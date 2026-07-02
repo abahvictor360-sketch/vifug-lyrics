@@ -1,0 +1,225 @@
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { X, Plus, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
+import { api } from "../lib/api";
+import { VButton, SectionChip } from "./bits";
+import { SECTION_TYPES } from "../lib/sections";
+import type { FullSongResponse } from "../hooks/use-songs";
+
+type EditSection = {
+  key: string;
+  type: string;
+  label: string;
+  number: number | null;
+  lyrics: string;
+};
+
+let keyCounter = 0;
+const nk = () => `s${keyCounter++}`;
+
+export function SongEditor({
+  song,
+  onClose,
+}: {
+  song: FullSongResponse | null; // null = new song
+  onClose: (savedId?: string) => void;
+}) {
+  const qc = useQueryClient();
+  const [title, setTitle] = useState("");
+  const [authors, setAuthors] = useState("");
+  const [ccli, setCcli] = useState("");
+  const [copyright, setCopyright] = useState("");
+  const [sections, setSections] = useState<EditSection[]>([]);
+
+  useEffect(() => {
+    if (song) {
+      setTitle(song.song.title);
+      setAuthors(song.song.authors ? (JSON.parse(song.song.authors) as string[]).join(", ") : "");
+      setCcli(song.song.ccliNumber ?? "");
+      setCopyright(song.song.copyright ?? "");
+      setSections(
+        song.sections.map((s) => ({
+          key: nk(),
+          type: s.type,
+          label: s.label,
+          number: s.number,
+          lyrics: s.lyrics,
+        })),
+      );
+    } else {
+      setTitle("");
+      setAuthors("");
+      setCcli("");
+      setCopyright("");
+      setSections([{ key: nk(), type: "verse", label: "Verse 1", number: 1, lyrics: "" }]);
+    }
+  }, [song]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        title: title.trim() || "Untitled Song",
+        authors: authors.split(",").map((a) => a.trim()).filter(Boolean),
+        ccliNumber: ccli.trim() || undefined,
+        copyright: copyright.trim() || undefined,
+        sections: sections.map((s) => ({
+          type: s.type,
+          label: s.label,
+          number: s.number,
+          lyrics: s.lyrics,
+        })),
+      };
+      if (song) {
+        await api.songs[":id"].$put({ param: { id: song.song.id }, json: payload });
+        return song.song.id;
+      }
+      const res = await api.songs.$post({ json: payload });
+      const data = await res.json();
+      return (data as { id: string }).id;
+    },
+    onSuccess: (id) => {
+      qc.invalidateQueries({ queryKey: ["songs"] });
+      qc.invalidateQueries({ queryKey: ["song", id] });
+      onClose(id);
+    },
+  });
+
+  const updateSection = (key: string, patch: Partial<EditSection>) =>
+    setSections((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
+
+  const addSection = () =>
+    setSections((prev) => [...prev, { key: nk(), type: "verse", label: `Verse ${prev.length + 1}`, number: null, lyrics: "" }]);
+
+  const removeSection = (key: string) => setSections((prev) => prev.filter((s) => s.key !== key));
+
+  const move = (idx: number, dir: -1 | 1) => {
+    setSections((prev) => {
+      const next = [...prev];
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
+  };
+
+  const setType = (key: string, type: string) => {
+    const def = SECTION_TYPES.find((t) => t.value === type);
+    updateSection(key, { type, label: def ? def.label : "Verse" });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="flex h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[var(--v-border)] bg-[var(--v-surface)] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[var(--v-border)] px-5 py-3">
+          <h2 className="font-display text-lg font-semibold">{song ? "Edit Song" : "New Song"}</h2>
+          <button onClick={() => onClose()} className="text-[var(--v-text-faint)] hover:text-[var(--v-text)]">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="v-scroll flex-1 overflow-y-auto px-5 py-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="col-span-2 block">
+              <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">Title</span>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Song title"
+                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">Authors</span>
+              <input
+                value={authors}
+                onChange={(e) => setAuthors(e.target.value)}
+                placeholder="Comma separated"
+                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">CCLI #</span>
+                <input
+                  value={ccli}
+                  onChange={(e) => setCcli(e.target.value)}
+                  className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">Copyright</span>
+                <input
+                  value={copyright}
+                  onChange={(e) => setCopyright(e.target.value)}
+                  className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-5 mb-2 flex items-center justify-between">
+            <span className="text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">Sections</span>
+            <span className="text-[11px] text-[var(--v-text-faint)]">One line per lyric line. Blank line = spacer.</span>
+          </div>
+
+          <div className="space-y-3">
+            {sections.map((s, idx) => (
+              <div key={s.key} className="rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <GripVertical className="h-4 w-4 text-[var(--v-text-faint)]" />
+                  <select
+                    value={s.type}
+                    onChange={(e) => setType(s.key, e.target.value)}
+                    className="rounded border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-xs outline-none"
+                  >
+                    {SECTION_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    value={s.label}
+                    onChange={(e) => updateSection(s.key, { label: e.target.value })}
+                    className="w-32 rounded border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-xs outline-none focus:border-[var(--v-accent)]"
+                  />
+                  <div className="ml-auto flex items-center gap-1">
+                    <button onClick={() => move(idx, -1)} className="rounded p-1 text-[var(--v-text-faint)] hover:bg-[var(--v-surface-3)] hover:text-[var(--v-text)]">
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => move(idx, 1)} className="rounded p-1 text-[var(--v-text-faint)] hover:bg-[var(--v-surface-3)] hover:text-[var(--v-text)]">
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => removeSection(s.key)} className="rounded p-1 text-[var(--v-text-faint)] hover:bg-[var(--v-live-soft)] hover:text-[var(--v-live)]">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  value={s.lyrics}
+                  onChange={(e) => updateSection(s.key, { lyrics: e.target.value })}
+                  rows={Math.max(3, s.lyrics.split("\n").length)}
+                  placeholder="Lyrics…"
+                  className="w-full resize-y rounded border border-[var(--v-border)] bg-[var(--v-bg)] px-3 py-2 font-lyric text-sm leading-relaxed outline-none focus:border-[var(--v-accent)]"
+                />
+              </div>
+            ))}
+          </div>
+
+          <VButton variant="ghost" size="sm" className="mt-3" onClick={addSection}>
+            <Plus className="h-4 w-4" /> Add section
+          </VButton>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--v-border)] px-5 py-3">
+          <VButton variant="ghost" onClick={() => onClose()}>
+            Cancel
+          </VButton>
+          <VButton variant="primary" onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Saving…" : "Save song"}
+          </VButton>
+        </div>
+      </div>
+    </div>
+  );
+}

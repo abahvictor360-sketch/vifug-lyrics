@@ -1,0 +1,77 @@
+name: Build Desktop Installers
+
+# Builds Vifug Lyrics native installers for Windows, macOS and Linux.
+# - Manual runs (workflow_dispatch) upload installers as artifacts.
+# - Tag pushes (v*) also attach installers to a GitHub Release.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win nsis
+          - os: macos-latest
+            target: --mac dmg
+          - os: ubuntu-latest
+            target: --linux AppImage
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build web bundle
+        run: bun run build
+        working-directory: packages/web
+
+      - name: Build desktop bundle
+        run: bun run build
+        working-directory: packages/desktop
+
+      - name: Package installer
+        run: bunx electron-builder ${{ matrix.target }} --publish never
+        working-directory: packages/desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signing (optional — set as repo secrets to enable):
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vifug-lyrics-${{ matrix.os }}
+          path: |
+            packages/desktop/release/**/*.exe
+            packages/desktop/release/**/*.dmg
+            packages/desktop/release/**/*.AppImage
+          if-no-files-found: ignore
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            packages/desktop/release/**/*.exe
+            packages/desktop/release/**/*.dmg
+            packages/desktop/release/**/*.AppImage
