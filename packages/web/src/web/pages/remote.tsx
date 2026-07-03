@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   ChevronLeft, ChevronRight, Square, Ban, SendHorizontal, Wifi, WifiOff,
 } from "lucide-react";
@@ -77,7 +77,13 @@ export default function RemotePage() {
   );
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#0a0a0c] p-4 text-white">
+    <div
+      className="fixed inset-0 flex flex-col p-4 text-white"
+      style={{
+        background:
+          "radial-gradient(800px 400px at 50% -10%, rgba(99,102,241,0.12), transparent 60%), #0b0c12",
+      }}
+    >
       {/* Status */}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-lg font-bold">Vifug Remote</span>
@@ -93,7 +99,7 @@ export default function RemotePage() {
 
       {/* Live preview */}
       <div className="mb-4 rounded-2xl border border-white/10 bg-black p-4">
-        <div className="mb-1 text-xs uppercase tracking-widest text-[color:#f5c518]">
+        <div className="mb-1 text-xs uppercase tracking-widest text-[color:#ffc233]">
           {state.status === "live"
             ? state.sectionLabel || "Live"
             : state.status === "blank"
@@ -128,14 +134,14 @@ export default function RemotePage() {
         </Btn>
         <Btn
           onClick={() => sendCommand("sendLive")}
-          className="col-span-2 bg-emerald-600 py-6 text-2xl"
+          className="col-span-2 bg-gradient-to-b from-emerald-500 to-emerald-700 py-6 text-2xl font-bold shadow-[0_4px_20px_rgba(16,185,129,0.35)]"
         >
-          <SendHorizontal className="h-7 w-7" /> Send Preview → Live
+          <SendHorizontal className="h-7 w-7" /> GO LIVE
         </Btn>
-        <Btn onClick={() => sendCommand("blank")} className="bg-blue-600/80 py-6 text-xl">
+        <Btn onClick={() => sendCommand("blank")} className="bg-gradient-to-b from-blue-500 to-blue-700 py-6 text-xl shadow-[0_4px_16px_rgba(59,130,246,0.3)]">
           <Square className="h-6 w-6" /> Blank
         </Btn>
-        <Btn onClick={() => sendCommand("clear")} className="bg-red-600/80 py-6 text-xl">
+        <Btn onClick={() => sendCommand("clear")} className="bg-gradient-to-b from-red-500 to-red-700 py-6 text-xl shadow-[0_4px_16px_rgba(239,68,68,0.3)]">
           <Ban className="h-6 w-6" /> Clear
         </Btn>
       </div>

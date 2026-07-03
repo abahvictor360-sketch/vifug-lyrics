@@ -528,7 +528,11 @@ export default function OperatorPage() {
                   <StatusPill status={liveState.status} />
                 </div>
                 <div
-                  className="relative aspect-video w-full overflow-hidden rounded-lg border border-[var(--v-border)]"
+                  className={`relative aspect-video w-full overflow-hidden rounded-lg border-2 ${
+                    liveState.status === "live"
+                      ? "v-live-pulse border-[var(--v-live)]"
+                      : "border-[var(--v-border)]"
+                  }`}
                   style={{ background: "#000" }}
                 >
                   <SlideRender state={liveState} scale />
@@ -538,11 +542,12 @@ export default function OperatorPage() {
 
             <VButton
               variant="ok"
-              className="mt-3 w-full"
+              size="lg"
+              className="mt-3 w-full text-base font-bold tracking-wide"
               onClick={stage.sendLive}
               disabled={!stage.previewSlide}
             >
-              <SendHorizontal className="h-4 w-4" /> Send Preview to Live <kbd className="ml-1 rounded bg-black/20 px-1 text-[10px]">↵</kbd>
+              <SendHorizontal className="h-5 w-5" /> GO LIVE <kbd className="ml-1 rounded-md bg-black/20 px-1.5 text-[11px] font-medium">↵</kbd>
             </VButton>
             <p className="mt-1.5 text-center text-[11px] text-[var(--v-text-faint)]">
               {liveState.status === "live"
@@ -564,11 +569,11 @@ export default function OperatorPage() {
               </VButton>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <VButton variant={liveState.status === "blank" ? "primary" : "subtle"} onClick={stage.blank}>
-                <Square className="h-4 w-4" /> Blank
+              <VButton size="lg" variant={liveState.status === "blank" ? "primary" : "subtle"} onClick={stage.blank}>
+                <Square className="h-5 w-5" /> Blank
               </VButton>
-              <VButton variant="danger" onClick={stage.clear}>
-                <Ban className="h-4 w-4" /> Clear
+              <VButton size="lg" variant="danger" onClick={stage.clear}>
+                <Ban className="h-5 w-5" /> Clear
               </VButton>
             </div>
             <p className="mt-2 text-center text-[11px] text-[var(--v-text-faint)]">
@@ -689,9 +694,9 @@ function TopBar({
   onSettings: () => void;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--v-border)] bg-[var(--v-surface-2)] px-4">
+    <header className="v-glass flex h-12 shrink-0 items-center justify-between border-b px-4">
       <div className="flex items-center gap-2">
-        <div className="grid h-7 w-7 place-items-center rounded-md bg-[var(--v-accent)] text-black">
+        <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-[var(--v-accent)] to-[var(--v-accent-2)] text-black shadow-[0_2px_10px_var(--v-accent-glow)]">
           <Music4 className="h-4 w-4" />
         </div>
         <span className="font-display text-sm font-bold tracking-tight">Vifug Lyrics</span>
@@ -739,8 +744,10 @@ function SongRow({
     <li>
       <div
         onClick={onSelect}
-        className={`group flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors ${
-          active ? "bg-[var(--v-accent-soft)] text-[var(--v-text)]" : "hover:bg-[var(--v-surface-3)]"
+        className={`group flex cursor-pointer items-center gap-2 rounded-lg border-l-2 px-2.5 py-2 text-sm transition-colors ${
+          active
+            ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-text)]"
+            : "border-transparent hover:bg-[var(--v-surface-3)]"
         }`}
       >
         <div className="min-w-0 flex-1">
@@ -860,12 +867,12 @@ function SlideGrid({
                     key={slide.slideId ?? idx}
                     onClick={() => stage.preview(idx)}
                     onDoubleClick={() => stage.goLive(idx)}
-                    className={`group relative aspect-video overflow-hidden rounded-lg border-2 bg-black text-left transition-all ${
+                    className={`group relative aspect-video overflow-hidden rounded-xl border-2 bg-black text-left transition-all duration-150 ${
                       isLive
-                        ? "border-[var(--v-live)] ring-2 ring-[var(--v-live)]/40"
+                        ? "v-live-pulse border-[var(--v-live)] ring-2 ring-[var(--v-live)]/40"
                         : isPreview
-                          ? "border-[var(--v-accent)] ring-2 ring-[var(--v-accent)]/30"
-                          : "border-[var(--v-border)] hover:border-[var(--v-accent)]"
+                          ? "border-[var(--v-accent)] ring-2 ring-[var(--v-accent)]/30 shadow-[0_0_16px_var(--v-accent-glow)]"
+                          : "border-[var(--v-border)] hover:-translate-y-0.5 hover:border-[var(--v-accent)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.5)]"
                     }`}
                   >
                     <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">

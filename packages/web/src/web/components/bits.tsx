@@ -5,7 +5,7 @@ export function SectionChip({ label, type, className }: { label: string; type: s
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        "inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
         chipClass(type),
         className,
       )}
@@ -36,21 +36,24 @@ export function VButton({
   size?: "sm" | "md" | "lg";
 }) {
   const variants: Record<string, string> = {
-    primary: "bg-[var(--v-accent)] text-black hover:brightness-110 font-semibold",
-    danger: "bg-[var(--v-live)] text-white hover:brightness-110 font-semibold",
-    ok: "bg-[var(--v-ok)] text-black hover:brightness-110 font-semibold",
+    primary:
+      "bg-gradient-to-b from-[var(--v-accent)] to-[var(--v-accent-2)] text-black font-semibold shadow-[0_2px_12px_var(--v-accent-glow)] hover:brightness-110",
+    danger:
+      "bg-gradient-to-b from-[var(--v-live)] to-[var(--v-live-2)] text-white font-semibold shadow-[0_2px_12px_var(--v-live-glow)] hover:brightness-110",
+    ok: "bg-[var(--v-ok)] text-black hover:brightness-110 font-semibold shadow-[0_2px_10px_rgba(47,213,117,0.3)]",
     ghost: "bg-transparent text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)] hover:text-[var(--v-text)]",
-    subtle: "bg-[var(--v-surface-2)] text-[var(--v-text)] hover:bg-[var(--v-surface-3)] border border-[var(--v-border)]",
+    subtle:
+      "bg-[var(--v-surface-2)] text-[var(--v-text)] hover:bg-[var(--v-surface-3)] hover:border-[var(--v-text-faint)] border border-[var(--v-border)]",
   };
   const sizes: Record<string, string> = {
-    sm: "h-8 px-2.5 text-xs rounded-md gap-1.5",
-    md: "h-9 px-3.5 text-sm rounded-md gap-2",
-    lg: "h-11 px-5 text-base rounded-lg gap-2",
+    sm: "h-8 px-2.5 text-xs rounded-lg gap-1.5",
+    md: "h-9 px-3.5 text-sm rounded-lg gap-2",
+    lg: "h-12 px-5 text-base rounded-xl gap-2",
   };
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center transition-colors disabled:opacity-40 disabled:pointer-events-none select-none",
+        "inline-flex items-center justify-center transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none select-none",
         variants[variant],
         sizes[size],
         className,

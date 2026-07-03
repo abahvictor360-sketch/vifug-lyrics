@@ -3,6 +3,14 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.vifug.lyrics",
   "asar": true,
+  "asarUnpack": [
+    "**/*.node",
+    "node_modules/@libsql/**",
+    "node_modules/libsql/**"
+  ],
+  "extraResources": [
+    { "from": "../web/local.db", "to": "seed.db" }
+  ],
   "productName": "Vifug Lyrics",
   "directories": {
     "output": "release/${version}"

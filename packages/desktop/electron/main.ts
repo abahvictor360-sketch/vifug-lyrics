@@ -2,23 +2,34 @@ import { app, BrowserWindow, ipcMain, dialog, Notification, screen } from "elect
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
+import { startEmbeddedServer } from "./server";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const isDev = process.env.NODE_ENV !== "production";
+const isDev = !app.isPackaged && process.env.NODE_ENV !== "production";
 const WEB_DEV_URL = process.env.WEBSITE_URL ?? "http://localhost:3000";
 const WEB_DIST = path.join(__dirname, "../web-dist");
 
+let baseUrl = WEB_DEV_URL;
 let win: BrowserWindow | null;
 let projectorWin: BrowserWindow | null = null;
 
 function loadRoute(target: BrowserWindow, route: string) {
-  if (isDev) {
-    // Hash routing: the web app uses wouter's useHashLocation so routes live
-    // after the '#'. Root is "/#/", projector is "/#/projector".
-    target.loadURL(`${WEB_DEV_URL}/#${route}`);
-  } else {
-    target.loadFile(path.join(WEB_DIST, "index.html"), { hash: route });
+  // Hash routing: the web app uses wouter's useHashLocation so routes live
+  // after the '#'. Root is "/#/", projector is "/#/projector".
+  target.loadURL(`${baseUrl}/#${route}`);
+}
+
+async function ensureProductionServer() {
+  if (isDev) return;
+  const dbFile = path.join(app.getPath("userData"), "vifug.db");
+  if (!fsSync.existsSync(dbFile)) {
+    // First run: install the bundled, pre-seeded library database.
+    const seed = path.join(process.resourcesPath, "seed.db");
+    if (fsSync.existsSync(seed)) await fs.copyFile(seed, dbFile);
   }
+  const port = await startEmbeddedServer(WEB_DIST, dbFile);
+  baseUrl = `http://127.0.0.1:${port}`;
 }
 
 function createWindow() {
@@ -158,4 +169,7 @@ app.on("activate", () => {
   }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  await ensureProductionServer();
+  createWindow();
+});

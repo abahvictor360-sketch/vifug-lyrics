@@ -12,6 +12,15 @@ export default defineConfig({
     electron({
       main: {
         entry: "electron/main.ts",
+        vite: {
+          build: {
+            rollupOptions: {
+              // Native sqlite driver cannot be bundled; resolved from
+              // node_modules at runtime (see package.json dependencies).
+              external: ["libsql"],
+            },
+          },
+        },
       },
       preload: {
         input: path.join(__dirname, "electron/preload.ts"),

@@ -76,7 +76,7 @@ export default function StagePage() {
           <div className="truncate text-2xl font-semibold text-white/80">
             {state.current?.title || (state.mode === "bible" ? "Scripture" : "Vifug Lyrics")}
           </div>
-          <div className="truncate text-lg text-[color:#f5c518]">
+          <div className="truncate text-lg text-[color:#ffc233]">
             {state.current?.caption || "—"}
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function StagePage() {
       {/* CURRENT slide — big */}
       <main className="flex min-h-0 flex-1 items-center justify-center px-12">
         {blanked ? (
-          <div className="text-3xl font-medium text-white/30">● Screen blanked</div>
+          <div className="text-3xl font-medium text-white/30">â— Screen blanked</div>
         ) : live ? (
           <div className="w-full text-center">
             {state.current!.lines.map((l, i) => (
@@ -117,7 +117,7 @@ export default function StagePage() {
           </div>
           {state.next ? (
             <div className="min-w-0">
-              <div className="truncate text-sm text-[color:#f5c518]">{state.next.caption}</div>
+              <div className="truncate text-sm text-[color:#ffc233]">{state.next.caption}</div>
               <div className="line-clamp-2 text-2xl font-medium text-white/70">
                 {state.next.lines.join(" / ")}
               </div>
