@@ -73,6 +73,8 @@ function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): Li
     fontWeight: o.fontWeight ?? base.fontWeight,
     fontSize: o.fontSize === undefined ? base.fontSize : o.fontSize,
     fontFamily: o.fontFamily ?? base.fontFamily,
+    displayMode: o.displayMode ?? base.displayMode,
+    verticalPos: o.verticalPos ?? base.verticalPos,
   };
 }
 

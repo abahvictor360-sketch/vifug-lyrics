@@ -22,7 +22,7 @@ export type LiveTheme = {
   safeMargin: number; // %
   overlayScrim: number; // 0-100
   displayMode: "fullscreen" | "lower_third" | "lower_third_bg";
-  verticalPos: "center" | "bottom";
+  verticalPos: "top" | "center" | "bottom";
   transition: string;
   transitionMs: number;
   textOutline: { color: string; width: number } | null;

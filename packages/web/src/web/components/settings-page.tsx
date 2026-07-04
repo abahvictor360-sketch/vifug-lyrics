@@ -196,9 +196,71 @@ function OverrideEditor({
 }) {
   const o = value ?? {};
   const set = (patch: ThemeOverride) => onChange({ ...o, ...patch });
+  const isLowerThird = o.displayMode === "lower_third" || o.displayMode === "lower_third_bg";
 
   return (
     <div className="space-y-4">
+      <label className="block">
+        <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Display mode</span>
+        <div className="flex gap-1.5">
+          {([
+            { v: "fullscreen", l: "Fullscreen" },
+            { v: "lower_third", l: "Lower third" },
+            { v: "lower_third_bg", l: "Lower third + bar" },
+          ] as const).map((m) => (
+            <button
+              key={m.v}
+              onClick={() =>
+                set(
+                  o.displayMode === m.v
+                    ? { displayMode: undefined } // back to inherit
+                    : {
+                        displayMode: m.v,
+                        // default the classic broadcast position when entering lower third
+                        ...(m.v !== "fullscreen" && !o.verticalPos ? { verticalPos: "bottom" } : {}),
+                      },
+                )
+              }
+              className={`flex-1 rounded-md border py-2 text-xs transition-colors ${
+                o.displayMode === m.v
+                  ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                  : "border-[var(--v-border)] bg-[var(--v-surface-3)] text-[var(--v-text-dim)] hover:text-[var(--v-text)]"
+              }`}
+            >
+              {m.l}
+            </button>
+          ))}
+        </div>
+        {!o.displayMode && (
+          <span className="mt-1 block text-[10px] text-[var(--v-text-faint)]">{inheritLabel}. Pick one to override.</span>
+        )}
+      </label>
+
+      {isLowerThird && (
+        <label className="block">
+          <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Lower third position</span>
+          <div className="flex gap-1.5">
+            {([
+              { v: "top", l: "Top" },
+              { v: "center", l: "Middle" },
+              { v: "bottom", l: "Bottom" },
+            ] as const).map((p) => (
+              <button
+                key={p.v}
+                onClick={() => set({ verticalPos: p.v })}
+                className={`flex-1 rounded-md border py-2 text-xs transition-colors ${
+                  (o.verticalPos ?? "bottom") === p.v
+                    ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                    : "border-[var(--v-border)] bg-[var(--v-surface-3)] text-[var(--v-text-dim)] hover:text-[var(--v-text)]"
+                }`}
+              >
+                {p.l}
+              </button>
+            ))}
+          </div>
+        </label>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
           <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Font</span>

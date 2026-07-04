@@ -31,15 +31,13 @@ export function SlideRender({
   const bg =
     state.status === "blank"
       ? "#000000"
-      : transparent
+      : transparent || isLowerThird
         ? "transparent"
-        : isLowerThird && t.displayMode === "lower_third"
-          ? "transparent"
-          : showMediaColor
-            ? media!.url
-            : media && (media.type === "image" || media.type === "video")
-              ? "transparent"
-              : t.bgColor;
+        : showMediaColor
+          ? media!.url
+          : media && (media.type === "image" || media.type === "video")
+            ? "transparent"
+            : t.bgColor;
 
   const showText = state.status === "live" && state.sourceLines.length > 0;
 
@@ -58,12 +56,15 @@ export function SlideRender({
       : `${t.fontSize}px`
     : `clamp(${scale ? "0.6rem" : "1.4rem"}, ${Math.min(autoVw, autoByLines)}${unit}, ${scale ? "9cqw" : "6rem"})`;
 
-  const justify =
-    isLowerThird && t.verticalPos === "bottom"
-      ? "flex-end"
-      : t.displayMode === "lower_third" || t.displayMode === "lower_third_bg"
-        ? "flex-end"
-        : "center";
+  // Fullscreen centers vertically; lower thirds sit where verticalPos says
+  // (bottom is the classic broadcast position).
+  const justify = !isLowerThird
+    ? "center"
+    : t.verticalPos === "top"
+      ? "flex-start"
+      : t.verticalPos === "center"
+        ? "center"
+        : "flex-end";
 
   const align = t.textAlign;
   const alignItems = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
@@ -139,7 +140,17 @@ export function SlideRender({
       )}
 
       {showText && (
-        <div style={{ position: "relative", width: "100%", maxWidth: "100%" }}>
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            maxWidth: "100%",
+            // lower_third_bg draws a backdrop bar behind the text band
+            ...(t.displayMode === "lower_third_bg"
+              ? { background: t.bgColor, padding: "0.5em 0.8em", borderRadius: "0.15em" }
+              : {}),
+          }}
+        >
           <div
             style={{
               fontSize,

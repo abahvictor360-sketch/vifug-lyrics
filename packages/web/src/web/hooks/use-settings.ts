@@ -8,6 +8,10 @@ export type ThemeOverride = {
   fontWeight?: number | null;
   fontSize?: number | null;
   fontFamily?: string | null;
+  /** fullscreen | lower_third | lower_third_bg (lower third with a backdrop bar) */
+  displayMode?: "fullscreen" | "lower_third" | "lower_third_bg" | null;
+  /** Where the lower third sits on screen. */
+  verticalPos?: "top" | "center" | "bottom" | null;
 };
 
 export type AppSettings = {
