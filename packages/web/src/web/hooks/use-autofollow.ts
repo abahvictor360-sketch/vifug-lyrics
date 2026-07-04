@@ -104,7 +104,10 @@ export function useAutoFollow(opts: {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRef.current = stream;
 
-      const url = `wss://api.deepgram.com/v1/listen?model=${cfg.model}&smart_format=true&interim_results=true&encoding=opus`;
+      // No `encoding` param: MediaRecorder sends containerized WebM/Opus and
+      // Deepgram auto-detects containers; forcing encoding=opus (raw packets)
+      // makes transcription silently fail.
+      const url = `wss://api.deepgram.com/v1/listen?model=${cfg.model}&smart_format=true&interim_results=true`;
       const ws = new WebSocket(url, ["token", cfg.key]);
       wsRef.current = ws;
 

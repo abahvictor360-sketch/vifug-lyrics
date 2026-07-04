@@ -83,7 +83,7 @@ export function SlideRender({
         alignItems,
         padding: `${t.safeMargin}%`,
         color: t.textColor,
-        fontFamily: "var(--font-lyric)",
+        fontFamily: t.fontFamily || "var(--font-lyric)",
         fontWeight: t.fontWeight,
         textAlign: align,
         // @ts-expect-error css var

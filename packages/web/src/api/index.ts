@@ -567,6 +567,8 @@ function defaultSettings() {
     secondaryLang: null as string | null,
     autoFollow: false,
     bibleLangs: { yor: true, hau: true, ibo: true },
+    lyricTheme: null as Record<string, unknown> | null,
+    bibleTheme: null as Record<string, unknown> | null,
     output: { displayId: null as number | null, resolution: "auto" },
     ui: { language: "en" },
   };

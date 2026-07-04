@@ -38,12 +38,6 @@ export function verseSlide(
  */
 export type BibleLangToggles = { yor: boolean; hau: boolean; ibo: boolean };
 
-const LANG_PACKS: { key: keyof BibleLangToggles; label: string }[] = [
-  { key: "yor", label: "Yoruba" },
-  { key: "hau", label: "Hausa" },
-  { key: "ibo", label: "Igbo" },
-];
-
 export function BiblePanel({
   onSlidesChange,
   onPreview,
@@ -51,7 +45,6 @@ export function BiblePanel({
   previewId,
   liveId,
   langs,
-  onToggleLang,
   cue,
 }: {
   onSlidesChange: (slides: StageSlide[]) => void;
@@ -59,8 +52,8 @@ export function BiblePanel({
   onSendLive: (index: number) => void;
   previewId: string | null;
   liveId: string | null;
+  /** Language packs enabled in Settings → Bible. */
   langs: BibleLangToggles;
-  onToggleLang: (key: keyof BibleLangToggles, value: boolean) => void;
   /** External navigation request (e.g. cued from a service plan). */
   cue?: { versionId?: string; ref: string; nonce: number } | null;
 }) {
@@ -214,30 +207,9 @@ export function BiblePanel({
             ))}
           </select>
 
-          {/* Language packs — English core is always on; toggle the rest. */}
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="text-[11px] text-[var(--v-text-faint)]">Languages:</span>
-            <span className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-[11px] font-medium text-[var(--v-text-dim)]">
-              English
-            </span>
-            {LANG_PACKS.map((p) => {
-              const on = langs[p.key] !== false;
-              return (
-                <button
-                  key={p.key}
-                  onClick={() => onToggleLang(p.key, !on)}
-                  title={on ? `Hide ${p.label} Bible` : `Show ${p.label} Bible`}
-                  className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
-                    on
-                      ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                      : "border-[var(--v-border)] bg-[var(--v-surface-2)] text-[var(--v-text-faint)] hover:text-[var(--v-text)]"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
+          <span className="ml-auto text-[11px] text-[var(--v-text-faint)]">
+            More versions in Settings → Bible
+          </span>
         </div>
 
         <div className="relative">

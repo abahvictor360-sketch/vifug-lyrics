@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
+export type ThemeOverride = {
+  bgColor?: string | null;
+  textColor?: string | null;
+  textAlign?: "left" | "center" | "right" | null;
+  fontWeight?: number | null;
+  fontSize?: number | null;
+  fontFamily?: string | null;
+};
+
 export type AppSettings = {
   activeThemeId: string | null;
   linesPerSlide: number;
@@ -16,16 +25,16 @@ export type AppSettings = {
    */
   bibleLangs?: { yor: boolean; hau: boolean; ibo: boolean };
   /**
-   * Per-display Bible overrides layered over the active lyric theme.
-   * Any field left null/undefined inherits the lyric theme.
+   * Operator-set lyric display overrides layered over the active theme
+   * (background/text color, font family/size/weight, alignment).
+   * Any field left null/undefined inherits the theme.
    */
-  bibleTheme?: {
-    bgColor?: string | null;
-    textColor?: string | null;
-    textAlign?: "left" | "center" | "right" | null;
-    fontWeight?: number | null;
-    fontSize?: number | null;
-  } | null;
+  lyricTheme?: ThemeOverride | null;
+  /**
+   * Per-display Bible overrides layered over the (already overridden) lyric
+   * theme. Any field left null/undefined inherits the lyric look.
+   */
+  bibleTheme?: ThemeOverride | null;
   output: { displayId: number | null; resolution: string };
   ui: { language: string };
 };

@@ -18,6 +18,7 @@ export type LiveTheme = {
   textAlign: "left" | "center" | "right";
   fontWeight: number;
   fontSize: number | null; // null = auto-fit
+  fontFamily: string | null; // CSS font stack; null = default lyric font
   safeMargin: number; // %
   overlayScrim: number; // 0-100
   displayMode: "fullscreen" | "lower_third" | "lower_third_bg";
@@ -47,6 +48,7 @@ export const DEFAULT_THEME: LiveTheme = {
   textAlign: "center",
   fontWeight: 600,
   fontSize: null,
+  fontFamily: null,
   safeMargin: 8,
   overlayScrim: 0,
   displayMode: "fullscreen",

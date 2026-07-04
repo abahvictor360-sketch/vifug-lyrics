@@ -14,7 +14,8 @@ import { SongEditor } from "../components/song-editor";
 import { ImportModal } from "../components/import-modal";
 import { BiblePanel } from "../components/bible-panel";
 import { useSongList, useFullSong, useThemes, type SongListItem } from "../hooks/use-songs";
-import { useSettings, useUpdateSettings, type AppSettings } from "../hooks/use-settings";
+import { useSettings, useUpdateSettings, type AppSettings, type ThemeOverride } from "../hooks/use-settings";
+import { SettingsPage } from "../components/settings-page";
 import { useLiveController } from "../hooks/use-live-controller";
 import { useStage, type StageController } from "../hooks/use-stage";
 import { useLiveState } from "../hooks/use-live";
@@ -42,6 +43,7 @@ function themeToLive(t: Record<string, unknown> | undefined): LiveTheme {
     textAlign: (t.textAlign as LiveTheme["textAlign"]) ?? "center",
     fontWeight: (t.fontWeight as number) ?? 600,
     fontSize: (t.fontSize as number) ?? null,
+    fontFamily: (t.fontFamily as string) ?? null,
     safeMargin: (t.safeMargin as number) ?? 8,
     overlayScrim: (t.overlayScrim as number) ?? 0,
     displayMode: (t.displayMode as LiveTheme["displayMode"]) ?? "fullscreen",
@@ -54,6 +56,23 @@ function themeToLive(t: Record<string, unknown> | undefined): LiveTheme {
         : t.textOutline
       : DEFAULT_THEME.textOutline) as LiveTheme["textOutline"],
     background: DEFAULT_THEME.background,
+  };
+}
+
+/**
+ * Layer operator overrides (from Settings) over a base theme.
+ * undefined = inherit; fontSize null = explicit auto-fit.
+ */
+function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): LiveTheme {
+  if (!o) return base;
+  return {
+    ...base,
+    bgColor: o.bgColor ?? base.bgColor,
+    textColor: o.textColor ?? base.textColor,
+    textAlign: o.textAlign ?? base.textAlign,
+    fontWeight: o.fontWeight ?? base.fontWeight,
+    fontSize: o.fontSize === undefined ? base.fontSize : o.fontSize,
+    fontFamily: o.fontFamily ?? base.fontFamily,
   };
 }
 
@@ -100,9 +119,9 @@ export default function OperatorPage() {
 
   const activeTheme = useMemo(() => {
     const t = themes.data?.find((x) => x.id === settings?.activeThemeId) ?? themes.data?.[0];
-    const base = themeToLive(t as Record<string, unknown> | undefined);
+    const base = mergeOverride(themeToLive(t as Record<string, unknown> | undefined), settings?.lyricTheme);
     return { ...base, background: activeBackground };
-  }, [themes.data, settings?.activeThemeId, activeBackground]);
+  }, [themes.data, settings?.activeThemeId, settings?.lyricTheme, activeBackground]);
 
   const linesPerSlide = settings?.linesPerSlide ?? 2;
   const dualLanguage = settings?.dualLanguage ?? false;
@@ -157,18 +176,10 @@ export default function OperatorPage() {
   const [bibleSlides, setBibleSlides] = useState<StageSlide[]>([]);
 
   // Bible theme = active lyric theme with per-display Bible overrides merged in.
-  const bibleTheme = useMemo<LiveTheme>(() => {
-    const o = settings?.bibleTheme;
-    if (!o) return activeTheme;
-    return {
-      ...activeTheme,
-      bgColor: o.bgColor ?? activeTheme.bgColor,
-      textColor: o.textColor ?? activeTheme.textColor,
-      textAlign: o.textAlign ?? activeTheme.textAlign,
-      fontWeight: o.fontWeight ?? activeTheme.fontWeight,
-      fontSize: o.fontSize === undefined ? activeTheme.fontSize : o.fontSize,
-    };
-  }, [activeTheme, settings?.bibleTheme]);
+  const bibleTheme = useMemo<LiveTheme>(
+    () => mergeOverride(activeTheme, settings?.bibleTheme),
+    [activeTheme, settings?.bibleTheme],
+  );
 
   const stageSlides = mode === "bible" ? bibleSlides : lyricStageSlides;
   const stageTheme = mode === "bible" ? bibleTheme : activeTheme;
@@ -280,11 +291,6 @@ export default function OperatorPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [stage, editorOpen, importOpen, settingsOpen, translateOpen]);
 
-  const setLines = (n: number) => {
-    if (!settings) return;
-    updateSettings.mutate({ ...settings, linesPerSlide: n });
-  };
-
   const patchSettings = (patch: Partial<AppSettings>) => {
     if (!settings) return;
     updateSettings.mutate({ ...settings, ...patch });
@@ -345,7 +351,7 @@ export default function OperatorPage() {
     <div className="flex h-screen flex-col bg-[var(--v-bg)] text-[var(--v-text)]">
       <TopBar
         desktop={desktop}
-        settings={settings}
+        liveStatus={liveState.status}
         onSettings={() => setSettingsOpen(true)}
       />
 
@@ -447,11 +453,6 @@ export default function OperatorPage() {
               previewId={stage.previewSlide?.slideId ?? null}
               liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
               langs={settings?.bibleLangs ?? { yor: true, hau: true, ibo: true }}
-              onToggleLang={(key, value) =>
-                patchSettings({
-                  bibleLangs: { ...(settings?.bibleLangs ?? { yor: true, hau: true, ibo: true }), [key]: value },
-                })
-              }
               cue={bibleCue}
             />
           ) : (
@@ -581,47 +582,6 @@ export default function OperatorPage() {
             </p>
           </div>
 
-          {/* Lines per slide */}
-          <div className="border-b border-[var(--v-border)] p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">Lines per slide</span>
-              <span className="rounded bg-[var(--v-accent-soft)] px-1.5 py-0.5 text-xs font-semibold text-[var(--v-accent)]">
-                {linesPerSlide}
-              </span>
-            </div>
-            <div className="flex gap-1.5">
-              {[1, 2, 3, 4].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setLines(n)}
-                  className={`flex-1 rounded-md border py-1.5 text-sm font-medium transition-colors ${
-                    linesPerSlide === n
-                      ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                      : "border-[var(--v-border)] bg-[var(--v-surface-2)] text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            <input
-              type="range"
-              min={1}
-              max={8}
-              value={linesPerSlide}
-              onChange={(e) => setLines(Number(e.target.value))}
-              className="mt-2 w-full accent-[var(--v-accent)]"
-            />
-          </div>
-
-          {/* Backgrounds */}
-          <BackgroundsPanel
-            media={media.data ?? []}
-            loading={media.isLoading}
-            activeId={settings?.activeBackgroundId ?? null}
-            onSelect={(id) => patchSettings({ activeBackgroundId: id })}
-          />
-
           {/* AI auto-follow */}
           <AutoFollowPanel
             enabled={autoFollowOn}
@@ -662,12 +622,14 @@ export default function OperatorPage() {
         />
       )}
       {settingsOpen && (
-        <SettingsModal
+        <SettingsPage
           onClose={() => setSettingsOpen(false)}
           settings={settings}
           patchSettings={patchSettings}
           themes={themes.data ?? []}
           desktop={desktop}
+          lyricPreviewTheme={activeTheme}
+          biblePreviewTheme={bibleTheme}
         />
       )}
       {translateOpen && full.data && (
@@ -686,11 +648,11 @@ export default function OperatorPage() {
 
 function TopBar({
   desktop,
-  settings,
+  liveStatus,
   onSettings,
 }: {
   desktop: ReturnType<typeof useDesktop>;
-  settings: AppSettings | undefined;
+  liveStatus: string;
   onSettings: () => void;
 }) {
   return (
@@ -705,9 +667,7 @@ function TopBar({
         </span>
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-[11px] text-[var(--v-text-faint)]">
-          {settings ? `${settings.linesPerSlide} lines/slide` : ""}
-        </span>
+        <StatusPill status={liveStatus} />
         <VButton variant="ghost" size="sm" onClick={onSettings}>
           <Settings2 className="h-4 w-4" /> Settings
         </VButton>
@@ -979,351 +939,6 @@ function ProjectorControls({
           Opens a preview window. In the desktop app it fills a second monitor.
         </p>
       )}
-    </div>
-  );
-}
-
-function SettingsModal({
-  onClose,
-  settings,
-  patchSettings,
-  themes,
-  desktop,
-}: {
-  onClose: () => void;
-  settings: AppSettings | undefined;
-  patchSettings: (p: Partial<AppSettings>) => void;
-  themes: { id: string; name: string }[];
-  desktop: ReturnType<typeof useDesktop>;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-xl border border-[var(--v-border)] bg-[var(--v-surface)] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[var(--v-border)] px-5 py-3">
-          <h2 className="font-display text-lg font-semibold">Settings</h2>
-          <button onClick={onClose} className="text-[var(--v-text-faint)] hover:text-[var(--v-text)]">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="space-y-4 p-5">
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">Theme</span>
-            <select
-              value={settings?.activeThemeId ?? ""}
-              onChange={(e) => patchSettings({ activeThemeId: e.target.value || null })}
-              className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2 text-sm outline-none"
-            >
-              {themes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">Default lines per slide</span>
-            <input
-              type="number"
-              min={1}
-              max={8}
-              value={settings?.linesPerSlide ?? 2}
-              onChange={(e) => patchSettings({ linesPerSlide: Math.max(1, Math.min(8, Number(e.target.value))) })}
-              className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2 text-sm outline-none"
-            />
-          </label>
-
-          <label className="flex items-center justify-between">
-            <span className="text-sm">Dual-language display</span>
-            <input
-              type="checkbox"
-              checked={settings?.dualLanguage ?? false}
-              onChange={(e) => patchSettings({ dualLanguage: e.target.checked })}
-              className="h-4 w-4 accent-[var(--v-accent)]"
-            />
-          </label>
-
-          {settings?.dualLanguage && (
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">
-                Secondary language (translation line)
-              </span>
-              <select
-                value={settings?.secondaryLang ?? ""}
-                onChange={(e) => patchSettings({ secondaryLang: e.target.value || null })}
-                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2 text-sm outline-none"
-              >
-                <option value="">— none —</option>
-                {LANGS.map((l) => (
-                  <option key={l.code} value={l.code}>
-                    {l.label}
-                  </option>
-                ))}
-              </select>
-              <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">
-                Add translations per section from the song's <b>Translate</b> panel.
-              </span>
-            </label>
-          )}
-          <BibleThemeOverride settings={settings} patchSettings={patchSettings} />
-
-          <p className="text-[11px] text-[var(--v-text-faint)]">
-            Output display is chosen in the Projector panel. {desktop ? "Second monitor detected via the desktop shell." : "Full multi-monitor output is available in the desktop app."}
-          </p>
-        </div>
-        <div className="flex justify-end border-t border-[var(--v-border)] px-5 py-3">
-          <VButton variant="primary" onClick={onClose}>Done</VButton>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------- Phase 3: Bible theme override ---------------- */
-
-function BibleThemeOverride({
-  settings,
-  patchSettings,
-}: {
-  settings: AppSettings | undefined;
-  patchSettings: (p: Partial<AppSettings>) => void;
-}) {
-  const bt = settings?.bibleTheme ?? null;
-  const enabled = !!bt;
-  const set = (patch: Partial<NonNullable<AppSettings["bibleTheme"]>>) =>
-    patchSettings({ bibleTheme: { ...(bt ?? {}), ...patch } });
-
-  return (
-    <div className="rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-3">
-      <label className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-sm font-medium">
-          <BookOpen className="h-4 w-4 text-[var(--v-accent)]" /> Bible display overrides
-        </span>
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={(e) => patchSettings({ bibleTheme: e.target.checked ? { textAlign: "center" } : null })}
-          className="h-4 w-4 accent-[var(--v-accent)]"
-        />
-      </label>
-      <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
-        Scripture inherits the active lyric theme. Enable to override look for Bible verses only.
-      </p>
-
-      {enabled && (
-        <div className="mt-3 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Background</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={bt?.bgColor ?? "#0a0a0c"}
-                  onChange={(e) => set({ bgColor: e.target.value })}
-                  className="h-8 w-10 cursor-pointer rounded border border-[var(--v-border)] bg-transparent"
-                />
-                {bt?.bgColor && (
-                  <button onClick={() => set({ bgColor: null })} className="text-[10px] text-[var(--v-text-faint)] hover:text-[var(--v-text)]">reset</button>
-                )}
-              </div>
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Text color</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={bt?.textColor ?? "#ffffff"}
-                  onChange={(e) => set({ textColor: e.target.value })}
-                  className="h-8 w-10 cursor-pointer rounded border border-[var(--v-border)] bg-transparent"
-                />
-                {bt?.textColor && (
-                  <button onClick={() => set({ textColor: null })} className="text-[10px] text-[var(--v-text-faint)] hover:text-[var(--v-text)]">reset</button>
-                )}
-              </div>
-            </label>
-          </div>
-
-          <label className="block">
-            <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Alignment</span>
-            <div className="flex gap-1.5">
-              {(["left", "center", "right"] as const).map((a) => (
-                <button
-                  key={a}
-                  onClick={() => set({ textAlign: a })}
-                  className={`flex-1 rounded-md border py-1.5 text-xs capitalize transition-colors ${
-                    (bt?.textAlign ?? "center") === a
-                      ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                      : "border-[var(--v-border)] bg-[var(--v-surface-3)] text-[var(--v-text-dim)]"
-                  }`}
-                >
-                  {a}
-                </button>
-              ))}
-            </div>
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Font weight</span>
-              <select
-                value={bt?.fontWeight ?? 600}
-                onChange={(e) => set({ fontWeight: Number(e.target.value) })}
-                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none"
-              >
-                {[400, 500, 600, 700, 800].map((w) => (
-                  <option key={w} value={w}>{w}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Font size (px)</span>
-              <input
-                type="number"
-                min={0}
-                placeholder="auto"
-                value={bt?.fontSize ?? ""}
-                onChange={(e) => set({ fontSize: e.target.value ? Number(e.target.value) : null })}
-                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none"
-              />
-            </label>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ---------------- Phase 2: Backgrounds ---------------- */
-
-function BackgroundsPanel({
-  media,
-  loading,
-  activeId,
-  onSelect,
-}: {
-  media: MediaItem[];
-  loading: boolean;
-  activeId: string | null;
-  onSelect: (id: string | null) => void;
-}) {
-  const upload = useUploadMedia();
-  const addUrl = useAddMediaUrl();
-  const del = useDeleteMedia();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [url, setUrl] = useState("");
-  const [color, setColor] = useState("#0a0a0c");
-
-  return (
-    <div className="border-b border-[var(--v-border)] p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">
-          <ImageIcon className="h-3.5 w-3.5" /> Backgrounds
-        </span>
-        <div className="flex items-center gap-1">
-          <button
-            title="Upload image/video"
-            onClick={() => fileRef.current?.click()}
-            className="rounded p-1 text-[var(--v-text-faint)] hover:bg-[var(--v-surface-3)] hover:text-[var(--v-text)]"
-          >
-            {upload.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          </button>
-        </div>
-      </div>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*,video/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) upload.mutate(f);
-          e.target.value = "";
-        }}
-      />
-
-      <div className="grid grid-cols-3 gap-2">
-        {/* None / solid theme */}
-        <button
-          onClick={() => onSelect(null)}
-          className={`relative aspect-video overflow-hidden rounded-md border-2 bg-[var(--v-surface-3)] text-[9px] text-[var(--v-text-faint)] ${
-            !activeId ? "border-[var(--v-accent)]" : "border-[var(--v-border)]"
-          }`}
-        >
-          <span className="grid h-full w-full place-items-center">None</span>
-        </button>
-        {media.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => onSelect(m.id)}
-            className={`group relative aspect-video overflow-hidden rounded-md border-2 bg-black ${
-              activeId === m.id ? "border-[var(--v-accent)]" : "border-[var(--v-border)]"
-            }`}
-          >
-            {m.type === "color" ? (
-              <span className="block h-full w-full" style={{ background: m.url }} />
-            ) : m.type === "video" ? (
-              <>
-                <video src={m.url} muted className="h-full w-full object-cover" />
-                <Film className="absolute right-1 top-1 h-3 w-3 text-white/80" />
-              </>
-            ) : (
-              <img src={m.url} alt="" className="h-full w-full object-cover" />
-            )}
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                del.mutate(m.id);
-                if (activeId === m.id) onSelect(null);
-              }}
-              className="absolute left-1 top-1 hidden rounded bg-black/60 p-0.5 text-white group-hover:block"
-            >
-              <Trash2 className="h-3 w-3" />
-            </span>
-          </button>
-        ))}
-        {loading && <div className="col-span-3 py-2 text-center text-[11px] text-[var(--v-text-faint)]">Loading…</div>}
-      </div>
-
-      {/* Add by URL */}
-      <div className="mt-2 flex gap-1.5">
-        <div className="relative flex-1">
-          <Link2 className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--v-text-faint)]" />
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Image / video URL"
-            className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] py-1.5 pl-7 pr-2 text-xs outline-none focus:border-[var(--v-accent)]"
-          />
-        </div>
-        <button
-          disabled={!url.trim() || addUrl.isPending}
-          onClick={() => {
-            const u = url.trim();
-            const type = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u) ? "video" : "image";
-            addUrl.mutate({ type, uri: u }, { onSuccess: () => setUrl("") });
-          }}
-          className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-2 text-xs hover:bg-[var(--v-surface-3)] disabled:opacity-40"
-        >
-          Add
-        </button>
-      </div>
-
-      {/* Add solid color */}
-      <div className="mt-1.5 flex items-center gap-1.5">
-        <Palette className="h-3.5 w-3.5 text-[var(--v-text-faint)]" />
-        <input
-          type="color"
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          className="h-7 w-9 cursor-pointer rounded border border-[var(--v-border)] bg-transparent"
-        />
-        <button
-          onClick={() => addUrl.mutate({ type: "color", uri: color })}
-          className="flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-2 py-1.5 text-xs hover:bg-[var(--v-surface-3)]"
-        >
-          Add color background
-        </button>
-      </div>
     </div>
   );
 }
