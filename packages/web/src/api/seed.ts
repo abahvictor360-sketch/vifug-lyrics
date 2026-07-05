@@ -19,7 +19,8 @@ import hymnData from "./seed-data/hymns.json";
 type HymnLyric = { verse?: number; content: string; type: string };
 type Hymn = { id: number; number: string; title: string; lyrics: HymnLyric[]; category?: string };
 
-const HYMN_LIMIT = 100;
+// Seed every hymn in the bundled public-domain dataset (300 as of v1.0.1).
+const HYMN_LIMIT = Infinity;
 
 function hymnToSections(h: Hymn) {
   let verseCount = 0;

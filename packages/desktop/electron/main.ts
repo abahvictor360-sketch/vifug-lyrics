@@ -73,29 +73,45 @@ ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: b
     displays.find((d) => d.id !== primary.id) ??
     primary;
 
+  const wantFullscreen = opts?.fullscreen ?? true;
+
   if (projectorWin && !projectorWin.isDestroyed()) {
+    // A fullscreen window ignores setBounds — drop out of fullscreen first,
+    // move to the target display, then restore fullscreen.
+    if (projectorWin.isFullScreen()) projectorWin.setFullScreen(false);
     projectorWin.setBounds(target.bounds);
-    projectorWin.setFullScreen(opts?.fullscreen ?? true);
+    projectorWin.setFullScreen(wantFullscreen);
     projectorWin.show();
     projectorWin.focus();
+    win?.webContents.send("projector:state", { open: true, displayId: target.id });
     return { ok: true, displayId: target.id };
   }
 
+  // Do NOT pass fullscreen:true to the constructor: on Windows the window can
+  // fullscreen onto the primary display before the x/y bounds are applied.
+  // Create hidden on the target display, then fullscreen + show once ready.
   projectorWin = new BrowserWindow({
     x: target.bounds.x,
     y: target.bounds.y,
     width: target.bounds.width,
     height: target.bounds.height,
-    fullscreen: opts?.fullscreen ?? true,
+    show: false,
     frame: false,
     backgroundColor: "#000000",
     title: "Vifug Projector",
     autoHideMenuBar: true,
+    skipTaskbar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+  projectorWin.once("ready-to-show", () => {
+    if (!projectorWin || projectorWin.isDestroyed()) return;
+    projectorWin.setBounds(target.bounds);
+    if (wantFullscreen) projectorWin.setFullScreen(true);
+    projectorWin.show();
   });
   loadRoute(projectorWin, "/projector");
   projectorWin.on("closed", () => {

@@ -5,6 +5,12 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.0.1] — 2026-07-05
+
+- Projector window now reliably opens fullscreen on the selected (secondary) display on Windows; moving an open projector between displays also works.
+- Library grows from 125 to 325 seeded songs (all 300 public-domain hymns + 25 Nigerian gospel).
+- Removed the "Made with Runable" badge from the app.
+
 ## [1.0.0] — 2026-07-05
 
 First public release.
