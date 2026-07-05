@@ -129,8 +129,10 @@
   --v-text: #f4f4f5;
   --v-text-dim: #a1a1aa;
   --v-text-faint: #71717a;
-  --v-accent: #f5b301;
-  --v-accent-soft: rgba(245, 179, 1, 0.14);
+  --v-accent: #a3e635;
+  --v-accent-2: #65a30d;
+  --v-accent-soft: rgba(163, 230, 53, 0.14);
+  --v-accent-glow: rgba(163, 230, 53, 0.35);
   --v-live: #ef4444;
   --v-live-soft: rgba(239, 68, 68, 0.15);
   --v-blank: #3b82f6;
@@ -152,6 +154,13 @@ body {
 .font-display { font-family: var(--font-display); }
 .font-lyric { font-family: var(--font-lyric); }
 
+/* translucent glass header (referenced by the operator header) */
+.v-glass {
+  background: rgba(20, 20, 24, 0.72);
+  backdrop-filter: blur(12px);
+  border-color: var(--v-border);
+}
+
 /* thin scrollbars */
 .v-scroll { scrollbar-width: thin; scrollbar-color: var(--v-surface-3) transparent; }
 .v-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -160,7 +169,7 @@ body {
 
 /* section type tint chips */
 .chip-verse { background: rgba(59,130,246,0.16); color: #93c5fd; }
-.chip-chorus { background: rgba(245,179,1,0.16); color: #fcd34d; }
+.chip-chorus { background: rgba(163,230,53,0.16); color: #bef264; }
 .chip-bridge { background: rgba(168,85,247,0.16); color: #d8b4fe; }
 .chip-pre_chorus { background: rgba(20,184,166,0.16); color: #5eead4; }
 .chip-tag, .chip-refrain { background: rgba(236,72,153,0.16); color: #f9a8d4; }

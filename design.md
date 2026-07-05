@@ -11,7 +11,7 @@ Volunteer-friendly: large targets, obvious go-live / blank / clear, minimal chro
 - **Nothing surprises the operator** — no modal traps, no destructive actions without confirm.
 
 ## Color
-Zinc/slate dark base with a warm amber-gold accent (worship warmth) and clear status colors.
+Zinc/slate dark base with a fresh lime accent and clear status colors.
 
 - `--bg`            #0a0a0c  (app background, near-black)
 - `--surface`       #141418  (panels, cards)
@@ -21,8 +21,10 @@ Zinc/slate dark base with a warm amber-gold accent (worship warmth) and clear st
 - `--text`          #f4f4f5  (primary)
 - `--text-dim`      #a1a1aa  (secondary)
 - `--text-faint`    #71717a  (labels, meta)
-- `--accent`        #f5b301  (gold — primary action, active state)
-- `--accent-soft`   rgba(245,179,1,0.14)
+- `--accent`        #a3e635  (lime — primary action, active state)
+- `--accent-2`      #65a30d  (lime deep — gradient end)
+- `--accent-soft`   rgba(163,230,53,0.14)
+- `--accent-glow`   rgba(163,230,53,0.35)
 - `--live`          #ef4444  (currently live indicator / GO LIVE)
 - `--live-soft`     rgba(239,68,68,0.15)
 - `--blank`         #3b82f6  (blank/black state)

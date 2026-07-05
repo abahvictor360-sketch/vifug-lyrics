@@ -10,6 +10,10 @@ on:
     tags:
       - "v*"
 
+# Needed so the release job can create/update the GitHub Release.
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -58,14 +62,12 @@ jobs:
         working-directory: packages/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Signing (optional — set as repo secrets to enable):
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Unsigned builds: do NOT pass empty CSC_LINK/WIN_CSC_LINK env vars —
+          # electron-builder treats an empty string as a certificate path and fails.
+          # When you have signing certs, add the secrets back here:
+          #   CSC_LINK / CSC_KEY_PASSWORD (macOS), WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD (Windows),
+          #   APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID (notarization)
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
