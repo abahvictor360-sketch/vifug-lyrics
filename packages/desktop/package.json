@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "copy:web": "bun scripts/copy-web.ts",
+    "copy:web": "bun copy-web.ts",
     "build": "bun run copy:web && vite build",
     "dist": "cd ../web && bun run build && cd ../desktop && bun run build && electron-builder",
     "typecheck": "tsc --noEmit"
