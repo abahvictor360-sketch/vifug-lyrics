@@ -4,9 +4,13 @@
   "version": "1.0.0",
   "type": "module",
   "main": "dist-electron/main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abahvictor360-sketch/vifug-lyrics.git"
+  },
   "scripts": {
     "dev": "vite",
-    "copy:web": "rm -rf web-dist && cp -r ../web/dist web-dist",
+    "copy:web": "bun scripts/copy-web.ts",
     "build": "bun run copy:web && vite build",
     "dist": "cd ../web && bun run build && cd ../desktop && bun run build && electron-builder",
     "typecheck": "tsc --noEmit"

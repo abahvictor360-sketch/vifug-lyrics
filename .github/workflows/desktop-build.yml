@@ -39,6 +39,16 @@ jobs:
         run: bun run build
         working-directory: packages/web
 
+      # Produce the pre-seeded library database bundled into the installer
+      # (electron-builder extraResources expects packages/web/local.db).
+      - name: Generate seed database
+        working-directory: packages/web
+        env:
+          DATABASE_URL: file:local.db
+        run: |
+          bunx drizzle-kit push --force
+          bun src/api/seed.ts
+
       - name: Build desktop bundle
         run: bun run build
         working-directory: packages/desktop
