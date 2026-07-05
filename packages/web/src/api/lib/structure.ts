@@ -28,8 +28,8 @@ function detectHeader(line: string): { type: string; label: string; number: numb
   if (!cleaned || cleaned.length > 24) return null;
   for (const p of TYPE_PATTERNS) {
     if (p.re.test(cleaned)) {
-      const numMatch = cleaned.match(/(\d+)/);
-      const number = numMatch ? parseInt(numMatch[1], 10) : null;
+      const num = cleaned.match(/(\d+)/)?.[1];
+      const number = num ? parseInt(num, 10) : null;
       const label = number ? `${p.label} ${number}` : p.label;
       return { type: p.type, label, number };
     }
@@ -47,7 +47,7 @@ export function parseStructure(raw: string, title?: string): ParsedSection[] {
   // section header and matches the song title (case-insensitive). This keeps
   // "Song Title\n\nVerse 1\n..." style imports from treating the title as lyrics.
   if (blocks.length > 1) {
-    const firstBlock = blocks[0].trim();
+    const firstBlock = (blocks[0] ?? "").trim();
     const isSingleLine = !firstBlock.includes("\n");
     const t = title?.trim().toLowerCase();
     if (

@@ -89,7 +89,7 @@ export function parsePro6(xml: string, fallbackTitle: string): ParsedSong {
     const nsRe = /<NSString[^>]*rvXMLIvarName="RTFData"[^>]*>([\s\S]*?)<\/NSString>/g;
     let m: RegExpExecArray | null;
     while ((m = nsRe.exec(body))) {
-      const rtf = decodeBase64(m[1]);
+      const rtf = decodeBase64(m[1] ?? "");
       const txt = rtfToText(rtf);
       if (txt) texts.push(txt);
     }
@@ -107,7 +107,7 @@ export function parsePro6(xml: string, fallbackTitle: string): ParsedSong {
   let matchedGroup = false;
   while ((g = groupRe.exec(xml))) {
     matchedGroup = true;
-    pushGroup(g[1] || "Verse", g[2]);
+    pushGroup(g[1] || "Verse", g[2] ?? "");
   }
 
   // Fallback: no groupings — grab every RTFData blob as its own verse.
@@ -116,7 +116,7 @@ export function parsePro6(xml: string, fallbackTitle: string): ParsedSong {
     let m: RegExpExecArray | null;
     let i = 0;
     while ((m = nsRe.exec(xml))) {
-      const txt = rtfToText(decodeBase64(m[1]));
+      const txt = rtfToText(decodeBase64(m[1] ?? ""));
       if (txt) {
         i += 1;
         sections.push({ type: "verse", label: `Verse ${i}`, number: i, lyrics: txt });

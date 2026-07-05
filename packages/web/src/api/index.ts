@@ -296,6 +296,7 @@ const app = new Hono()
       fit: body.fit ?? "cover",
     });
     const [row] = await db.select().from(schema.media).where(eq(schema.media.id, id));
+    if (!row) return c.json({ error: "media not found after insert" }, 500);
     return c.json({ media: { ...row, url: await resolveMediaUrl(row.uri) } }, 201);
   })
   .delete("/media/:id", async (c) => {
