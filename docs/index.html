@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vifug Lyrics — Free offline worship presentation software</title>
+<meta name="description" content="Vifug Lyrics is a free, offline-first church presentation app: song lyrics, Bible verses, projector output, OBS/NDI streaming, remote control and stage display. Download for Windows, macOS and Linux." />
+<meta property="og:title" content="Vifug Lyrics — worship lyrics & scripture, beautifully live" />
+<meta property="og:description" content="Free, offline-first presentation software for churches. Preview→Live workflow, 7 offline Bible versions, OBS/NDI streaming." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #141418;
+    --surface-2: #1c1c22;
+    --surface-3: #26262e;
+    --border: #2e2e38;
+    --text: #f4f4f5;
+    --dim: #a1a1aa;
+    --faint: #71717a;
+    --accent: #f5b301;
+    --accent-soft: rgba(245, 179, 1, 0.14);
+    --ok: #22c55e;
+    --live: #ef4444;
+    --font-display: "Sora", system-ui, sans-serif;
+    --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- nav ---------- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: 0.02em; display: flex; align-items: center; gap: 10px; }
+  .logo-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: #0a0a0c; display: grid; place-items: center; font-size: 15px; }
+  .nav-links { display: flex; gap: 28px; font-size: 14px; color: var(--dim); }
+  .nav-links a:hover { color: var(--text); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    border-radius: 10px; font-weight: 600; font-size: 14px; padding: 10px 18px;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    transition: background .15s, transform .1s;
+  }
+  .btn:hover { background: var(--surface-3); }
+  .btn-accent { background: var(--accent); border-color: var(--accent); color: #0a0a0c; }
+  .btn-accent:hover { background: #ffc51f; }
+  .btn-lg { padding: 14px 24px; font-size: 15px; border-radius: 12px; }
+  @media (max-width: 720px) { .nav-links { display: none; } }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 88px 0 56px; text-align: center; position: relative; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: -40% -20% auto; height: 520px; pointer-events: none;
+    background: radial-gradient(600px 320px at 50% 0%, rgba(245,179,1,0.12), transparent 70%);
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600;
+    color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(245,179,1,0.3);
+    border-radius: 999px; padding: 6px 14px; margin-bottom: 22px;
+  }
+  h1 {
+    font-family: var(--font-display); font-weight: 800; letter-spacing: -0.02em;
+    font-size: clamp(34px, 5.4vw, 60px); line-height: 1.08; margin-bottom: 18px;
+  }
+  h1 .gold { color: var(--accent); }
+  .sub { color: var(--dim); font-size: clamp(15px, 2vw, 18px); line-height: 1.6; max-width: 640px; margin: 0 auto 34px; }
+  .dl-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 12px; }
+  .dl-note { font-size: 12.5px; color: var(--faint); }
+  .dl-note a { color: var(--dim); text-decoration: underline; }
+
+  /* ---------- mock preview ---------- */
+  .mock { margin: 56px auto 0; max-width: 880px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 30px 80px rgba(0,0,0,0.5); text-align: left; }
+  .mock-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-3); }
+  .dot.r { background: #f87171; } .dot.y { background: #fbbf24; } .dot.g { background: #34d399; }
+  .mock-body { display: grid; grid-template-columns: 220px 1fr; min-height: 300px; }
+  .mock-side { border-right: 1px solid var(--border); padding: 14px; font-size: 12px; color: var(--faint); }
+  .mock-side .row { padding: 8px 10px; border-radius: 8px; margin-bottom: 4px; }
+  .mock-side .row.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .mock-main { display: grid; place-items: center; padding: 40px 24px; background: radial-gradient(500px 260px at 50% 30%, rgba(245,179,1,0.07), transparent); }
+  .mock-live { text-align: center; }
+  .live-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--live); border: 1px solid rgba(239,68,68,.4); background: rgba(239,68,68,.12); padding: 3px 10px; border-radius: 999px; margin-bottom: 18px; }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--live); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .mock-lyric { font-family: var(--font-display); font-weight: 700; font-size: clamp(20px, 3.4vw, 34px); line-height: 1.35; }
+  .mock-ref { margin-top: 16px; color: var(--accent); font-size: 13px; font-weight: 600; }
+  @media (max-width: 720px) { .mock-body { grid-template-columns: 1fr; } .mock-side { display: none; } }
+
+  /* ---------- stats ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin: 72px 0; }
+  .stat { background: var(--surface); padding: 26px 18px; text-align: center; }
+  .stat b { display: block; font-family: var(--font-display); font-size: 28px; color: var(--accent); margin-bottom: 4px; }
+  .stat span { font-size: 13px; color: var(--dim); }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---------- sections ---------- */
+  section { padding: 64px 0; }
+  .kicker { color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 12px; }
+  h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 3.6vw, 38px); letter-spacing: -0.01em; margin-bottom: 14px; }
+  .lead { color: var(--dim); font-size: 16px; line-height: 1.65; max-width: 620px; }
+  .center { text-align: center; } .center .lead { margin: 0 auto; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 26px; transition: border-color .15s, transform .15s; }
+  .card:hover { border-color: rgba(245,179,1,.45); transform: translateY(-3px); }
+  .card .ico { width: 42px; height: 42px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 20px; margin-bottom: 16px; }
+  .card h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+  .card p { color: var(--dim); font-size: 14px; line-height: 1.6; }
+  @media (max-width: 880px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ---------- steps ---------- */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; counter-reset: step; }
+  .step { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px 26px 26px; }
+  .step::before {
+    counter-increment: step; content: counter(step, decimal-leading-zero);
+    font-family: var(--font-display); font-weight: 800; font-size: 13px; color: #0a0a0c;
+    background: var(--accent); border-radius: 8px; padding: 4px 9px;
+    position: absolute; top: -13px; left: 24px;
+  }
+  .step h3 { font-family: var(--font-display); font-size: 16px; margin-bottom: 8px; }
+  .step p { color: var(--dim); font-size: 14px; line-height: 1.6; }
+  @media (max-width: 720px) { .steps { grid-template-columns: 1fr; } }
+
+  /* ---------- streaming strip ---------- */
+  .strip { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 44px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+  .strip ul { list-style: none; margin-top: 18px; }
+  .strip li { display: flex; gap: 10px; color: var(--dim); font-size: 14.5px; line-height: 1.5; margin-bottom: 12px; }
+  .strip li::before { content: "✓"; color: var(--ok); font-weight: 700; }
+  .chain { display: flex; flex-direction: column; gap: 10px; }
+  .chain .node { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 13px 18px; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; }
+  .chain .node b { font-weight: 600; }
+  .chain .node span { font-size: 11px; color: var(--faint); }
+  .chain .arrow { text-align: center; color: var(--accent); font-size: 15px; line-height: .6; }
+  @media (max-width: 820px) { .strip { grid-template-columns: 1fr; padding: 30px; } }
+
+  /* ---------- faq ---------- */
+  .faq { max-width: 720px; margin: 40px auto 0; }
+  details { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); margin-bottom: 10px; overflow: hidden; }
+  summary { cursor: pointer; padding: 17px 20px; font-weight: 600; font-size: 15px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--accent); font-size: 19px; font-weight: 400; }
+  details[open] summary::after { content: "–"; }
+  details p { padding: 0 20px 18px; color: var(--dim); font-size: 14px; line-height: 1.65; }
+  details a { color: var(--accent); }
+
+  /* ---------- cta / footer ---------- */
+  .cta { text-align: center; padding: 90px 0; }
+  footer { border-top: 1px solid var(--border); padding: 36px 0; }
+  .foot { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; color: var(--faint); font-size: 13px; }
+  .foot a:hover { color: var(--text); }
+  .foot-links { display: flex; gap: 22px; }
+
+  .os-ico { width: 17px; height: 17px; fill: currentColor; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#"><span class="logo-mark">♪</span>VIFUG LYRICS</a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#streaming">Streaming &amp; NDI</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/abahvictor360-sketch/vifug-lyrics" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <a class="btn btn-accent" href="#download">Download free</a>
+  </div>
+</header>
+
+<section class="hero" id="download">
+  <div class="wrap">
+    <span class="badge">✦ Free &amp; offline-first · No watermark · No subscription</span>
+    <h1>Worship lyrics &amp; scripture,<br /><span class="gold">beautifully live.</span></h1>
+    <p class="sub">
+      Vifug Lyrics is presentation software built for churches: cue songs and Bible verses with a
+      Preview&nbsp;→&nbsp;Live workflow, project to a second screen, stream to OBS or NDI —
+      all fully offline, on your own computer.
+    </p>
+    <div class="dl-row">
+      <a class="btn btn-accent btn-lg" id="dl-win" href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases/latest">
+        <svg class="os-ico" viewBox="0 0 24 24"><path d="M3 5.5 10.5 4.4v7.1H3V5.5zm0 13 7.5 1.1v-7H3v5.9zM11.5 4.2 21 3v8.5h-9.5V4.2zm0 15.6L21 21v-8.5h-9.5v7.3z"/></svg>
+        Download for Windows
+      </a>
+      <a class="btn btn-lg" id="dl-mac" href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases/latest">
+        <svg class="os-ico" viewBox="0 0 24 24"><path d="M16.7 12.9c0-2.2 1.8-3.2 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.6.8-3.3.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.8 2.3s1.6-.7 2.9-.7 1.8.7 2.9.7 2-1.1 2.7-2.2c.9-1.2 1.2-2.4 1.2-2.5 0 0-2.4-.9-2.4-3.8zM14.5 5.8c.6-.8 1-1.8.9-2.8-.9 0-2 .6-2.6 1.4-.6.7-1.1 1.7-.9 2.7 1 .1 2-.5 2.6-1.3z"/></svg>
+        macOS
+      </a>
+      <a class="btn btn-lg" id="dl-linux" href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases/latest">
+        <svg class="os-ico" viewBox="0 0 24 24"><path d="M12 2c-1.7 0-3 1.4-3 3.2 0 1.2.1 2.1-.4 3.2-.7 1.4-2 2.7-2.5 4.6-.4 1.5-.1 3 .6 4.1-.3.3-.5.8-.4 1.3.1.4.4.7.7 1 .5.4.8 1 1.3 1.6.6.7 1.5 1 2.3.6.5.4 1.1.4 1.4.4s.9 0 1.4-.4c.8.4 1.7.1 2.3-.6.5-.6.8-1.2 1.3-1.6.3-.3.6-.6.7-1 .1-.5-.1-1-.4-1.3.7-1.1 1-2.6.6-4.1-.5-1.9-1.8-3.2-2.5-4.6-.5-1.1-.4-2-.4-3.2C15 3.4 13.7 2 12 2zm-1.5 6.5c.4 0 .8.4.8 1s-.3 1-.8 1-.8-.4-.8-1 .4-1 .8-1zm3 0c.4 0 .8.4.8 1s-.3 1-.8 1-.8-.4-.8-1 .4-1 .8-1z"/></svg>
+        Linux
+      </a>
+    </div>
+    <p class="dl-note" id="dl-version">Windows · macOS · Linux — <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases" target="_blank" rel="noreferrer">all releases</a></p>
+
+    <div class="mock">
+      <div class="mock-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+      <div class="mock-body">
+        <aside class="mock-side">
+          <div class="row">Amazing Grace</div>
+          <div class="row active">How Great Thou Art</div>
+          <div class="row">Way Maker</div>
+          <div class="row">Blessed Assurance</div>
+          <div class="row">John 3:16 — KJV</div>
+          <div class="row">Psalm 23 — Yoruba</div>
+        </aside>
+        <div class="mock-main">
+          <div class="mock-live">
+            <span class="live-pill"><span class="live-dot"></span>LIVE</span>
+            <div class="mock-lyric">Then sings my soul,<br />my Saviour God, to Thee —<br />how great Thou art!</div>
+            <div class="mock-ref">Chorus · 2 of 4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>125</b><span>songs seeded &amp; ready</span></div>
+      <div class="stat"><b>7</b><span>offline Bible versions</span></div>
+      <div class="stat"><b>6</b><span>languages supported</span></div>
+      <div class="stat"><b>100%</b><span>offline — no internet needed</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap center">
+    <p class="kicker">Everything a media team needs</p>
+    <h2>Built for real Sunday services</h2>
+    <p class="lead">Store words, not slides. Vifug computes slides at render time, so changing lines-per-slide, themes or language never means rebuilding a deck.</p>
+    <div class="grid">
+      <div class="card"><div class="ico">⚡</div><h3>Preview → Live stage</h3><p>ProPresenter-style workflow: cue the next slide privately, then send it live with Enter. Arrow keys, Space to blank, Esc to clear.</p></div>
+      <div class="card"><div class="ico">📖</div><h3>Offline Bible engine</h3><p>KJV, WEB, ASV, BBE plus Yoruba, Hausa and Igbo — bundled offline with reference jump ("John 3:16") and keyword search.</p></div>
+      <div class="card"><div class="ico">🎥</div><h3>OBS &amp; NDI streaming</h3><p>A transparent browser-source output stays in sync over the network. Route it through OBS + DistroAV for real NDI on the wire.</p></div>
+      <div class="card"><div class="ico">🌍</div><h3>Multi-language lyrics</h3><p>English, Idoma, Yoruba, Igbo, Hausa and Twi. Show two languages stacked on the projector at the same time.</p></div>
+      <div class="card"><div class="ico">🗓️</div><h3>Service plans</h3><p>Build the full order of service — songs, scripture and blank items — then click through it live. Import from ProPresenter files too.</p></div>
+      <div class="card"><div class="ico">📱</div><h3>Remote &amp; stage display</h3><p>Control slides from a phone or tablet, and give the worship team a stage view with current + next slide, clock and notes.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap center">
+    <p class="kicker">Up and running in minutes</p>
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step"><h3>Install &amp; import</h3><p>Download the installer for your OS. 125 songs come pre-loaded; add more from .txt, .docx or ProPresenter files.</p></div>
+      <div class="step"><h3>Cue your service</h3><p>Pick songs and scriptures, preview each slide, tweak lines-per-slide and themes — then send to live when the moment is right.</p></div>
+      <div class="step"><h3>Output everywhere</h3><p>Projector on the second screen, transparent overlay in OBS or vMix, NDI across the building, remote on your phone.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="streaming">
+  <div class="wrap">
+    <div class="strip">
+      <div>
+        <p class="kicker">Streaming &amp; NDI</p>
+        <h2>One output, every screen</h2>
+        <p class="lead">Every surface renders the same live state, kept in sync by the built-in server — nothing drifts out of step.</p>
+        <ul>
+          <li>Transparent <b>/stream</b> page composites cleanly over your video feed in OBS or vMix.</li>
+          <li>Auto-reconnecting sync (Server-Sent Events) survives network hiccups.</li>
+          <li>Real NDI output via OBS + the free DistroAV plugin — vMix, TriCaster and Resolume see it instantly.</li>
+          <li>Backgrounds (image, video, color) flow through to the stream automatically.</li>
+        </ul>
+      </div>
+      <div class="chain">
+        <div class="node"><b>Vifug operator</b><span>live state</span></div>
+        <div class="arrow">↓</div>
+        <div class="node"><b>/stream browser source</b><span>transparent · SSE sync</span></div>
+        <div class="arrow">↓</div>
+        <div class="node"><b>OBS + DistroAV</b><span>NDI output</span></div>
+        <div class="arrow">↓</div>
+        <div class="node"><b>vMix · TriCaster · Resolume</b><span>any NDI receiver</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap center">
+    <p class="kicker">Questions</p>
+    <h2>Frequently asked</h2>
+    <div class="faq">
+      <details>
+        <summary>Is Vifug Lyrics really free?</summary>
+        <p>Yes. It's free to download and use, with no watermark and no subscription. The source is on <a href="https://github.com/abahvictor360-sketch/vifug-lyrics" target="_blank" rel="noreferrer">GitHub</a>.</p>
+      </details>
+      <details>
+        <summary>Does it work without internet?</summary>
+        <p>Completely. Songs, all seven Bible versions and your settings live in a local database on your machine. Church Wi-Fi going down will never take your lyrics down.</p>
+      </details>
+      <details>
+        <summary>Which platforms are supported?</summary>
+        <p>Windows (installer), macOS (DMG) and Linux (AppImage). Grab the latest build from the download buttons above or the <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases" target="_blank" rel="noreferrer">releases page</a>.</p>
+      </details>
+      <details>
+        <summary>How do I get lyrics into OBS or vMix?</summary>
+        <p>Copy the stream URL from the operator's "Stream / OBS source" panel and add it as a Browser source (1920×1080, transparent). For NDI, enable OBS's NDI output via the DistroAV plugin — full guide in <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/blob/main/docs/STREAMING_AND_NDI.md" target="_blank" rel="noreferrer">docs/STREAMING_AND_NDI.md</a>.</p>
+      </details>
+      <details>
+        <summary>Can I import my existing ProPresenter library?</summary>
+        <p>Yes — .pro6 files import directly (plus best-effort .pro), and plain .txt / .docx lyrics are auto-detected into verses and choruses.</p>
+      </details>
+      <details>
+        <summary>Can someone control slides from their phone?</summary>
+        <p>Yes. Open the remote page on any phone or tablet on the same network and cue, advance or blank slides — the operator's machine stays in charge.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <p class="kicker">Get started</p>
+    <h2>Your next service, one download away.</h2>
+    <p class="sub" style="margin-bottom:28px">Free forever for your church. Windows, macOS and Linux.</p>
+    <div class="dl-row">
+      <a class="btn btn-accent btn-lg" href="#download">Download Vifug Lyrics</a>
+      <a class="btn btn-lg" href="https://github.com/abahvictor360-sketch/vifug-lyrics" target="_blank" rel="noreferrer">Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span>© <span id="year"></span> Vifug Lyrics. Free worship presentation software.</span>
+    <nav class="foot-links">
+      <a href="#features">Features</a>
+      <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases" target="_blank" rel="noreferrer">Releases</a>
+      <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/blob/main/docs/STREAMING_AND_NDI.md" target="_blank" rel="noreferrer">Streaming docs</a>
+      <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/issues" target="_blank" rel="noreferrer">Support</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // Point the download buttons at the latest GitHub Release assets.
+  fetch("https://api.github.com/repos/abahvictor360-sketch/vifug-lyrics/releases/latest")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((rel) => {
+      if (!rel || !Array.isArray(rel.assets)) return;
+      const find = (ext) => rel.assets.find((a) => a.name.toLowerCase().endsWith(ext));
+      const map = [ ["dl-win", ".exe"], ["dl-mac", ".dmg"], ["dl-linux", ".appimage"] ];
+      for (const [id, ext] of map) {
+        const asset = find(ext);
+        if (asset) document.getElementById(id).href = asset.browser_download_url;
+      }
+      if (rel.tag_name) {
+        document.getElementById("dl-version").firstChild.textContent =
+          "Latest release " + rel.tag_name + " · Windows · macOS · Linux — ";
+      }
+    })
+    .catch(() => { /* buttons fall back to the releases page */ });
+</script>
+</body>
+</html>
