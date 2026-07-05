@@ -175,6 +175,40 @@
   .foot-links { display: flex; gap: 22px; }
 
   .os-ico { width: 17px; height: 17px; fill: currentColor; }
+
+  /* ---------- animation ---------- */
+  @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+  @keyframes glow-drift {
+    0%, 100% { opacity: .9; transform: translateX(0); }
+    50% { opacity: 1.25; transform: translateX(3%); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .hero .badge, .hero h1, .hero .sub, .hero .dl-row, .hero .dl-note {
+    animation: rise .7s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .hero h1 { animation-delay: .08s; }
+  .hero .sub { animation-delay: .16s; }
+  .hero .dl-row { animation-delay: .24s; }
+  .hero .dl-note { animation-delay: .32s; }
+  .hero::before { animation: glow-drift 9s ease-in-out infinite; }
+  .mock { animation: rise .8s .35s cubic-bezier(.2,.7,.2,1) both, float 7s 1.2s ease-in-out infinite; }
+  .mock-lyric { transition: opacity .45s ease; }
+  .mock-lyric.swap { opacity: 0; }
+
+  .reveal { opacity: 0; transform: translateY(26px); transition: opacity .65s ease, transform .65s cubic-bezier(.2,.7,.2,1); transition-delay: var(--rd, 0s); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  .btn { transition: background .15s, transform .15s, box-shadow .2s; }
+  .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(163,230,53,.35); }
+  .stat b { transition: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero .badge, .hero h1, .hero .sub, .hero .dl-row, .hero .dl-note, .mock, .hero::before { animation: none; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
 </style>
 </head>
 <body>
@@ -380,6 +414,74 @@
       }
     })
     .catch(() => { /* buttons fall back to the releases page */ });
+
+  // ---------- animations ----------
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Scroll-reveal: tag elements, then reveal with a small stagger per group.
+  const groups = [".stats .stat", "#features .card", "#how .step", "#streaming .strip", "#faq details", ".cta .kicker, .cta h2, .cta .sub, .cta .dl-row", "#features .kicker, #features h2, #features .lead", "#how .kicker, #how h2", "#faq .kicker, #faq h2"];
+  groups.forEach((sel) => {
+    document.querySelectorAll(sel).forEach((el, i) => {
+      el.classList.add("reveal");
+      el.style.setProperty("--rd", (i * 0.07).toFixed(2) + "s");
+    });
+  });
+  if (reduced) {
+    document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+      }
+    }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+    document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+  }
+
+  // Stats count-up when the row scrolls into view.
+  const countUp = (el) => {
+    const raw = el.textContent.trim();
+    const target = parseInt(raw, 10);
+    if (!target || reduced) return;
+    const suffix = raw.replace(/^[0-9]+/, "");
+    const t0 = performance.now(), dur = 1100;
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  const statsIo = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll(".stat b").forEach(countUp);
+        statsIo.unobserve(e.target);
+      }
+    }
+  }, { threshold: 0.3 });
+  document.querySelectorAll(".stats").forEach((el) => statsIo.observe(el));
+
+  // Cycle the mock "live" lyric like a real service.
+  const LYRICS = [
+    { lines: "Then sings my soul,<br />my Saviour God, to Thee —<br />how great Thou art!", ref: "Chorus · 2 of 4" },
+    { lines: "Amazing grace, how sweet the sound,<br />that saved a wretch like me!", ref: "Verse 1 · 1 of 6" },
+    { lines: "For God so loved the world, that he gave<br />his only begotten Son", ref: "John 3:16 · KJV" },
+    { lines: "Blessed assurance,<br />Jesus is mine!<br />Oh what a foretaste of glory divine!", ref: "Verse 1 · 1 of 4" },
+  ];
+  const lyricEl = document.querySelector(".mock-lyric");
+  const refEl = document.querySelector(".mock-ref");
+  if (lyricEl && refEl && !reduced) {
+    let li = 0;
+    setInterval(() => {
+      lyricEl.classList.add("swap");
+      setTimeout(() => {
+        li = (li + 1) % LYRICS.length;
+        lyricEl.innerHTML = LYRICS[li].lines;
+        refEl.textContent = LYRICS[li].ref;
+        lyricEl.classList.remove("swap");
+      }, 460);
+    }, 4200);
+  }
 </script>
 </body>
 </html>

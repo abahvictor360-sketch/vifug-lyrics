@@ -39,12 +39,12 @@ export const FONT_OPTIONS: { label: string; value: string }[] = [
   { label: "Courier New", value: '"Courier New", Courier, monospace' },
 ];
 
-function sampleState(theme: LiveTheme, lines: string[]): LiveState {
+function sampleState(theme: LiveTheme, lines: string[], caption = ""): LiveState {
   return {
     status: "live",
     sourceLines: lines,
     translationLines: [],
-    sectionLabel: "",
+    sectionLabel: caption,
     songTitle: "",
     slideId: null,
     slideIndex: 0,
@@ -170,10 +170,10 @@ function Group({ title, icon: Icon, children }: { title: string; icon?: typeof M
   );
 }
 
-function PreviewStrip({ theme, lines }: { theme: LiveTheme; lines: string[] }) {
+function PreviewStrip({ theme, lines, caption }: { theme: LiveTheme; lines: string[]; caption?: string }) {
   return (
     <div className="relative mb-6 aspect-[21/6] w-full overflow-hidden rounded-xl border border-[var(--v-border)]" style={{ background: "#000" }}>
-      <SlideRender state={sampleState(theme, lines)} scale />
+      <SlideRender state={sampleState(theme, lines, caption)} scale />
       <span className="absolute right-2 top-1.5 rounded bg-black/50 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/60">
         Live preview
       </span>
@@ -500,8 +500,9 @@ function BibleSection({
   return (
     <div>
       <PreviewStrip
-        theme={previewTheme}
+        theme={{ ...previewTheme, showCaption: true }}
         lines={["For God so loved the world, that he gave his only begotten Son"]}
+        caption="John 3:16 · KJV"
       />
 
       <Group title="Bible versions" icon={BookOpen}>
@@ -524,6 +525,26 @@ function BibleSection({
               />
             </label>
           ))}
+        </div>
+      </Group>
+
+      <Group title="Reference & verse colors" icon={Palette}>
+        <p className="mb-3 text-[11px] text-[var(--v-text-faint)]">
+          The scripture reference (e.g. "John 3:16") is shown under the verse on the projector and stream.
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <ColorField
+            label="Reference color"
+            value={bt?.referenceColor ?? null}
+            fallback="#a3e635"
+            onChange={(v) => patchSettings({ bibleTheme: { ...(bt ?? {}), referenceColor: v } })}
+          />
+          <ColorField
+            label="Verse text color"
+            value={bt?.textColor ?? null}
+            fallback="#ffffff"
+            onChange={(v) => patchSettings({ bibleTheme: { ...(bt ?? {}), textColor: v } })}
+          />
         </div>
       </Group>
 
@@ -607,6 +628,20 @@ function GeneralSection({
         </p>
       </Group>
 
+      <Group title="Live behavior" icon={LayoutList}>
+        <label className="flex items-center justify-between">
+          <span className="text-sm">Next / Prev sends the slide live immediately</span>
+          <Toggle
+            checked={settings?.advanceGoesLive ?? true}
+            onChange={(v) => patchSettings({ advanceGoesLive: v })}
+          />
+        </label>
+        <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+          On = arrows, Next/Prev buttons and the phone remote change the live output directly.
+          Off = they cue the preview and Enter sends it live (ProPresenter style).
+        </p>
+      </Group>
+
       <Group title="AI auto-follow" icon={Ear}>
         <label className="flex items-center justify-between">
           <span className="text-sm">Advance slides automatically by listening to the room</span>
@@ -615,9 +650,42 @@ function GeneralSection({
             onChange={(v) => patchSettings({ autoFollow: v })}
           />
         </label>
+        <label className="mt-3 block">
+          <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Deepgram API key</span>
+          <input
+            type="password"
+            placeholder="dg_..."
+            value={settings?.deepgramApiKey ?? ""}
+            onChange={(e) => patchSettings({ deepgramApiKey: e.target.value || null })}
+            className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+          />
+        </label>
         <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
-          Requires a speech key on the server. Manual next/prev always overrides.
+          Get a free key at <a href="https://deepgram.com" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">deepgram.com</a> — it powers the live speech recognition.
+          Manual next/prev always overrides.
         </p>
+      </Group>
+
+      <Group title="NDI output" icon={Film}>
+        <p className="text-sm text-[var(--v-text-dim)]">
+          Vifug streams lyrics as a transparent overlay that becomes a real NDI source via OBS:
+        </p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-[12px] text-[var(--v-text-dim)]">
+          <li>In OBS, add a <b>Browser</b> source with the stream overlay URL below (1920×1080).</li>
+          <li>Install the free <a href="https://github.com/DistroAV/DistroAV" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">DistroAV</a> OBS plugin.</li>
+          <li>OBS → Tools → <b>NDI Output Settings</b> → enable Main Output.</li>
+          <li>vMix, TriCaster, Resolume or any NDI receiver on the network now sees the lyrics.</li>
+        </ol>
+        <div className="mt-3 flex items-center gap-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2">
+          <Link2 className="h-3.5 w-3.5 shrink-0 text-[var(--v-text-faint)]" />
+          <code className="min-w-0 flex-1 truncate text-xs text-[var(--v-text-dim)]">{origin}/#/stream</code>
+          <button
+            onClick={() => navigator.clipboard?.writeText(`${origin}/#/stream`)}
+            className="shrink-0 text-xs font-medium text-[var(--v-accent)] hover:underline"
+          >
+            Copy
+          </button>
+        </div>
       </Group>
 
       <Group title="Outputs & companion screens" icon={Monitor}>

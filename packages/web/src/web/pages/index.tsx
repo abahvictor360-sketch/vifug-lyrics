@@ -75,6 +75,7 @@ function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): Li
     fontFamily: o.fontFamily ?? base.fontFamily,
     displayMode: o.displayMode ?? base.displayMode,
     verticalPos: o.verticalPos ?? base.verticalPos,
+    captionColor: o.referenceColor ?? base.captionColor ?? null,
   };
 }
 
@@ -178,8 +179,9 @@ export default function OperatorPage() {
   const [bibleSlides, setBibleSlides] = useState<StageSlide[]>([]);
 
   // Bible theme = active lyric theme with per-display Bible overrides merged in.
+  // Bible slides always show the scripture reference caption on the output.
   const bibleTheme = useMemo<LiveTheme>(
-    () => mergeOverride(activeTheme, settings?.bibleTheme),
+    () => ({ ...mergeOverride(activeTheme, settings?.bibleTheme), showCaption: true }),
     [activeTheme, settings?.bibleTheme],
   );
 
@@ -212,6 +214,13 @@ export default function OperatorPage() {
   // --- Remote control: execute commands from /#/remote over SSE ---
   const stageRef = useRef<StageController>(stage);
   stageRef.current = stage;
+
+  // Next/Prev behavior: live-immediately (default) or cue-then-Enter.
+  const advanceGoesLive = settings?.advanceGoesLive ?? true;
+  const advanceGoesLiveRef = useRef(advanceGoesLive);
+  advanceGoesLiveRef.current = advanceGoesLive;
+  const advanceNext = () => (advanceGoesLiveRef.current ? stageRef.current.next() : stageRef.current.previewNext());
+  const advancePrev = () => (advanceGoesLiveRef.current ? stageRef.current.prev() : stageRef.current.previewPrev());
   useEffect(() => {
     let es: EventSource | null = null;
     let stopped = false;
@@ -223,8 +232,8 @@ export default function OperatorPage() {
           const cmd = JSON.parse((e as MessageEvent).data) as { action: string; index?: number };
           const s = stageRef.current;
           switch (cmd.action) {
-            case "next": s.previewNext(); break;
-            case "prev": s.previewPrev(); break;
+            case "next": if (advanceGoesLiveRef.current) s.next(); else s.previewNext(); break;
+            case "prev": if (advanceGoesLiveRef.current) s.prev(); else s.previewPrev(); break;
             case "sendLive": s.sendLive(); break;
             case "goLive": if (typeof cmd.index === "number") s.goLive(cmd.index); break;
             case "blank": s.blank(); break;
@@ -274,10 +283,10 @@ export default function OperatorPage() {
       if (editorOpen || importOpen || settingsOpen || translateOpen) return;
       if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === "PageDown") {
         e.preventDefault();
-        stage.previewNext();
+        advanceNext();
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "PageUp") {
         e.preventDefault();
-        stage.previewPrev();
+        advancePrev();
       } else if (e.key === "Enter") {
         e.preventDefault();
         stage.sendLive();
@@ -564,10 +573,10 @@ export default function OperatorPage() {
           {/* Transport */}
           <div className="border-b border-[var(--v-border)] p-3">
             <div className="grid grid-cols-2 gap-2">
-              <VButton variant="subtle" onClick={stage.previewPrev} disabled={!stage.slides.length}>
+              <VButton variant="subtle" onClick={advancePrev} disabled={!stage.slides.length}>
                 <ChevronLeft className="h-4 w-4" /> Prev
               </VButton>
-              <VButton variant="subtle" onClick={stage.previewNext} disabled={!stage.slides.length}>
+              <VButton variant="subtle" onClick={advanceNext} disabled={!stage.slides.length}>
                 Next <ChevronRight className="h-4 w-4" />
               </VButton>
             </div>
@@ -580,7 +589,9 @@ export default function OperatorPage() {
               </VButton>
             </div>
             <p className="mt-2 text-center text-[11px] text-[var(--v-text-faint)]">
-              ← → cue · Enter send live · Space blank · Esc clear
+              {advanceGoesLive
+                ? "← → go live · Space blank · Esc clear"
+                : "← → cue · Enter send live · Space blank · Esc clear"}
             </p>
           </div>
 

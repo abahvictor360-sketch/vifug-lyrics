@@ -27,6 +27,10 @@ export type LiveTheme = {
   transitionMs: number;
   textOutline: { color: string; width: number } | null;
   background: LiveBackground;
+  /** Show the caption (scripture reference / section label) on the output. */
+  showCaption?: boolean;
+  /** Caption color; null = accent default. */
+  captionColor?: string | null;
 };
 
 export type LiveState = {
@@ -57,6 +61,8 @@ export const DEFAULT_THEME: LiveTheme = {
   transitionMs: 300,
   textOutline: { color: "rgba(0,0,0,0.6)", width: 2 },
   background: null,
+  showCaption: false,
+  captionColor: null,
 };
 
 export const IDLE_STATE: LiveState = {

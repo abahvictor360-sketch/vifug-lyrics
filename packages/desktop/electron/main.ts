@@ -107,12 +107,18 @@ ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: b
       nodeIntegration: false,
     },
   });
-  projectorWin.once("ready-to-show", () => {
-    if (!projectorWin || projectorWin.isDestroyed()) return;
+  let shown = false;
+  const reveal = () => {
+    if (shown || !projectorWin || projectorWin.isDestroyed()) return;
+    shown = true;
     projectorWin.setBounds(target.bounds);
     if (wantFullscreen) projectorWin.setFullScreen(true);
     projectorWin.show();
-  });
+    projectorWin.moveTop();
+  };
+  projectorWin.once("ready-to-show", reveal);
+  // Safety net: some GPU/driver combos never emit ready-to-show.
+  setTimeout(reveal, 2000);
   loadRoute(projectorWin, "/projector");
   projectorWin.on("closed", () => {
     projectorWin = null;

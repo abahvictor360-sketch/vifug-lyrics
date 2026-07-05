@@ -12,6 +12,8 @@ export type ThemeOverride = {
   displayMode?: "fullscreen" | "lower_third" | "lower_third_bg" | null;
   /** Where the lower third sits on screen. */
   verticalPos?: "top" | "center" | "bottom" | null;
+  /** Bible only: color of the scripture reference caption (e.g. "John 3:16"). */
+  referenceColor?: string | null;
 };
 
 export type AppSettings = {
@@ -22,6 +24,10 @@ export type AppSettings = {
   dualLanguage: boolean;
   secondaryLang: string | null;
   autoFollow: boolean;
+  /** Deepgram API key for AI auto-follow (falls back to server env). */
+  deepgramApiKey?: string | null;
+  /** Next/Prev (arrows, buttons, remote) sends the slide live immediately. */
+  advanceGoesLive?: boolean;
   activeBackgroundId?: string | null;
   /**
    * Which non-English Bible language packs are enabled. English core

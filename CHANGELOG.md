@@ -5,6 +5,13 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.0.3] — 2026-07-05
+
+- Next / Prev (arrow keys, transport buttons, phone remote) now sends the slide live immediately — no separate GO LIVE click. Toggle in Settings → General → Live behavior to return to cue-then-Enter.
+- Bible slides now show the scripture reference on the projector/stream, with a new Reference color and Verse text color in Settings → Bible.
+- Settings → General gains an AI auto-follow section with in-app Deepgram API key (no server env needed) and an NDI output section with setup steps and the stream URL.
+- Projector: extra safety net so the output window always appears on the chosen display.
+
 ## [1.0.2] — 2026-07-05
 
 - All installers (Windows, macOS, Linux) now carry the Vifug Lyrics app icon — the lime music-note tile — instead of the default Electron icon.

@@ -426,7 +426,17 @@ const app = new Hono()
   // Returns a short-lived config for the client to open a Deepgram live WS.
   // Key stays server-side; we hand the browser a temporary token when possible.
   .get("/autofollow/config", async (c) => {
-    const key = process.env.DEEPGRAM_API_KEY;
+    // Server env key wins; otherwise use the key saved in app Settings → AI.
+    let key = process.env.DEEPGRAM_API_KEY;
+    if (!key) {
+      const [row] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
+      if (row) {
+        try {
+          const cfg = JSON.parse(row.config) as { deepgramApiKey?: string | null };
+          key = cfg.deepgramApiKey?.trim() || undefined;
+        } catch { /* ignore malformed config */ }
+      }
+    }
     if (!key) return c.json({ enabled: false, reason: "no_key" }, 200);
     return c.json({ enabled: true, key, model: "nova-2", provider: "deepgram" }, 200);
   })
@@ -566,6 +576,8 @@ function defaultSettings() {
     dualLanguage: false,
     secondaryLang: null as string | null,
     autoFollow: false,
+    deepgramApiKey: null as string | null,
+    advanceGoesLive: true,
     bibleLangs: { yor: true, hau: true, ibo: true },
     lyricTheme: null as Record<string, unknown> | null,
     bibleTheme: null as Record<string, unknown> | null,

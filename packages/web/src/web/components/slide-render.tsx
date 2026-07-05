@@ -181,6 +181,20 @@ export function SlideRender({
               ))}
             </div>
           )}
+          {t.showCaption && state.sectionLabel && (
+            <div
+              style={{
+                marginTop: "0.7em",
+                fontSize: `calc(${fontSize} * 0.42)`,
+                fontWeight: 600,
+                letterSpacing: "0.04em",
+                color: t.captionColor || "#a3e635",
+                ...outlineStyle(t),
+              }}
+            >
+              {state.sectionLabel}
+            </div>
+          )}
         </div>
       )}
     </div>
