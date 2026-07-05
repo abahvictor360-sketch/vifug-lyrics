@@ -74,9 +74,9 @@ jobs:
         with:
           name: vifug-lyrics-${{ matrix.os }}
           path: |
-            packages/desktop/release/**/*.exe
-            packages/desktop/release/**/*.dmg
-            packages/desktop/release/**/*.AppImage
+            packages/desktop/release/*/*-Setup.exe
+            packages/desktop/release/*/*.dmg
+            packages/desktop/release/*/*.AppImage
           if-no-files-found: ignore
 
       - name: Attach to release
@@ -84,6 +84,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            packages/desktop/release/**/*.exe
-            packages/desktop/release/**/*.dmg
-            packages/desktop/release/**/*.AppImage
+            packages/desktop/release/*/*-Setup.exe
+            packages/desktop/release/*/*.dmg
+            packages/desktop/release/*/*.AppImage

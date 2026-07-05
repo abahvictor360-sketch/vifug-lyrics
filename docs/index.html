@@ -364,9 +364,9 @@
     .then((rel) => {
       if (!rel || !Array.isArray(rel.assets)) return;
       const find = (ext) => rel.assets.find((a) => a.name.toLowerCase().endsWith(ext));
-      const map = [ ["dl-win", ".exe"], ["dl-mac", ".dmg"], ["dl-linux", ".appimage"] ];
-      for (const [id, ext] of map) {
-        const asset = find(ext);
+      const map = [ ["dl-win", ["-setup.exe", ".exe"]], ["dl-mac", [".dmg"]], ["dl-linux", [".appimage"]] ];
+      for (const [id, exts] of map) {
+        const asset = exts.map(find).find(Boolean);
         if (asset) document.getElementById(id).href = asset.browser_download_url;
       }
       if (rel.tag_name) {
