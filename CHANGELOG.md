@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.0.8] — 2026-07-06
+
+- Bible reference jump now accepts flexible formats: "john 3 16" (spaces), "ps 23.1", "john 3v16", and ranges like "1 john 2 3-5" — in addition to the classic "John 3:16".
+
 ## [1.0.7] — 2026-07-06
 
 - Fullscreen auto-fit now measures the real rendered text width (per font family/weight) instead of estimating, so lyrics fill the usable width edge-to-edge within the safe margin — roughly 18% larger than v1.0.6 on typical verses.

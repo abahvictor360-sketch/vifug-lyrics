@@ -218,7 +218,7 @@ export function BiblePanel({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search text or jump to reference (e.g. John 3:16)…"
+            placeholder="Search text or jump to reference (John 3:16 or john 3 16)…"
             className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] py-2 pl-8 pr-8 text-sm outline-none focus:border-[var(--v-accent)]"
           />
         </div>

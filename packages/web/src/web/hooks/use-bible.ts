@@ -74,12 +74,14 @@ export function bookName(manifest: BibleManifest | undefined, code: string): str
 export type ParsedRef = { code: string; chapter: number; verse: number; endVerse: number | null };
 
 /**
- * Parse a free-text reference like "John 3:16", "1 John 2:3-5", "Gen 1".
- * Matches against the canon's English names + common short forms.
+ * Parse a free-text reference like "John 3:16", "john 3 16", "1 John 2:3-5",
+ * "Gen 1", "ps 23.1", "john 3v16". Chapter and verse may be separated by a
+ * colon, period, space, or "v"/"vs". Matches against the canon's English
+ * names + common short forms.
  */
 export function parseReference(input: string, manifest: BibleManifest): ParsedRef | null {
   const q = input.trim();
-  const m = q.match(/^(\d?\s*[A-Za-z. ]+?)\s*(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?\s*$/);
+  const m = q.match(/^(\d?\s*[A-Za-z. ]+?)\s*(\d+)(?:\s*(?:[:.]|vs?\.?|\s)\s*(\d+)(?:\s*[-–]\s*(\d+))?)?\s*$/i);
   if (!m) return null;
   const rawBook = m[1].replace(/\.$/, "").trim().toLowerCase().replace(/\s+/g, " ");
   const chapter = parseInt(m[2], 10);
