@@ -513,7 +513,7 @@ export default function OperatorPage() {
         </main>
 
         {/* RIGHT: Preview → Live stage + transport */}
-        <aside className="flex w-[30rem] shrink-0 flex-col border-l border-[var(--v-border)] bg-[var(--v-surface)]">
+        <aside className="v-scroll flex w-[30rem] shrink-0 flex-col overflow-y-auto border-l border-[var(--v-border)] bg-[var(--v-surface)]">
           {/* PREVIEW | LIVE — side by side (ProPresenter-style) */}
           <div className="border-b border-[var(--v-border)] p-3">
             <div className="grid grid-cols-2 gap-3">
@@ -595,6 +595,11 @@ export default function OperatorPage() {
             </p>
           </div>
 
+          {/* Output / projector — kept high so it's reachable on small screens */}
+          <div className="border-b border-[var(--v-border)] p-3">
+            <ProjectorControls desktop={desktop} settings={settings} patchSettings={patchSettings} />
+          </div>
+
           {/* AI auto-follow */}
           <AutoFollowPanel
             enabled={autoFollowOn}
@@ -609,11 +614,6 @@ export default function OperatorPage() {
 
           {/* Stage display + phone remote */}
           <StageRemotePanel notes={stageNotes} onNotes={setStageNotes} />
-
-          {/* Output / projector */}
-          <div className="mt-auto p-3">
-            <ProjectorControls desktop={desktop} settings={settings} patchSettings={patchSettings} />
-          </div>
         </aside>
       </div>
 

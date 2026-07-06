@@ -5,6 +5,11 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.0.4] — 2026-07-05
+
+- FIX: on small screens (1366×768 laptops) the Projector panel was pushed below the window edge and unreachable — this is why "Open projector" seemed missing. The panel now sits right under the transport controls and the whole right rail scrolls.
+- Removed the leftover analytics debug overlay that could appear over the operator UI in the packaged app.
+
 ## [1.0.3] — 2026-07-05
 
 - Next / Prev (arrow keys, transport buttons, phone remote) now sends the slide live immediately — no separate GO LIVE click. Toggle in Settings → General → Live behavior to return to cue-then-Enter.
