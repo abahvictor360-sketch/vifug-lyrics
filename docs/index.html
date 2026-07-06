@@ -12,6 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<!-- AOS (Animate On Scroll) — scroll fade-up animations, ViseREMI-style -->
+<link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
 <style>
   :root {
     --bg: #0a0a0c;
@@ -36,13 +38,28 @@
   a { color: inherit; text-decoration: none; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-  /* ---------- nav ---------- */
+  /* ---------- nav (ViseREMI-style floating pill) ---------- */
   header {
-    position: sticky; top: 0; z-index: 50;
-    background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
+    position: absolute; top: 0; left: 0; right: 0; z-index: 50;
   }
-  .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .nav {
+    display: flex; align-items: center; justify-content: space-between; height: 68px;
+    padding: 0 6px 0 4px;
+    border: 1px solid transparent; border-radius: 999px;
+    transition: background .3s ease, border-color .3s ease, box-shadow .3s ease, height .3s ease, padding .3s ease;
+  }
+  /* Once scrolled, the bar detaches into a floating pill that slides down. */
+  header.fixed-header {
+    position: fixed; top: 14px;
+    animation: slide-down .8s cubic-bezier(.2, .7, .2, 1);
+  }
+  header.fixed-header .nav {
+    height: 58px; padding: 0 8px 0 18px;
+    background: rgba(16, 16, 20, 0.82); backdrop-filter: blur(14px);
+    border-color: var(--border);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  }
+  @keyframes slide-down { from { transform: translateY(-130%); } to { transform: translateY(0); } }
   .logo { font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: 0.02em; display: flex; align-items: center; gap: 10px; }
   .logo-mark {
     width: 28px; height: 28px; border-radius: 8px; color: #0a0a0c;
@@ -66,7 +83,7 @@
   @media (max-width: 720px) { .nav-links { display: none; } }
 
   /* ---------- hero ---------- */
-  .hero { padding: 88px 0 56px; text-align: center; position: relative; overflow: hidden; }
+  .hero { padding: 116px 0 56px; text-align: center; position: relative; overflow: hidden; }
   .hero::before {
     content: ""; position: absolute; inset: -40% -20% auto; height: 520px; pointer-events: none;
     background: radial-gradient(600px 320px at 50% 0%, rgba(163,230,53,0.12), transparent 70%);
@@ -177,37 +194,25 @@
   .os-ico { width: 17px; height: 17px; fill: currentColor; }
 
   /* ---------- animation ---------- */
-  @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+  /* Entrance animations are handled by AOS (fade-up). Only ambient / looping
+     effects live here now, matching the ViseREMI motion style. */
   @keyframes glow-drift {
     0%, 100% { opacity: .9; transform: translateX(0); }
     50% { opacity: 1.25; transform: translateX(3%); }
   }
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-  .hero .badge, .hero h1, .hero .sub, .hero .dl-row, .hero .dl-note {
-    animation: rise .7s cubic-bezier(.2,.7,.2,1) both;
-  }
-  .hero h1 { animation-delay: .08s; }
-  .hero .sub { animation-delay: .16s; }
-  .hero .dl-row { animation-delay: .24s; }
-  .hero .dl-note { animation-delay: .32s; }
   .hero::before { animation: glow-drift 9s ease-in-out infinite; }
-  .mock { animation: rise .8s .35s cubic-bezier(.2,.7,.2,1) both, float 7s 1.2s ease-in-out infinite; }
   .mock-lyric { transition: opacity .45s ease; }
   .mock-lyric.swap { opacity: 0; }
 
-  .reveal { opacity: 0; transform: translateY(26px); transition: opacity .65s ease, transform .65s cubic-bezier(.2,.7,.2,1); transition-delay: var(--rd, 0s); }
-  .reveal.in { opacity: 1; transform: none; }
-
   .btn { transition: background .15s, transform .15s, box-shadow .2s; }
   .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(163,230,53,.35); }
-  .stat b { transition: none; }
+
+  /* Safety: if AOS fails to load, reveal everything (never hide content). */
+  .no-aos [data-aos] { opacity: 1 !important; transform: none !important; }
 
   @media (prefers-reduced-motion: reduce) {
-    .hero .badge, .hero h1, .hero .sub, .hero .dl-row, .hero .dl-note, .mock, .hero::before { animation: none; }
-    .reveal { opacity: 1; transform: none; transition: none; }
+    [data-aos] { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .hero::before { animation: none; }
   }
 </style>
 </head>
@@ -229,14 +234,14 @@
 
 <section class="hero" id="download">
   <div class="wrap">
-    <span class="badge"><svg viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Free &amp; offline-first · No watermark · No subscription</span>
-    <h1>Worship lyrics &amp; scripture,<br /><span class="gold">beautifully live.</span></h1>
-    <p class="sub">
+    <span class="badge" data-aos="fade-up"><svg viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Free &amp; offline-first · No watermark · No subscription</span>
+    <h1 data-aos="fade-up" data-aos-delay="60">Worship lyrics &amp; scripture,<br /><span class="gold">beautifully live.</span></h1>
+    <p class="sub" data-aos="fade-up" data-aos-delay="120">
       Vifug Lyrics is presentation software built for churches: cue songs and Bible verses with a
       Preview&nbsp;→&nbsp;Live workflow, project to a second screen, stream to OBS or NDI —
       all fully offline, on your own computer.
     </p>
-    <div class="dl-row">
+    <div class="dl-row" data-aos="fade-up" data-aos-delay="180">
       <a class="btn btn-accent btn-lg" id="dl-win" href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases/latest">
         <svg class="os-ico" viewBox="0 0 24 24"><path d="M3 5.5 10.5 4.4v7.1H3V5.5zm0 13 7.5 1.1v-7H3v5.9zM11.5 4.2 21 3v8.5h-9.5V4.2zm0 15.6L21 21v-8.5h-9.5v7.3z"/></svg>
         Download for Windows
@@ -250,9 +255,9 @@
         Linux
       </a>
     </div>
-    <p class="dl-note" id="dl-version">Windows · macOS · Linux — <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases" target="_blank" rel="noreferrer">all releases</a></p>
+    <p class="dl-note" id="dl-version" data-aos="fade-up" data-aos-delay="240">Windows · macOS · Linux — <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases" target="_blank" rel="noreferrer">all releases</a></p>
 
-    <div class="mock">
+    <div class="mock" data-aos="fade-up" data-aos-delay="150">
       <div class="mock-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
       <div class="mock-body">
         <aside class="mock-side">
@@ -274,38 +279,38 @@
     </div>
 
     <div class="stats">
-      <div class="stat"><b>325</b><span>songs seeded &amp; ready</span></div>
-      <div class="stat"><b>7</b><span>offline Bible versions</span></div>
-      <div class="stat"><b>6</b><span>languages supported</span></div>
-      <div class="stat"><b>100%</b><span>offline — no internet needed</span></div>
+      <div class="stat" data-aos="fade-up"><b>325</b><span>songs seeded &amp; ready</span></div>
+      <div class="stat" data-aos="fade-up" data-aos-delay="80"><b>7</b><span>offline Bible versions</span></div>
+      <div class="stat" data-aos="fade-up" data-aos-delay="160"><b>6</b><span>languages supported</span></div>
+      <div class="stat" data-aos="fade-up" data-aos-delay="240"><b>100%</b><span>offline — no internet needed</span></div>
     </div>
   </div>
 </section>
 
 <section id="features">
   <div class="wrap center">
-    <p class="kicker">Everything a media team needs</p>
-    <h2>Built for real Sunday services</h2>
-    <p class="lead">Store words, not slides. Vifug computes slides at render time, so changing lines-per-slide, themes or language never means rebuilding a deck.</p>
+    <p class="kicker" data-aos="fade-up">Everything a media team needs</p>
+    <h2 data-aos="fade-up" data-aos-delay="60">Built for real Sunday services</h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="120">Store words, not slides. Vifug computes slides at render time, so changing lines-per-slide, themes or language never means rebuilding a deck.</p>
     <div class="grid">
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><h3>Preview → Live stage</h3><p>ProPresenter-style workflow: cue the next slide privately, then send it live with Enter. Arrow keys, Space to blank, Esc to clear.</p></div>
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><h3>Offline Bible engine</h3><p>KJV, WEB, ASV, BBE plus Yoruba, Hausa and Igbo — bundled offline with reference jump ("John 3:16") and keyword search.</p></div>
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></div><h3>OBS &amp; NDI streaming</h3><p>A transparent browser-source output stays in sync over the network. Route it through OBS + DistroAV for real NDI on the wire.</p></div>
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></div><h3>Multi-language lyrics</h3><p>English, Idoma, Yoruba, Igbo, Hausa and Twi. Show two languages stacked on the projector at the same time.</p></div>
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg></div><h3>Service plans</h3><p>Build the full order of service — songs, scripture and blank items — then click through it live. Import from ProPresenter files too.</p></div>
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></div><h3>Remote &amp; stage display</h3><p>Control slides from a phone or tablet, and give the worship team a stage view with current + next slide, clock and notes.</p></div>
+      <div class="card" data-aos="fade-up"><div class="ico"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><h3>Preview → Live stage</h3><p>ProPresenter-style workflow: cue the next slide privately, then send it live with Enter. Arrow keys, Space to blank, Esc to clear.</p></div>
+      <div class="card" data-aos="fade-up" data-aos-delay="80"><div class="ico"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><h3>Offline Bible engine</h3><p>KJV, WEB, ASV, BBE plus Yoruba, Hausa and Igbo — bundled offline with reference jump ("John 3:16") and keyword search.</p></div>
+      <div class="card" data-aos="fade-up" data-aos-delay="160"><div class="ico"><svg viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></div><h3>OBS &amp; NDI streaming</h3><p>A transparent browser-source output stays in sync over the network. Route it through OBS + DistroAV for real NDI on the wire.</p></div>
+      <div class="card" data-aos="fade-up"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></div><h3>Multi-language lyrics</h3><p>English, Idoma, Yoruba, Igbo, Hausa and Twi. Show two languages stacked on the projector at the same time.</p></div>
+      <div class="card" data-aos="fade-up" data-aos-delay="80"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg></div><h3>Service plans</h3><p>Build the full order of service — songs, scripture and blank items — then click through it live. Import from ProPresenter files too.</p></div>
+      <div class="card" data-aos="fade-up" data-aos-delay="160"><div class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></div><h3>Remote &amp; stage display</h3><p>Control slides from a phone or tablet, and give the worship team a stage view with current + next slide, clock and notes.</p></div>
     </div>
   </div>
 </section>
 
 <section id="how">
   <div class="wrap center">
-    <p class="kicker">Up and running in minutes</p>
-    <h2>How it works</h2>
+    <p class="kicker" data-aos="fade-up">Up and running in minutes</p>
+    <h2 data-aos="fade-up" data-aos-delay="60">How it works</h2>
     <div class="steps">
-      <div class="step"><h3>Install &amp; import</h3><p>Download the installer for your OS. 325 songs come pre-loaded; add more from .txt, .docx or ProPresenter files.</p></div>
-      <div class="step"><h3>Cue your service</h3><p>Pick songs and scriptures, preview each slide, tweak lines-per-slide and themes — then send to live when the moment is right.</p></div>
-      <div class="step"><h3>Output everywhere</h3><p>Projector on the second screen, transparent overlay in OBS or vMix, NDI across the building, remote on your phone.</p></div>
+      <div class="step" data-aos="fade-up"><h3>Install &amp; import</h3><p>Download the installer for your OS. 325 songs come pre-loaded; add more from .txt, .docx or ProPresenter files.</p></div>
+      <div class="step" data-aos="fade-up" data-aos-delay="100"><h3>Cue your service</h3><p>Pick songs and scriptures, preview each slide, tweak lines-per-slide and themes — then send to live when the moment is right.</p></div>
+      <div class="step" data-aos="fade-up" data-aos-delay="200"><h3>Output everywhere</h3><p>Projector on the second screen, transparent overlay in OBS or vMix, NDI across the building, remote on your phone.</p></div>
     </div>
   </div>
 </section>
@@ -313,7 +318,7 @@
 <section id="streaming">
   <div class="wrap">
     <div class="strip">
-      <div>
+      <div data-aos="fade-up">
         <p class="kicker">Streaming &amp; NDI</p>
         <h2>One output, every screen</h2>
         <p class="lead">Every surface renders the same live state, kept in sync by the built-in server — nothing drifts out of step.</p>
@@ -324,7 +329,7 @@
           <li>Backgrounds (image, video, color) flow through to the stream automatically.</li>
         </ul>
       </div>
-      <div class="chain">
+      <div class="chain" data-aos="fade-up" data-aos-delay="120">
         <div class="node"><b>Vifug operator</b><span>live state</span></div>
         <div class="arrow">↓</div>
         <div class="node"><b>/stream browser source</b><span>transparent · SSE sync</span></div>
@@ -339,9 +344,9 @@
 
 <section id="faq">
   <div class="wrap center">
-    <p class="kicker">Questions</p>
-    <h2>Frequently asked</h2>
-    <div class="faq">
+    <p class="kicker" data-aos="fade-up">Questions</p>
+    <h2 data-aos="fade-up" data-aos-delay="60">Frequently asked</h2>
+    <div class="faq" data-aos="fade-up" data-aos-delay="120">
       <details>
         <summary>Is Vifug Lyrics really free?</summary>
         <p>Yes. It's free to download and use, with no watermark and no subscription. The source is on <a href="https://github.com/abahvictor360-sketch/vifug-lyrics" target="_blank" rel="noreferrer">GitHub</a>.</p>
@@ -372,10 +377,10 @@
 
 <section class="cta">
   <div class="wrap">
-    <p class="kicker">Get started</p>
-    <h2>Your next service, one download away.</h2>
-    <p class="sub" style="margin-bottom:28px">Free forever for your church. Windows, macOS and Linux.</p>
-    <div class="dl-row">
+    <p class="kicker" data-aos="fade-up">Get started</p>
+    <h2 data-aos="fade-up" data-aos-delay="60">Your next service, one download away.</h2>
+    <p class="sub" style="margin-bottom:28px" data-aos="fade-up" data-aos-delay="120">Free forever for your church. Windows, macOS and Linux.</p>
+    <div class="dl-row" data-aos="fade-up" data-aos-delay="180">
       <a class="btn btn-accent btn-lg" href="#download">Download Vifug Lyrics</a>
       <a class="btn btn-lg" href="https://github.com/abahvictor360-sketch/vifug-lyrics" target="_blank" rel="noreferrer">Star on GitHub</a>
     </div>
@@ -394,6 +399,7 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 <script>
   document.getElementById("year").textContent = new Date().getFullYear();
 
@@ -418,24 +424,33 @@
   // ---------- animations ----------
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Scroll-reveal: tag elements, then reveal with a small stagger per group.
-  const groups = [".stats .stat", "#features .card", "#how .step", "#streaming .strip", "#faq details", ".cta .kicker, .cta h2, .cta .sub, .cta .dl-row", "#features .kicker, #features h2, #features .lead", "#how .kicker, #how h2", "#faq .kicker, #faq h2"];
-  groups.forEach((sel) => {
-    document.querySelectorAll(sel).forEach((el, i) => {
-      el.classList.add("reveal");
-      el.style.setProperty("--rd", (i * 0.07).toFixed(2) + "s");
+  // AOS scroll-reveal (ViseREMI-style fade-up). Falls back to fully-visible
+  // content if the library fails to load (never hide the page).
+  if (window.AOS) {
+    AOS.init({
+      duration: 750,
+      easing: "ease-out-cubic",
+      once: true,
+      offset: 60,
+      disable: reduced ? true : false,
     });
-  });
-  if (reduced) {
-    document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
   } else {
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
-      }
-    }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
-    document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+    document.documentElement.classList.add("no-aos");
   }
+  // Belt-and-braces: if anything is still hidden a moment later, reveal it.
+  setTimeout(() => {
+    if (!window.AOS) document.documentElement.classList.add("no-aos");
+  }, 2500);
+
+  // ---------- ViseREMI-style floating header ----------
+  // After scrolling past the hero, the bar detaches into a floating pill.
+  const headerEl = document.querySelector("header");
+  const onScroll = () => {
+    if (window.scrollY >= 300) headerEl.classList.add("fixed-header");
+    else headerEl.classList.remove("fixed-header");
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
 
   // Stats count-up when the row scrolls into view.
   const countUp = (el) => {
