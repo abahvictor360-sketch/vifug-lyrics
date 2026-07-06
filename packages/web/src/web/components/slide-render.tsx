@@ -44,17 +44,31 @@ export function SlideRender({
   // Auto-fit font sizing based on line count/length when fontSize is null.
   const lineCount = state.sourceLines.length + (state.translationLines.length ? state.translationLines.length : 0);
   const longest = Math.max(1, ...state.sourceLines.map((l) => l.length), ...state.translationLines.map((l) => l.length));
-  const autoVw = Math.max(2.4, Math.min(7.5, 46 / Math.max(longest, 10)));
-  const autoByLines = Math.max(2.4, 8 - lineCount * 0.5);
-  // Use container-query width (cqw) when rendered as a scaled preview so the
-  // font sizes relative to the small box, not the whole viewport. The full
-  // projector uses viewport width (vw).
-  const unit = scale ? "cqw" : "vw";
-  const fontSize = t.fontSize
-    ? scale
-      ? `${t.fontSize * 0.28}cqw`
-      : `${t.fontSize}px`
-    : `clamp(${scale ? "0.6rem" : "1.4rem"}, ${Math.min(autoVw, autoByLines)}${unit}, ${scale ? "9cqw" : "6rem"})`;
+  // Use container-query units (cqw/cqh) when rendered as a scaled preview so
+  // the font sizes relative to the small box, not the whole viewport. The full
+  // projector uses viewport units (vw/vh).
+  let fontSize: string;
+  if (t.fontSize) {
+    fontSize = scale ? `${t.fontSize * 0.28}cqw` : `${t.fontSize}px`;
+  } else if (!isLowerThird) {
+    // Fullscreen: FILL the display. Grow until the longest line spans the
+    // usable width or the line stack spans the usable height, whichever binds
+    // first. The safe margin keeps text off the screen edges.
+    const margin = Math.max(2, t.safeMargin ?? 8);
+    const usable = 100 - margin * 2;
+    const effLines = Math.max(1, state.sourceLines.length + state.translationLines.length * 0.75);
+    const fillW = usable / (0.56 * Math.max(longest, 4)); // ~0.56em average glyph width
+    const fillH = usable / (1.3 * effLines);              // line-height + breathing room
+    fontSize = scale
+      ? `clamp(0.6rem, min(${fillW.toFixed(2)}cqw, ${fillH.toFixed(2)}cqh), 90cqh)`
+      : `clamp(1.4rem, min(${fillW.toFixed(2)}vw, ${fillH.toFixed(2)}vh), 55vh)`;
+  } else {
+    // Lower thirds keep the conservative broadcast sizing.
+    const autoVw = Math.max(2.4, Math.min(7.5, 46 / Math.max(longest, 10)));
+    const autoByLines = Math.max(2.4, 8 - lineCount * 0.5);
+    const unit = scale ? "cqw" : "vw";
+    fontSize = `clamp(${scale ? "0.6rem" : "1.4rem"}, ${Math.min(autoVw, autoByLines)}${unit}, ${scale ? "9cqw" : "6rem"})`;
+  }
 
   // Fullscreen centers vertically; lower thirds sit where verticalPos says
   // (bottom is the classic broadcast position).

@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.0.6] — 2026-07-06
+
+- Fullscreen slides now auto-size the text to FILL the display (bounded by the safe margin at the edges) instead of capping at 96px. Lower-third modes keep their broadcast-style sizing. Switch between Fullscreen and Lower third in Settings → Lyrics → Look & feel → Display mode (and Settings → Bible for scripture).
+
 ## [1.0.5] — 2026-07-06
 
 - FIX: the projector window fullscreened onto the primary monitor even when targeting the secondary display. Cause: fullscreening a still-hidden window on Windows snaps it to the primary display. The window is now positioned on the target display, shown, and only then fullscreened — same for moving an already-open projector between displays.
