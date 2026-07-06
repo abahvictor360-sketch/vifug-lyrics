@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.0.5] — 2026-07-06
+
+- FIX: the projector window fullscreened onto the primary monitor even when targeting the secondary display. Cause: fullscreening a still-hidden window on Windows snaps it to the primary display. The window is now positioned on the target display, shown, and only then fullscreened — same for moving an already-open projector between displays.
+
 ## [1.0.4] — 2026-07-05
 
 - FIX: on small screens (1366×768 laptops) the Projector panel was pushed below the window edge and unreachable — this is why "Open projector" seemed missing. The panel now sits right under the transport controls and the whole right rail scrolls.

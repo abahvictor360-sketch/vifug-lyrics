@@ -77,11 +77,13 @@ ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: b
 
   if (projectorWin && !projectorWin.isDestroyed()) {
     // A fullscreen window ignores setBounds — drop out of fullscreen first,
-    // move to the target display, then restore fullscreen.
+    // move to the target display, show it THERE, then restore fullscreen.
+    // setFullScreen on a hidden/other-display window fullscreens the wrong
+    // monitor on Windows, so the order is: position → show → fullscreen.
     if (projectorWin.isFullScreen()) projectorWin.setFullScreen(false);
     projectorWin.setBounds(target.bounds);
-    projectorWin.setFullScreen(wantFullscreen);
     projectorWin.show();
+    if (wantFullscreen) projectorWin.setFullScreen(true);
     projectorWin.focus();
     win?.webContents.send("projector:state", { open: true, displayId: target.id });
     return { ok: true, displayId: target.id };
@@ -111,9 +113,13 @@ ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: b
   const reveal = () => {
     if (shown || !projectorWin || projectorWin.isDestroyed()) return;
     shown = true;
+    // Order matters on Windows: position on the target display, make the
+    // window visible THERE, and only then fullscreen it. Fullscreening a
+    // hidden window snaps it to the primary display.
+    projectorWin.setBounds(target.bounds);
+    projectorWin.show();
     projectorWin.setBounds(target.bounds);
     if (wantFullscreen) projectorWin.setFullScreen(true);
-    projectorWin.show();
     projectorWin.moveTop();
   };
   projectorWin.once("ready-to-show", reveal);
