@@ -47,7 +47,9 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
-  loadRoute(win, "/");
+  // The desktop app opens straight into the operator console; "/" is the
+  // public landing page (web only).
+  loadRoute(win, "/console");
 }
 
 // --- Projector / second-monitor output ---

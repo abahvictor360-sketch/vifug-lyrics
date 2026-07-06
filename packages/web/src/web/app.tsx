@@ -1,4 +1,5 @@
 import { Route, Switch } from "wouter";
+import Landing from "./pages/landing";
 import Index from "./pages/index";
 import ProjectorPage from "./pages/projector";
 import StreamPage from "./pages/stream";
@@ -11,7 +12,8 @@ function App() {
   return (
     <Provider>
       <Switch>
-        <Route path="/" component={Index} />
+        <Route path="/" component={Landing} />
+        <Route path="/console" component={Index} />
         <Route path="/projector" component={ProjectorPage} />
         <Route path="/stream" component={StreamPage} />
         <Route path="/stage" component={StagePage} />
