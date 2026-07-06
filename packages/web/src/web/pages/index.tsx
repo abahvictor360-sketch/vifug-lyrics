@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Square, Ban, Settings2, Repeat, X,
   Image as ImageIcon, Radio, Languages, Ear, Copy, Check, Film, Palette, Link2, Loader2,
   BookOpen, SendHorizontal, Eye, MonitorSmartphone, Smartphone, NotebookPen,
-  ListChecks, ArrowUp, ArrowDown, CalendarDays, PlayCircle, GripVertical,
+  ListChecks, ArrowUp, ArrowDown, CalendarDays, PlayCircle, GripVertical, History,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { VButton, SectionChip, Spinner } from "../components/bits";
@@ -32,6 +32,7 @@ import { useBibleManifest } from "../hooks/use-bible";
 import { DEFAULT_THEME, type LiveTheme, type LiveBackground, type LiveState } from "../lib/live-bus";
 import { stageToState, type StageSlide } from "../lib/stage";
 import { publishStageDisplay } from "../lib/stage-display";
+import { loadHistory, recordHistory, clearHistory, type LiveHistoryEntry } from "../lib/history";
 import type { Slide } from "../lib/paginator";
 import type { DisplayInfo } from "../lib/desktop";
 
@@ -143,7 +144,7 @@ export default function OperatorPage() {
 
   // Operator mode: drive the live output from song lyrics OR the Bible.
   // "plans" is a service-plan builder that cues songs/scripture into lyrics/bible.
-  const [mode, setMode] = useState<"lyrics" | "bible" | "plans">("lyrics");
+  const [mode, setMode] = useState<"lyrics" | "bible" | "plans" | "history">("lyrics");
   // Bible cue: set when a plan item cues a scripture into the Bible panel.
   const [bibleCue, setBibleCue] = useState<{ versionId?: string; ref: string; nonce: number } | null>(null);
 
@@ -317,6 +318,36 @@ export default function OperatorPage() {
     setBibleCue({ ref, versionId, nonce: Date.now() });
   }, []);
 
+  // --- Live history: every song / passage that reaches the live output ---
+  const [history, setHistory] = useState<LiveHistoryEntry[]>(() => loadHistory());
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+  useEffect(() => {
+    if (stage.status !== "live" || stage.liveIndex < 0) return;
+    const s = stage.slides[stage.liveIndex];
+    if (!s) return;
+    if (s.kind === "lyric") {
+      const songId = selectedIdRef.current;
+      if (!songId || !s.title) return;
+      setHistory((h) => recordHistory(h, { kind: "lyric", title: s.title, caption: "", songId }));
+    } else {
+      // slideId is `${versionId}-${bookCode}-${chapter}-${verse}`
+      const versionId = s.slideId?.split("-")[0];
+      if (!s.caption) return;
+      setHistory((h) =>
+        recordHistory(h, { kind: "bible", title: s.title, caption: s.caption, ref: s.caption, versionId }),
+      );
+    }
+  }, [stage.status, stage.liveIndex, stage.slides]);
+
+  const recallHistory = useCallback(
+    (e: LiveHistoryEntry) => {
+      if (e.kind === "lyric" && e.songId) cueSong(e.songId);
+      else if (e.kind === "bible" && e.ref) cueScripture(e.ref, e.versionId);
+    },
+    [cueSong, cueScripture],
+  );
+
   const deleteSong = async (id: string) => {
     await api.songs[":id"].$delete({ param: { id } });
     if (selectedId === id) setSelectedId(null);
@@ -449,12 +480,24 @@ export default function OperatorPage() {
             >
               <ListChecks className="h-4 w-4" /> Plans
             </button>
+            <button
+              onClick={() => setMode("history")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === "history"
+                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
+              }`}
+            >
+              <History className="h-4 w-4" /> History
+            </button>
             <span className="ml-auto text-[11px] text-[var(--v-text-faint)]">
               Click to preview · Enter / double-click sends live
             </span>
           </div>
 
-          {mode === "plans" ? (
+          {mode === "history" ? (
+            <HistoryPanel entries={history} onRecall={recallHistory} onClear={() => setHistory(clearHistory())} />
+          ) : mode === "plans" ? (
             <PlansPanel onCueSong={cueSong} onCueScripture={cueScripture} />
           ) : mode === "bible" ? (
             <BiblePanel
@@ -1065,6 +1108,76 @@ function StreamPanel() {
       >
         Open stream output ↗
       </a>
+    </div>
+  );
+}
+
+/* ---------------- Live history ---------------- */
+
+function HistoryPanel({
+  entries,
+  onRecall,
+  onClear,
+}: {
+  entries: LiveHistoryEntry[];
+  onRecall: (e: LiveHistoryEntry) => void;
+  onClear: () => void;
+}) {
+  const fmt = (at: number) => {
+    const d = new Date(at);
+    const today = new Date().toDateString() === d.toDateString();
+    return today
+      ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : d.toLocaleDateString([], { month: "short", day: "numeric" }) +
+          " · " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center justify-between border-b border-[var(--v-border)] px-5 py-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">
+          {entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"} shown live` : "Live history"}
+        </span>
+        {entries.length > 0 && (
+          <button
+            onClick={onClear}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-[var(--v-text-faint)] hover:bg-[var(--v-surface-3)] hover:text-[var(--v-text)]"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Clear history
+          </button>
+        )}
+      </div>
+      {entries.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-[var(--v-text-faint)]">
+          <History className="h-8 w-8" />
+          <p className="text-sm">Nothing has gone live yet.</p>
+          <p className="text-xs">Songs and Bible passages appear here as you present them.</p>
+        </div>
+      ) : (
+        <div className="v-scroll flex-1 overflow-y-auto p-3">
+          {entries.map((e) => (
+            <button
+              key={e.id}
+              onClick={() => onRecall(e)}
+              className="mb-1.5 flex w-full items-center gap-3 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2.5 text-left transition-colors hover:border-[var(--v-accent)]/50 hover:bg-[var(--v-surface-3)]"
+            >
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[var(--v-accent-soft)] text-[var(--v-accent)]">
+                {e.kind === "lyric" ? <Music4 className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">
+                  {e.kind === "lyric" ? e.title : e.caption}
+                </span>
+                <span className="block truncate text-[11px] text-[var(--v-text-faint)]">
+                  {e.kind === "lyric" ? "Song" : e.title}
+                </span>
+              </span>
+              <span className="shrink-0 text-[11px] text-[var(--v-text-faint)]">{fmt(e.at)}</span>
+              <PlayCircle className="h-4 w-4 shrink-0 text-[var(--v-text-faint)]" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
