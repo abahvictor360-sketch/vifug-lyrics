@@ -6,7 +6,11 @@
   "asarUnpack": [
     "**/*.node",
     "node_modules/@libsql/**",
-    "node_modules/libsql/**"
+    "node_modules/libsql/**",
+    // Native NDI sender: the .node is covered above, but its NDI runtime DLL
+    // (Processing.NDI.Lib.*.dll) must be unpacked too or the addon can't load.
+    "node_modules/@stagetimerio/grandiose/**",
+    "node_modules/grandiose/**"
   ],
   "extraResources": [
     { "from": "../web/local.db", "to": "seed.db" }

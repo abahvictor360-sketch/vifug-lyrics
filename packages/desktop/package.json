@@ -18,6 +18,7 @@
   "dependencies": {
     "@libsql/win32-x64-msvc": "0.5.29",
     "@neon-rs/load": "^0.0.4",
+    "@stagetimerio/grandiose": "^0.2.0",
     "detect-libc": "2.0.2",
     "libsql": "0.5.29",
     "ws": "^8.20.0"

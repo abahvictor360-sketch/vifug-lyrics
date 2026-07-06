@@ -688,6 +688,8 @@ export default function OperatorPage() {
           desktop={desktop}
           lyricPreviewTheme={activeTheme}
           biblePreviewTheme={bibleTheme}
+          autoFollowStatus={autoFollow.status}
+          autoFollowHeard={autoFollow.heard}
         />
       )}
       {translateOpen && full.data && (

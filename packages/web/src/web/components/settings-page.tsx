@@ -89,6 +89,8 @@ export function SettingsPage({
   desktop,
   lyricPreviewTheme,
   biblePreviewTheme,
+  autoFollowStatus = "off",
+  autoFollowHeard = "",
 }: {
   onClose: () => void;
   settings: AppSettings | undefined;
@@ -99,6 +101,9 @@ export function SettingsPage({
   lyricPreviewTheme: LiveTheme;
   /** Fully merged Bible theme for previews. */
   biblePreviewTheme: LiveTheme;
+  /** Live auto-follow status/heard-text, surfaced in the General tab. */
+  autoFollowStatus?: string;
+  autoFollowHeard?: string;
 }) {
   const [section, setSection] = useState<SectionId>("lyrics");
 
@@ -171,7 +176,13 @@ export function SettingsPage({
               <BibleSection settings={settings} patchSettings={patchSettings} previewTheme={biblePreviewTheme} />
             )}
             {section === "general" && (
-              <GeneralSection settings={settings} patchSettings={patchSettings} desktop={desktop} />
+              <GeneralSection
+                settings={settings}
+                patchSettings={patchSettings}
+                desktop={desktop}
+                autoFollowStatus={autoFollowStatus}
+                autoFollowHeard={autoFollowHeard}
+              />
             )}
           </div>
 
@@ -606,10 +617,14 @@ function GeneralSection({
   settings,
   patchSettings,
   desktop,
+  autoFollowStatus,
+  autoFollowHeard,
 }: {
   settings: AppSettings | undefined;
   patchSettings: (p: Partial<AppSettings>) => void;
   desktop: ReturnType<typeof useDesktop>;
+  autoFollowStatus: string;
+  autoFollowHeard: string;
 }) {
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
   useEffect(() => {
@@ -677,6 +692,13 @@ function GeneralSection({
             onChange={(v) => patchSettings({ autoFollow: v })}
           />
         </label>
+
+        <AutoFollowStatus
+          status={autoFollowStatus}
+          heard={autoFollowHeard}
+          enabled={settings?.autoFollow ?? false}
+        />
+
         <label className="mt-3 block">
           <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Deepgram API key</span>
           <input
@@ -768,6 +790,54 @@ function GeneralSection({
           ))}
         </ul>
       </Group>
+    </div>
+  );
+}
+
+/* ---------------- AI auto-follow live status ---------------- */
+
+function AutoFollowStatus({
+  status,
+  heard,
+  enabled,
+}: {
+  status: string;
+  heard: string;
+  enabled: boolean;
+}) {
+  const label =
+    status === "listening"
+      ? "Listening to the room…"
+      : status === "connecting"
+        ? "Connecting to speech service…"
+        : status === "unavailable"
+          ? "No Deepgram key set"
+          : status === "error"
+            ? "Microphone / connection error"
+            : enabled
+              ? "Ready — starts when a slide goes live"
+              : "Off";
+
+  const dot =
+    status === "listening"
+      ? "animate-pulse bg-[var(--v-ok)]"
+      : status === "error" || status === "unavailable"
+        ? "bg-[var(--v-live)]"
+        : status === "connecting"
+          ? "animate-pulse bg-amber-400"
+          : "bg-[var(--v-text-faint)]";
+
+  return (
+    <div className="mt-3 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2">
+      <p className="flex items-center gap-2 text-[12px] text-[var(--v-text-dim)]">
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+        {label}
+      </p>
+      {status === "listening" && heard && (
+        <p className="mt-1.5 truncate rounded bg-[var(--v-surface-2)] px-2 py-1 text-[11px] italic text-[var(--v-text-dim)]">
+          “…{heard}”
+        </p>
+      )}
     </div>
   );
 }

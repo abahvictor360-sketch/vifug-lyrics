@@ -23,6 +23,10 @@ export type NdiStatus = {
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// Maintained N-API forks first, then the legacy addon. Whichever resolves and
+// exposes `send` wins; a missing addon or NDI runtime just means available:false.
+const CANDIDATES = ["@stagetimerio/grandiose", "grandiose"];
+
 let grandiose: any = null;
 let loadTried = false;
 let loadError: string | undefined;
@@ -30,12 +34,18 @@ let loadError: string | undefined;
 function loadGrandiose(): any {
   if (loadTried) return grandiose;
   loadTried = true;
-  try {
-    grandiose = require("grandiose");
-  } catch (err) {
-    grandiose = null;
-    loadError = err instanceof Error ? err.message : "addon_missing";
+  for (const name of CANDIDATES) {
+    try {
+      const mod = require(name);
+      if (mod && typeof mod.send === "function") {
+        grandiose = mod;
+        return grandiose;
+      }
+    } catch (err) {
+      loadError = err instanceof Error ? err.message : "addon_missing";
+    }
   }
+  if (!grandiose && !loadError) loadError = "addon_missing";
   return grandiose;
 }
 
@@ -65,11 +75,9 @@ export async function ndiStart(
   frameIntervalMs = 1000 / currentFrameRate;
 
   try {
+    g.initialize?.();
     if (!sender) {
-      // grandiose 4.x takes an options object; older builds accept a bare name.
-      sender = await (g.send.length >= 1
-        ? g.send({ name: currentName, clockVideo: true, clockAudio: false })
-        : g.send(currentName));
+      sender = await g.send({ name: currentName, clockVideo: true, clockAudio: false });
     }
     running = true;
     attach(win);
@@ -129,18 +137,22 @@ function onFrame(image: NativeImage): void {
 
   try {
     const g = grandiose;
-    sender.video({
-      type: "video",
-      xres: width,
-      yres: height,
-      frameRateN: currentFrameRate * 1000,
-      frameRateD: 1000,
-      pictureAspectRatio: width / height,
-      frameFormatType: g.FRAME_FORMAT_TYPE_PROGRESSIVE ?? 1,
-      timecode: 0n,
-      fourCC: g.FOURCC_BGRA ?? g.BGRA ?? 0,
-      lineStrideBytes: width * 4,
-      data,
+    // Fire-and-forget: awaiting per-frame would backpressure the paint loop.
+    // timecode is omitted so the NDI runtime synthesizes a monotonic clock.
+    Promise.resolve(
+      sender.video({
+        xres: width,
+        yres: height,
+        frameRateN: currentFrameRate * 1000,
+        frameRateD: 1000,
+        pictureAspectRatio: width / height,
+        frameFormatType: g.FORMAT_TYPE_PROGRESSIVE ?? 1,
+        fourCC: g.FOURCC_BGRA,
+        lineStrideBytes: width * 4,
+        data,
+      }),
+    ).catch(() => {
+      /* drop this frame; keep the sender alive */
     });
   } catch {
     /* drop this frame; keep the sender alive */
