@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.0.7] — 2026-07-06
+
+- Fullscreen auto-fit now measures the real rendered text width (per font family/weight) instead of estimating, so lyrics fill the usable width edge-to-edge within the safe margin — roughly 18% larger than v1.0.6 on typical verses.
+
 ## [1.0.6] — 2026-07-06
 
 - Fullscreen slides now auto-size the text to FILL the display (bounded by the safe margin at the edges) instead of capping at 96px. Lower-third modes keep their broadcast-style sizing. Switch between Fullscreen and Lower third in Settings → Lyrics → Look & feel → Display mode (and Settings → Bible for scripture).

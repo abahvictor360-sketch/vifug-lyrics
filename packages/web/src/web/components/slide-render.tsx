@@ -5,6 +5,21 @@ import type { LiveState, LiveTheme } from "../lib/live-bus";
  * Reused by the projector window and the operator preview (scaled down).
  */
 
+// Measure the widest line in em units (width at 100px font / 100) using the
+// real font, so fullscreen auto-fit can fill the width precisely instead of
+// guessing an average glyph width.
+let _measureCanvas: HTMLCanvasElement | null = null;
+function longestLineEm(lines: string[], font: string): number {
+  if (typeof document === "undefined" || lines.length === 0) return 0;
+  _measureCanvas ??= document.createElement("canvas");
+  const ctx = _measureCanvas.getContext("2d");
+  if (!ctx) return Math.max(...lines.map((l) => l.length)) * 0.56;
+  ctx.font = font;
+  let max = 0;
+  for (const l of lines) max = Math.max(max, ctx.measureText(l).width);
+  return max / 100;
+}
+
 function outlineStyle(t: LiveTheme): React.CSSProperties {
   if (!t.textOutline || !t.textOutline.width) return {};
   const w = t.textOutline.width;
@@ -57,8 +72,15 @@ export function SlideRender({
     const margin = Math.max(2, t.safeMargin ?? 8);
     const usable = 100 - margin * 2;
     const effLines = Math.max(1, state.sourceLines.length + state.translationLines.length * 0.75);
-    const fillW = usable / (0.56 * Math.max(longest, 4)); // ~0.56em average glyph width
-    const fillH = usable / (1.3 * effLines);              // line-height + breathing room
+    // Measure with the real font: translation lines render at 0.7em.
+    const fontSpec = `${t.fontWeight || 600} 100px ${t.fontFamily || '"Archivo", system-ui, sans-serif'}`;
+    const em = Math.max(
+      longestLineEm(state.sourceLines, fontSpec),
+      longestLineEm(state.translationLines, fontSpec) * 0.7,
+      1.5, // floor so a 1-2 char slide doesn't explode
+    );
+    const fillW = (usable * 0.98) / em;       // 2% slack against measurement drift
+    const fillH = usable / (1.3 * effLines);  // line-height + breathing room
     fontSize = scale
       ? `clamp(0.6rem, min(${fillW.toFixed(2)}cqw, ${fillH.toFixed(2)}cqh), 90cqh)`
       : `clamp(1.4rem, min(${fillW.toFixed(2)}vw, ${fillH.toFixed(2)}vh), 55vh)`;
