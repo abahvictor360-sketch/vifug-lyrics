@@ -35,6 +35,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return () => ipcRenderer.removeListener("projector:state", listener);
   },
 
+  // NDI output (native, optional)
+  ndiStatus: () => ipcRenderer.invoke("ndi:status"),
+  ndiStart: (opts: { sourceName: string; frameRate: number }) =>
+    ipcRenderer.invoke("ndi:start", opts),
+  ndiStop: () => ipcRenderer.invoke("ndi:stop"),
+
   // Events from main → renderer
   onDeepLink: (cb: (url: string) => void) => {
     ipcRenderer.on("deep-link", (_, url) => cb(url));

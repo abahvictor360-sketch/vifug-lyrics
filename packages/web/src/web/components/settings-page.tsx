@@ -39,6 +39,33 @@ export const FONT_OPTIONS: { label: string; value: string }[] = [
   { label: "Courier New", value: '"Courier New", Courier, monospace' },
 ];
 
+/** Languages offered for AI auto-follow transcription (Deepgram codes). */
+export const AUTOFOLLOW_LANGS: { code: string; label: string }[] = [
+  { code: "multi", label: "Multi (auto-detect)" },
+  { code: "en", label: "English" },
+  { code: "es", label: "Spanish" },
+  { code: "fr", label: "French" },
+  { code: "pt", label: "Portuguese" },
+  { code: "de", label: "German" },
+  { code: "it", label: "Italian" },
+  { code: "nl", label: "Dutch" },
+  { code: "sw", label: "Swahili" },
+  { code: "hi", label: "Hindi" },
+  { code: "id", label: "Indonesian" },
+  { code: "ru", label: "Russian" },
+  { code: "uk", label: "Ukrainian" },
+  { code: "zh", label: "Chinese" },
+  { code: "ja", label: "Japanese" },
+  { code: "ko", label: "Korean" },
+];
+
+/** Human label for the auto-follow match threshold (lower threshold = keener). */
+function sensitivityLabel(threshold: number): string {
+  if (threshold <= 0.25) return "High";
+  if (threshold >= 0.45) return "Low";
+  return "Medium";
+}
+
 function sampleState(theme: LiveTheme, lines: string[], caption = ""): LiveState {
   return {
     status: "live",
@@ -664,28 +691,65 @@ function GeneralSection({
           Get a free key at <a href="https://deepgram.com" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">deepgram.com</a> — it powers the live speech recognition.
           Manual next/prev always overrides.
         </p>
+
+        <label className="mt-4 block">
+          <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Spoken language</span>
+          <select
+            value={settings?.autoFollowLang ?? "en"}
+            onChange={(e) => patchSettings({ autoFollowLang: e.target.value })}
+            className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+          >
+            {AUTOFOLLOW_LANGS.map((l) => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
+          <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">
+            Match the language your congregation sings in. "Multi (auto-detect)" follows code-switching between languages.
+          </span>
+        </label>
+
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <label className="block">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Sensitivity</span>
+              <span className="text-[10px] font-medium text-[var(--v-accent)]">
+                {sensitivityLabel(settings?.autoFollowThreshold ?? 0.34)}
+              </span>
+            </div>
+            {/* Slider is inverted: left = more eager (lower threshold). */}
+            <input
+              type="range"
+              min={0.15}
+              max={0.6}
+              step={0.01}
+              value={0.75 - (settings?.autoFollowThreshold ?? 0.34)}
+              onChange={(e) => patchSettings({ autoFollowThreshold: Number((0.75 - Number(e.target.value)).toFixed(2)) })}
+              className="w-full accent-[var(--v-accent)]"
+            />
+            <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">
+              Higher = advances sooner but may jump early.
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Look-ahead (slides)</span>
+            <select
+              value={settings?.autoFollowLookahead ?? 3}
+              onChange={(e) => patchSettings({ autoFollowLookahead: Number(e.target.value) })}
+              className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+            >
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">
+              How far ahead it scans for the next matching slide.
+            </span>
+          </label>
+        </div>
       </Group>
 
       <Group title="NDI output" icon={Film}>
-        <p className="text-sm text-[var(--v-text-dim)]">
-          Vifug streams lyrics as a transparent overlay that becomes a real NDI source via OBS:
-        </p>
-        <ol className="mt-2 list-decimal space-y-1 pl-5 text-[12px] text-[var(--v-text-dim)]">
-          <li>In OBS, add a <b>Browser</b> source with the stream overlay URL below (1920×1080).</li>
-          <li>Install the free <a href="https://github.com/DistroAV/DistroAV" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">DistroAV</a> OBS plugin.</li>
-          <li>OBS → Tools → <b>NDI Output Settings</b> → enable Main Output.</li>
-          <li>vMix, TriCaster, Resolume or any NDI receiver on the network now sees the lyrics.</li>
-        </ol>
-        <div className="mt-3 flex items-center gap-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2">
-          <Link2 className="h-3.5 w-3.5 shrink-0 text-[var(--v-text-faint)]" />
-          <code className="min-w-0 flex-1 truncate text-xs text-[var(--v-text-dim)]">{origin}/#/stream</code>
-          <button
-            onClick={() => navigator.clipboard?.writeText(`${origin}/#/stream`)}
-            className="shrink-0 text-xs font-medium text-[var(--v-accent)] hover:underline"
-          >
-            Copy
-          </button>
-        </div>
+        <NdiPanel settings={settings} patchSettings={patchSettings} desktop={desktop} origin={origin} />
       </Group>
 
       <Group title="Outputs & companion screens" icon={Monitor}>
@@ -704,6 +768,157 @@ function GeneralSection({
           ))}
         </ul>
       </Group>
+    </div>
+  );
+}
+
+/* ---------------- NDI output ---------------- */
+
+type NdiRuntimeStatus = {
+  available: boolean;   // native NDI addon + runtime present
+  running: boolean;     // sender currently emitting
+  sourceName?: string;
+  reason?: string;      // why unavailable (e.g. "addon_missing")
+};
+
+function NdiPanel({
+  settings,
+  patchSettings,
+  desktop,
+  origin,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+  desktop: ReturnType<typeof useDesktop>;
+  origin: string;
+}) {
+  const ndi = settings?.ndi ?? { enabled: false, sourceName: "Vifug Lyrics", frameRate: 30 };
+  const setNdi = (patch: Partial<NonNullable<AppSettings["ndi"]>>) =>
+    patchSettings({ ndi: { ...ndi, ...patch } });
+
+  const [status, setStatus] = useState<NdiRuntimeStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const refresh = () => {
+    desktop?.ndiStatus?.().then(setStatus).catch(() => setStatus(null));
+  };
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [desktop]);
+
+  const toggleNative = async (on: boolean) => {
+    setNdi({ enabled: on });
+    if (!desktop?.ndiStart) return;
+    setBusy(true);
+    try {
+      if (on) {
+        const s = await desktop.ndiStart({ sourceName: ndi.sourceName, frameRate: ndi.frameRate });
+        setStatus(s);
+      } else {
+        const s = await desktop.ndiStop();
+        setStatus(s);
+      }
+    } catch {
+      /* leave last status */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      {desktop ? (
+        <div className="space-y-4">
+          <label className="flex items-center justify-between">
+            <span className="min-w-0">
+              <span className="block text-sm">Publish the projector as an NDI source</span>
+              <span className="block text-[11px] text-[var(--v-text-faint)]">
+                Sends live lyrics/scripture directly to the network — no OBS needed.
+              </span>
+            </span>
+            <Toggle checked={ndi.enabled} onChange={toggleNative} />
+          </label>
+
+          <div className="grid grid-cols-2 gap-4">
+            <label className="block">
+              <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Source name</span>
+              <input
+                value={ndi.sourceName}
+                onChange={(e) => setNdi({ sourceName: e.target.value })}
+                placeholder="Vifug Lyrics"
+                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Frame rate</span>
+              <select
+                value={ndi.frameRate}
+                onChange={(e) => setNdi({ frameRate: Number(e.target.value) })}
+                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+              >
+                {[24, 25, 30, 50, 60].map((f) => (
+                  <option key={f} value={f}>{f} fps</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-[12px]">
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                status?.running ? "bg-[var(--v-ok)]" : status?.available ? "bg-amber-400" : "bg-[var(--v-text-faint)]"
+              }`}
+            />
+            <span className="min-w-0 flex-1 text-[var(--v-text-dim)]">
+              {busy
+                ? "Working…"
+                : status?.running
+                  ? `On air as "${status.sourceName ?? ndi.sourceName}"`
+                  : status?.available
+                    ? "NDI runtime ready — open the projector, then enable."
+                    : "Native NDI runtime not found on this machine."}
+            </span>
+            <button onClick={refresh} className="shrink-0 text-xs font-medium text-[var(--v-accent)] hover:underline">
+              Refresh
+            </button>
+          </div>
+
+          {status && !status.available && (
+            <p className="text-[11px] text-[var(--v-text-faint)]">
+              To enable native NDI, install the <a href="https://ndi.video/tools/" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">NDI Runtime</a> and rebuild
+              the desktop app with the <code>grandiose</code> addon. Until then, use the OBS bridge below.
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-[var(--v-text-dim)]">
+          Native NDI output runs in the desktop app. In the browser, use the OBS bridge below.
+        </p>
+      )}
+
+      {/* OBS → NDI bridge (works everywhere, no native code) */}
+      <details className="mt-4 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-3)] p-3" open={!desktop}>
+        <summary className="cursor-pointer text-sm font-medium text-[var(--v-text-dim)]">
+          Alternative: OBS → NDI bridge
+        </summary>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-[12px] text-[var(--v-text-dim)]">
+          <li>In OBS, add a <b>Browser</b> source with the stream overlay URL below (1920×1080).</li>
+          <li>Install the free <a href="https://github.com/DistroAV/DistroAV" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">DistroAV</a> OBS plugin.</li>
+          <li>OBS → Tools → <b>NDI Output Settings</b> → enable Main Output.</li>
+          <li>vMix, TriCaster, Resolume or any NDI receiver on the network now sees the lyrics.</li>
+        </ol>
+        <div className="mt-3 flex items-center gap-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 py-2">
+          <Link2 className="h-3.5 w-3.5 shrink-0 text-[var(--v-text-faint)]" />
+          <code className="min-w-0 flex-1 truncate text-xs text-[var(--v-text-dim)]">{origin}/#/stream</code>
+          <button
+            onClick={() => navigator.clipboard?.writeText(`${origin}/#/stream`)}
+            className="shrink-0 text-xs font-medium text-[var(--v-accent)] hover:underline"
+          >
+            Copy
+          </button>
+        </div>
+      </details>
     </div>
   );
 }

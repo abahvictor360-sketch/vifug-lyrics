@@ -26,6 +26,25 @@ export type AppSettings = {
   autoFollow: boolean;
   /** Deepgram API key for AI auto-follow (falls back to server env). */
   deepgramApiKey?: string | null;
+  /**
+   * Language the room is sung/spoken in, for AI auto-follow transcription.
+   * A Deepgram language code (e.g. "en", "es", "fr") or "multi" to
+   * auto-detect. Defaults to "en".
+   */
+  autoFollowLang?: string | null;
+  /**
+   * How eagerly auto-follow advances (0.15–0.6). Fraction of a slide's words
+   * that must be heard before it jumps. Lower = more eager. Default 0.34.
+   */
+  autoFollowThreshold?: number;
+  /** How many upcoming slides auto-follow scans for a match. Default 3. */
+  autoFollowLookahead?: number;
+  /**
+   * NDI output (desktop only). When enabled, the Electron app publishes the
+   * projector window as an NDI source on the local network (requires the
+   * native NDI runtime + grandiose addon; falls back gracefully if absent).
+   */
+  ndi?: { enabled: boolean; sourceName: string; frameRate: number } | null;
   /** Next/Prev (arrows, buttons, remote) sends the slide live immediately. */
   advanceGoesLive?: boolean;
   activeBackgroundId?: string | null;

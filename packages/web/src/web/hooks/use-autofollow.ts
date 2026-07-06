@@ -38,8 +38,12 @@ export function useAutoFollow(opts: {
   slides: FollowSlide[];
   currentIndex: number;
   onAdvanceTo: (index: number) => void;
+  /** Fraction of a slide's words that must be heard to advance (0.15–0.6). */
+  threshold?: number;
+  /** How many upcoming slides to scan for a match. */
+  lookahead?: number;
 }) {
-  const { slides, currentIndex, onAdvanceTo } = opts;
+  const { slides, currentIndex, onAdvanceTo, threshold = 0.34, lookahead = 3 } = opts;
   const [status, setStatus] = useState<AutoFollowStatus>("off");
   const [heard, setHeard] = useState("");
 
@@ -50,8 +54,10 @@ export function useAutoFollow(opts: {
   const idxRef = useRef(currentIndex);
   const slidesRef = useRef(slides);
   const lastAdvanceRef = useRef(0);
+  const tuningRef = useRef({ threshold, lookahead });
   idxRef.current = currentIndex;
   slidesRef.current = slides;
+  tuningRef.current = { threshold, lookahead };
 
   const slideTokens = useCallback((i: number) => {
     const s = slidesRef.current[i];
@@ -62,10 +68,11 @@ export function useAutoFollow(opts: {
   const evaluate = useCallback(() => {
     const tokens = transcriptRef.current;
     const cur = idxRef.current;
+    const { threshold: thr, lookahead: look } = tuningRef.current;
     // Look at the next few slides; advance to the furthest confident match.
     let best = -1;
-    let bestScore = 0.34; // threshold
-    for (let i = cur + 1; i <= Math.min(cur + 3, slidesRef.current.length - 1); i++) {
+    let bestScore = thr; // threshold
+    for (let i = cur + 1; i <= Math.min(cur + look, slidesRef.current.length - 1); i++) {
       const sc = matchScore(tokens, slideTokens(i));
       if (sc >= bestScore) {
         best = i;
@@ -95,7 +102,7 @@ export function useAutoFollow(opts: {
       const cfgRes = await api.autofollow.config.$get();
       const cfg = (await cfgRes.json()) as
         | { enabled: false; reason?: string }
-        | { enabled: true; key: string; model: string; provider: string };
+        | { enabled: true; key: string; model: string; language?: string; provider: string };
       if (!cfg.enabled) {
         setStatus("unavailable");
         return;
@@ -107,7 +114,8 @@ export function useAutoFollow(opts: {
       // No `encoding` param: MediaRecorder sends containerized WebM/Opus and
       // Deepgram auto-detects containers; forcing encoding=opus (raw packets)
       // makes transcription silently fail.
-      const url = `wss://api.deepgram.com/v1/listen?model=${cfg.model}&smart_format=true&interim_results=true`;
+      const langParam = cfg.language ? `&language=${encodeURIComponent(cfg.language)}` : "";
+      const url = `wss://api.deepgram.com/v1/listen?model=${cfg.model}${langParam}&smart_format=true&interim_results=true`;
       const ws = new WebSocket(url, ["token", cfg.key]);
       wsRef.current = ws;
 

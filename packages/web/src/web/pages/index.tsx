@@ -268,6 +268,8 @@ export default function OperatorPage() {
     slides: stage.slides,
     currentIndex: stage.liveIndex,
     onAdvanceTo: (i) => stage.goLive(i),
+    threshold: settings?.autoFollowThreshold ?? 0.34,
+    lookahead: settings?.autoFollowLookahead ?? 3,
   });
   const autoFollowOn = settings?.autoFollow ?? false;
   useEffect(() => {

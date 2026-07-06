@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import { startEmbeddedServer } from "./server";
+import { ndiStatus, ndiStart, ndiStop, ndiRebind } from "./ndi";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const isDev = !app.isPackaged && process.env.NODE_ENV !== "production";
@@ -85,6 +86,7 @@ ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: b
     projectorWin.show();
     if (wantFullscreen) projectorWin.setFullScreen(true);
     projectorWin.focus();
+    ndiRebind(projectorWin);
     win?.webContents.send("projector:state", { open: true, displayId: target.id });
     return { ok: true, displayId: target.id };
   }
@@ -128,8 +130,11 @@ ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: b
   loadRoute(projectorWin, "/projector");
   projectorWin.on("closed", () => {
     projectorWin = null;
+    ndiRebind(null);
     win?.webContents.send("projector:state", { open: false });
   });
+  // Once the projector is up, point any running NDI sender at it.
+  projectorWin.webContents.on("did-finish-load", () => ndiRebind(projectorWin));
   win?.webContents.send("projector:state", { open: true, displayId: target.id });
   return { ok: true, displayId: target.id };
 });
@@ -137,12 +142,23 @@ ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: b
 ipcMain.handle("projector:close", () => {
   if (projectorWin && !projectorWin.isDestroyed()) projectorWin.close();
   projectorWin = null;
+  ndiRebind(null);
   return { ok: true };
 });
 
 ipcMain.handle("projector:status", () => ({
   open: !!(projectorWin && !projectorWin.isDestroyed()),
 }));
+
+// --- NDI output (native, optional) ---
+// The projector window is the capture source, so NDI mirrors exactly what the
+// second monitor shows. If the projector isn't open yet, the sender waits and
+// picks it up on the next projector:open.
+ipcMain.handle("ndi:status", () => ndiStatus());
+ipcMain.handle("ndi:start", (_e, opts: { sourceName: string; frameRate: number }) =>
+  ndiStart(projectorWin, opts),
+);
+ipcMain.handle("ndi:stop", () => ndiStop());
 
 // --- IPC Handlers ---
 

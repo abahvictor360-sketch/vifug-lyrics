@@ -429,17 +429,22 @@ const app = new Hono()
   .get("/autofollow/config", async (c) => {
     // Server env key wins; otherwise use the key saved in app Settings → AI.
     let key = process.env.DEEPGRAM_API_KEY;
-    if (!key) {
-      const [row] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
-      if (row) {
-        try {
-          const cfg = JSON.parse(row.config) as { deepgramApiKey?: string | null };
-          key = cfg.deepgramApiKey?.trim() || undefined;
-        } catch { /* ignore malformed config */ }
-      }
+    let language = "en";
+    // Always read settings: env key wins for the key, but the language always
+    // comes from app Settings → AI.
+    const [row] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
+    if (row) {
+      try {
+        const cfg = JSON.parse(row.config) as { deepgramApiKey?: string | null; autoFollowLang?: string | null };
+        if (!key) key = cfg.deepgramApiKey?.trim() || undefined;
+        if (cfg.autoFollowLang) language = cfg.autoFollowLang;
+      } catch { /* ignore malformed config */ }
     }
     if (!key) return c.json({ enabled: false, reason: "no_key" }, 200);
-    return c.json({ enabled: true, key, model: "nova-2", provider: "deepgram" }, 200);
+    // Deepgram's auto language detection ("multi") requires nova-3; single
+    // languages run on nova-2 (broadest per-language coverage).
+    const model = language === "multi" ? "nova-3" : "nova-2";
+    return c.json({ enabled: true, key, model, language, provider: "deepgram" }, 200);
   })
 
   // ---------- SETTINGS (single row) ----------
@@ -578,6 +583,10 @@ function defaultSettings() {
     secondaryLang: null as string | null,
     autoFollow: false,
     deepgramApiKey: null as string | null,
+    autoFollowLang: "en" as string | null,
+    autoFollowThreshold: 0.34,
+    autoFollowLookahead: 3,
+    ndi: { enabled: false, sourceName: "Vifug Lyrics", frameRate: 30 },
     advanceGoesLive: true,
     bibleLangs: { yor: true, hau: true, ibo: true },
     lyricTheme: null as Record<string, unknown> | null,
