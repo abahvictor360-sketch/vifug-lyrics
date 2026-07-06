@@ -39,6 +39,19 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      # Compile the native NDI addon (@stagetimerio/grandiose). Bun skips the
+      # package's own install script, so build it here: download the NDI SDK,
+      # compile with node-gyp (N-API — no Electron rebuild needed), assemble
+      # dist/. Best-effort: if a runner can't build it, the installer still
+      # ships and NDI degrades to the OBS bridge at runtime.
+      - name: Build native NDI addon
+        continue-on-error: true
+        working-directory: packages/desktop/node_modules/@stagetimerio/grandiose
+        run: |
+          node scripts/ndi.js
+          npx --yes node-gyp rebuild
+          node scripts/dist.js
+
       - name: Build web bundle
         run: bun run build
         working-directory: packages/web

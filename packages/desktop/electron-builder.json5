@@ -3,6 +3,11 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.vifug.lyrics",
   "asar": true,
+  // The native NDI addon is N-API (ABI-stable) and is compiled explicitly in
+  // CI, so electron-builder must NOT try to rebuild native deps against Electron
+  // headers (that would need the NDI SDK at rebuild time and can fail). libsql
+  // ships its own prebuilt binaries, so this is safe for it too.
+  "npmRebuild": false,
   "asarUnpack": [
     "**/*.node",
     "node_modules/@libsql/**",
