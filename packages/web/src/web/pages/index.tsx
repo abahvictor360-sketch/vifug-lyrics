@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, Upload, Music4, Pencil, Trash2, Monitor, MonitorX,
@@ -719,21 +718,10 @@ function TopBar({
   return (
     <header className="v-glass flex h-12 shrink-0 items-center justify-between border-b px-4">
       <div className="flex items-center gap-2">
-        {desktop ? (
-          <div className="flex items-center gap-2">
-            <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-[var(--v-accent)] to-[var(--v-accent-2)] text-black shadow-[0_2px_10px_var(--v-accent-glow)]">
-              <Music4 className="h-4 w-4" />
-            </div>
-            <span className="font-display text-sm font-bold tracking-tight">Vifug Lyrics</span>
-          </div>
-        ) : (
-          <Link href="/" className="flex items-center gap-2" title="Back to home">
-            <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-[var(--v-accent)] to-[var(--v-accent-2)] text-black shadow-[0_2px_10px_var(--v-accent-glow)]">
-              <Music4 className="h-4 w-4" />
-            </div>
-            <span className="font-display text-sm font-bold tracking-tight hover:text-[var(--v-accent)]">Vifug Lyrics</span>
-          </Link>
-        )}
+        <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-[var(--v-accent)] to-[var(--v-accent-2)] text-black shadow-[0_2px_10px_var(--v-accent-glow)]">
+          <Music4 className="h-4 w-4" />
+        </div>
+        <span className="font-display text-sm font-bold tracking-tight">Vifug Lyrics</span>
         <span className="ml-1 rounded bg-[var(--v-surface-3)] px-1.5 py-0.5 text-[10px] text-[var(--v-text-faint)]">
           {desktop ? "Desktop" : "Preview"}
         </span>
