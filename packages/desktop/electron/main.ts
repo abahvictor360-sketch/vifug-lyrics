@@ -127,6 +127,13 @@ ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: b
   projectorWin.once("ready-to-show", reveal);
   // Safety net: some GPU/driver combos never emit ready-to-show.
   setTimeout(reveal, 2000);
+  // Esc closes the projection (reliable even for a frameless fullscreen window,
+  // where the renderer keydown can be swallowed).
+  projectorWin.webContents.on("before-input-event", (_e, input) => {
+    if (input.type === "keyDown" && input.key === "Escape") {
+      if (projectorWin && !projectorWin.isDestroyed()) projectorWin.close();
+    }
+  });
   loadRoute(projectorWin, "/projector");
   projectorWin.on("closed", () => {
     projectorWin = null;

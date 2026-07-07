@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { SlideRender } from "../components/slide-render";
 import { useLiveState } from "../hooks/use-live";
+import { getDesktopAPI } from "../lib/desktop";
 
 /** Pure lyric output. Loaded in the second-monitor Electron window (or a browser tab). */
 export default function ProjectorPage() {
@@ -13,6 +14,24 @@ export default function ProjectorPage() {
     return () => {
       document.body.style.cursor = "";
     };
+  }, []);
+
+  // Esc closes the projection. In the desktop app this closes the projector
+  // window via the main process (which also notifies the operator and stops
+  // NDI); in a browser it closes the popup window.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      const desktop = getDesktopAPI();
+      if (desktop) {
+        desktop.closeProjector().catch(() => window.close());
+      } else {
+        window.close();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   return (
