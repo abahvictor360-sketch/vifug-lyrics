@@ -65,6 +65,9 @@
     background: rgba(13, 18, 32, 0.82); backdrop-filter: blur(16px);
     border-color: var(--line); box-shadow: 0 16px 46px rgba(0,0,0,.55);
   }
+  /* Shrink just the nav's Download button once the header goes sticky —
+     the hero/CTA download buttons keep their full size. */
+  header.fixed-header .nav > .btn { padding: 8px 15px; font-size: 13px; border-radius: 10px; }
   @keyframes slide-down { from { transform: translateY(-130%); } to { transform: translateY(0); } }
   .brand { display: flex; align-items: center; gap: 11px; font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: .01em; }
   .brand-mark {
@@ -90,7 +93,7 @@
   .btn:focus-visible { outline: 2px solid var(--live); outline-offset: 3px; }
   .btn-live { background: var(--live); border-color: var(--live); color: #0a0f04; font-weight: 700; }
   .btn-live:hover { background: #b6f14a; box-shadow: 0 10px 30px var(--halo); }
-  .btn-lg { padding: 12px 22px; font-size: 14px; border-radius: 13px; }
+  .btn-lg { padding: 15px 26px; font-size: 15px; border-radius: 14px; }
   .os { width: 17px; height: 17px; fill: currentColor; }
 
   /* ---------- hero ---------- */
