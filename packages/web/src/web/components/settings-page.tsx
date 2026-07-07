@@ -768,7 +768,11 @@ function GeneralSection({
           />
         </label>
         <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
-          Get a free key at <a href="https://deepgram.com" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">deepgram.com</a> — it powers the live speech recognition.
+          Powers the live speech recognition. New to this?{" "}
+          <a href="https://abahvictor360-sketch.github.io/vifug-lyrics/deepgram-api-key.html" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">
+            How to get a Deepgram key
+          </a>{" "}
+          — a free key from <a href="https://deepgram.com" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">deepgram.com</a> takes a few minutes.
           Manual next/prev always overrides.
         </p>
 
