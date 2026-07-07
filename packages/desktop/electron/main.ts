@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, Notification, screen } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, Notification, screen, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -47,6 +47,13 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
+  // Links that open in a new tab (target="_blank") — e.g. the Help menu's
+  // links to the landing-page guides — should open in the system browser,
+  // not a bare chromeless Electron window.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith("http://") || url.startsWith("https://")) shell.openExternal(url);
+    return { action: "deny" };
+  });
   loadRoute(win, "/");
 }
 
@@ -65,6 +72,15 @@ function serializeDisplays() {
 }
 
 ipcMain.handle("displays:list", () => serializeDisplays());
+
+// Live display detection — a monitor plugged/unplugged mid-service should
+// show up (or drop out) in the Projector picker without an app restart.
+const broadcastDisplays = () => {
+  win?.webContents.send("displays:changed", serializeDisplays());
+};
+screen.on("display-added", broadcastDisplays);
+screen.on("display-removed", broadcastDisplays);
+screen.on("display-metrics-changed", broadcastDisplays);
 
 ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: boolean }) => {
   const displays = screen.getAllDisplays();

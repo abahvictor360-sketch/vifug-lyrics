@@ -25,6 +25,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // Displays + projector (second-monitor output)
   listDisplays: () => ipcRenderer.invoke("displays:list"),
+  onDisplaysChanged: (cb: (displays: unknown[]) => void) => {
+    const listener = (_: unknown, displays: unknown[]) => cb(displays);
+    ipcRenderer.on("displays:changed", listener);
+    return () => ipcRenderer.removeListener("displays:changed", listener);
+  },
   openProjector: (opts: { displayId?: number; fullscreen?: boolean }) =>
     ipcRenderer.invoke("projector:open", opts),
   closeProjector: () => ipcRenderer.invoke("projector:close"),

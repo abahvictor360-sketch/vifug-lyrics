@@ -565,6 +565,14 @@ function LyricsSection({
             <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">
               Add translations per section from the song's <b>Translate</b> panel.
             </span>
+            <div className="mt-3 max-w-[180px]">
+              <ColorField
+                label="Translation text color"
+                value={settings?.lyricTheme?.translationColor ?? null}
+                fallback="#ffffff"
+                onChange={(v) => patchSettings({ lyricTheme: { ...(settings?.lyricTheme ?? {}), translationColor: v } })}
+              />
+            </div>
           </label>
         )}
       </Group>

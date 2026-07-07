@@ -121,7 +121,13 @@
   .dl-meta .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--live); box-shadow: 0 0 10px var(--halo); }
 
   /* ---------- signature: on-air projector ---------- */
-  .stage-wrap { position: relative; }
+  .stage-wrap {
+    position: relative;
+    transform: perspective(1200px) rotateX(0deg) rotateY(0deg) translate3d(0,0,0);
+    transition: transform .35s cubic-bezier(.2,.7,.2,1);
+    will-change: transform;
+  }
+  .stage-wrap .stage { transition: box-shadow .35s ease; }
   .stage-tag {
     position: absolute; top: -12px; left: 20px; z-index: 3; display: inline-flex; align-items: center; gap: 7px;
     font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--live-red);
@@ -327,7 +333,7 @@
         </a>
       </div>
       <p class="dl-meta" data-aos="fade-up" data-aos-delay="220" id="dl-version">
-        <span class="dot"></span>Windows · macOS · Linux — <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases" target="_blank" rel="noreferrer">all releases</a>
+        <span class="dot"></span><span id="dl-version-text">Windows · macOS · Linux — </span><a href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases" target="_blank" rel="noreferrer">all releases</a>
       </p>
     </div>
 
@@ -479,10 +485,10 @@
   <div class="wrap foot">
     <span>© <span id="year"></span> Vifug Lyrics · Free worship presentation software</span>
     <nav class="foot-links">
-      <a href="#features">Features</a>
-      <a href="deepgram-api-key.html">Deepgram guide</a>
+      <a href="guide.html">Guide</a>
+      <a href="contact.html">Contact</a>
+      <a href="contact.html#support">Support us</a>
       <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/releases" target="_blank" rel="noreferrer">Releases</a>
-      <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/issues" target="_blank" rel="noreferrer">Support</a>
     </nav>
   </div>
 </footer>
@@ -503,10 +509,8 @@
         if (asset) document.getElementById(id).href = asset.browser_download_url;
       }
       if (rel.tag_name) {
-        const meta = document.getElementById("dl-version");
-        // childNodes: [0] = dot span, [1] = the version text node, [2] = "all releases" link
-        const textNode = meta && meta.childNodes[1];
-        if (textNode) textNode.textContent = " Latest release " + rel.tag_name + " · Windows · macOS · Linux — ";
+        const textEl = document.getElementById("dl-version-text");
+        if (textEl) textEl.textContent = "Latest release " + rel.tag_name + " · Windows · macOS · Linux — ";
       }
     })
     .catch(() => { /* buttons fall back to the releases page */ });
@@ -519,6 +523,26 @@
     document.documentElement.classList.add("no-aos");
   }
   setTimeout(() => { if (!window.AOS) document.documentElement.classList.add("no-aos"); }, 2500);
+
+  // Mouse-follow tilt on the hero's signature projector mockup — a subtle,
+  // physical response to cursor position (not decoration for its own sake).
+  // Transform-only, capped small, and fully skipped under reduced-motion.
+  const heroEl = document.querySelector(".hero");
+  const stageWrapEl = document.querySelector(".stage-wrap");
+  if (heroEl && stageWrapEl && !reduced && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    const MAX_TILT = 6; // degrees
+    const MAX_SHIFT = 10; // px
+    heroEl.addEventListener("pointermove", (e) => {
+      const r = heroEl.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5; // -0.5..0.5
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      stageWrapEl.style.transform =
+        `perspective(1200px) rotateX(${(-py * MAX_TILT).toFixed(2)}deg) rotateY(${(px * MAX_TILT).toFixed(2)}deg) translate3d(${(px * MAX_SHIFT).toFixed(1)}px, ${(py * MAX_SHIFT * 0.6).toFixed(1)}px, 0)`;
+    });
+    heroEl.addEventListener("pointerleave", () => {
+      stageWrapEl.style.transform = "perspective(1200px) rotateX(0deg) rotateY(0deg) translate3d(0,0,0)";
+    });
+  }
 
   // Floating header: detach into a pill after the hero.
   const headerEl = document.querySelector("header");

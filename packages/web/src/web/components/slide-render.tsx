@@ -212,7 +212,8 @@ export function SlideRender({
               style={{
                 marginTop: "0.5em",
                 fontSize: `calc(${fontSize} * 0.7)`,
-                opacity: 0.78,
+                color: t.translationColor || undefined,
+                opacity: t.translationColor ? 1 : 0.78,
                 lineHeight: 1.2,
                 ...outlineStyle(t),
                 whiteSpace: "pre-wrap",

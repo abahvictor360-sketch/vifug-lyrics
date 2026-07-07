@@ -28,6 +28,8 @@ export interface ElectronAPI {
 
   // Displays + projector
   listDisplays: () => Promise<DisplayInfo[]>;
+  /** Fires whenever a monitor is plugged/unplugged or its bounds change. */
+  onDisplaysChanged: (cb: (displays: DisplayInfo[]) => void) => () => void;
   openProjector: (opts: { displayId?: number; fullscreen?: boolean }) => Promise<{ ok: boolean; displayId: number }>;
   closeProjector: () => Promise<{ ok: boolean }>;
   projectorStatus: () => Promise<{ open: boolean }>;

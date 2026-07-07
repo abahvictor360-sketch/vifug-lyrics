@@ -33,6 +33,8 @@ export type LiveTheme = {
   showCaption?: boolean;
   /** Caption color; null = accent default. */
   captionColor?: string | null;
+  /** Color of the secondary/translation line; null = textColor at reduced opacity. */
+  translationColor?: string | null;
 };
 
 export type LiveState = {
@@ -66,6 +68,7 @@ export const DEFAULT_THEME: LiveTheme = {
   background: null,
   showCaption: false,
   captionColor: null,
+  translationColor: null,
 };
 
 export const IDLE_STATE: LiveState = {

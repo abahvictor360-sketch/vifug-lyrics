@@ -6,6 +6,7 @@ import {
   Image as ImageIcon, Radio, Languages, Ear, Copy, Check, Film, Palette, Link2, Loader2,
   BookOpen, SendHorizontal, Eye, MonitorSmartphone, Smartphone, NotebookPen,
   ListChecks, ArrowUp, ArrowDown, CalendarDays, PlayCircle, GripVertical, History,
+  Mic, HelpCircle, Mail,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { VButton, SectionChip, Spinner } from "../components/bits";
@@ -82,8 +83,62 @@ function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): Li
     displayMode: o.displayMode ?? base.displayMode,
     verticalPos: o.verticalPos ?? base.verticalPos,
     captionColor: o.referenceColor ?? base.captionColor ?? null,
+    translationColor: o.translationColor ?? base.translationColor ?? null,
     textShadow: o.textShadow === undefined ? base.textShadow : o.textShadow,
   };
+}
+
+/**
+ * Shared projector open/close/status + live display list. Used by both the
+ * Projector panel and the preview/live right-click menu so there's a single
+ * IPC subscription instead of each caller managing its own.
+ */
+function useProjector(desktop: ReturnType<typeof useDesktop>, outputDisplayId: number | null | undefined) {
+  const [displays, setDisplays] = useState<DisplayInfo[]>([]);
+  const [open, setOpen] = useState(false);
+  const [justDetected, setJustDetected] = useState(false);
+  const knownCountRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!desktop) return;
+    desktop.listDisplays().then((d) => {
+      setDisplays(d);
+      knownCountRef.current = d.length;
+    }).catch(() => {});
+    desktop.projectorStatus().then((s) => setOpen(s.open)).catch(() => {});
+    const offState = desktop.onProjectorState((s) => setOpen(s.open));
+    // A monitor plugged/unplugged mid-service updates the picker live — no
+    // app restart needed. Flash a brief hint when the count grows.
+    const offDisplays = desktop.onDisplaysChanged((next) => {
+      if (knownCountRef.current !== null && next.length > knownCountRef.current) {
+        setJustDetected(true);
+        setTimeout(() => setJustDetected(false), 4000);
+      }
+      knownCountRef.current = next.length;
+      setDisplays(next);
+    });
+    return () => {
+      offState();
+      offDisplays();
+    };
+  }, [desktop]);
+
+  const openProjector = useCallback(async () => {
+    if (!desktop) {
+      window.open("/#/projector", "vifug-projector", "width=960,height=540");
+      setOpen(true);
+      return;
+    }
+    await desktop.openProjector({ displayId: outputDisplayId ?? undefined, fullscreen: true });
+    setOpen(true);
+  }, [desktop, outputDisplayId]);
+
+  const closeProjector = useCallback(async () => {
+    if (desktop) await desktop.closeProjector();
+    setOpen(false);
+  }, [desktop]);
+
+  return { displays, open, justDetected, openProjector, closeProjector };
 }
 
 export default function OperatorPage() {
@@ -95,6 +150,7 @@ export default function OperatorPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [translateOpen, setTranslateOpen] = useState(false);
+  const [screenMenu, setScreenMenu] = useState<{ x: number; y: number } | null>(null);
 
   const songs = useSongList(search);
   const full = useFullSong(selectedId);
@@ -102,6 +158,7 @@ export default function OperatorPage() {
   const settingsQ = useSettings();
   const updateSettings = useUpdateSettings();
   const settings = settingsQ.data;
+  const projector = useProjector(desktop, settings?.output.displayId);
 
   // Phase 2 data
   const media = useMedia();
@@ -289,7 +346,7 @@ export default function OperatorPage() {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if (editorOpen || importOpen || settingsOpen || translateOpen) return;
+      if (editorOpen || importOpen || settingsOpen || translateOpen || screenMenu) return;
       if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === "PageDown") {
         e.preventDefault();
         advanceNext();
@@ -309,7 +366,22 @@ export default function OperatorPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [stage, editorOpen, importOpen, settingsOpen, translateOpen]);
+  }, [stage, editorOpen, importOpen, settingsOpen, translateOpen, screenMenu]);
+
+  // Close the preview/live right-click menu on outside click or Escape.
+  useEffect(() => {
+    if (!screenMenu) return;
+    const close = () => setScreenMenu(null);
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    window.addEventListener("click", close);
+    window.addEventListener("contextmenu", close);
+    window.addEventListener("keydown", onEsc);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("contextmenu", close);
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [screenMenu]);
 
   const patchSettings = (patch: Partial<AppSettings>) => {
     if (!settings) return;
@@ -579,6 +651,7 @@ export default function OperatorPage() {
                 <div
                   className="relative aspect-video w-full overflow-hidden rounded-lg border-2 border-[var(--v-accent)]/50"
                   style={{ background: "#000" }}
+                  onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
                 >
                   <SlideRender state={previewState} scale />
                 </div>
@@ -597,11 +670,25 @@ export default function OperatorPage() {
                       : "border-[var(--v-border)]"
                   }`}
                   style={{ background: "#000" }}
+                  onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
                 >
                   <SlideRender state={liveState} scale />
                 </div>
               </div>
             </div>
+
+            {screenMenu && (
+              <ScreenContextMenu
+                x={screenMenu.x}
+                y={screenMenu.y}
+                projectorOpen={projector.open}
+                onOpenProjection={() => { projector.openProjector(); setScreenMenu(null); }}
+                onCloseProjection={() => { projector.closeProjector(); setScreenMenu(null); }}
+                onBlank={() => { stage.blank(); setScreenMenu(null); }}
+                onClear={() => { stage.clear(); setScreenMenu(null); }}
+                onClose={() => setScreenMenu(null)}
+              />
+            )}
 
             <VButton
               variant="ok"
@@ -648,7 +735,7 @@ export default function OperatorPage() {
 
           {/* Output / projector — kept high so it's reachable on small screens */}
           <div className="border-b border-[var(--v-border)] p-3">
-            <ProjectorControls desktop={desktop} settings={settings} patchSettings={patchSettings} />
+            <ProjectorControls desktop={desktop} settings={settings} patchSettings={patchSettings} projector={projector} />
           </div>
 
           {/* AI auto-follow */}
@@ -734,11 +821,65 @@ function TopBar({
       </div>
       <div className="flex items-center gap-3">
         <StatusPill status={liveStatus} />
+        <HelpMenu />
         <VButton variant="ghost" size="sm" onClick={onSettings}>
           <Settings2 className="h-4 w-4" /> Settings
         </VButton>
       </div>
     </header>
+  );
+}
+
+/** Help menu — everything routes to the guides hosted on the landing page. */
+const HELP_BASE = "https://abahvictor360-sketch.github.io/vifug-lyrics";
+const HELP_LINKS = [
+  { icon: BookOpen, label: "How to use Vifug Lyrics", href: `${HELP_BASE}/guide.html` },
+  { icon: Mic, label: "Set up AI auto-follow (Deepgram)", href: `${HELP_BASE}/deepgram-api-key.html` },
+  { icon: Radio, label: "Streaming & NDI setup", href: "https://github.com/abahvictor360-sketch/vifug-lyrics/blob/main/docs/STREAMING_AND_NDI.md" },
+  { icon: HelpCircle, label: "FAQ", href: `${HELP_BASE}/index.html#faq` },
+  { icon: Mail, label: "Contact us", href: `${HELP_BASE}/contact.html` },
+];
+
+function HelpMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("click", onClick);
+    window.addEventListener("keydown", onEsc);
+    return () => {
+      window.removeEventListener("click", onClick);
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <VButton variant="ghost" size="sm" onClick={() => setOpen((v) => !v)}>
+        <HelpCircle className="h-4 w-4" /> Help
+      </VButton>
+      {open && (
+        <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-64 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-1.5 shadow-2xl">
+          {HELP_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm text-[var(--v-text)] transition-colors hover:bg-[var(--v-surface-3)]"
+            >
+              <l.icon className="h-4 w-4 shrink-0 text-[var(--v-accent)]" /> {l.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -752,6 +893,59 @@ function StatusPill({ status }: { status: string }) {
   if (status === "blank")
     return <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-300">Blank</span>;
   return <span className="rounded-full bg-[var(--v-surface-3)] px-2 py-0.5 text-[10px] font-semibold uppercase text-[var(--v-text-faint)]">Idle</span>;
+}
+
+/** Right-click menu on the Preview/Live screens — quick access to the projector. */
+function ScreenContextMenu({
+  x,
+  y,
+  projectorOpen,
+  onOpenProjection,
+  onCloseProjection,
+  onBlank,
+  onClear,
+  onClose,
+}: {
+  x: number;
+  y: number;
+  projectorOpen: boolean;
+  onOpenProjection: () => void;
+  onCloseProjection: () => void;
+  onBlank: () => void;
+  onClear: () => void;
+  onClose: () => void;
+}) {
+  // Keep the menu on-screen near the cursor even close to the window edge.
+  const MENU_W = 208;
+  const left = Math.min(x, window.innerWidth - MENU_W - 8);
+  const top = Math.min(y, window.innerHeight - 180);
+
+  const item = (icon: React.ReactNode, label: string, onClick: () => void, danger?: boolean) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+        danger ? "text-[var(--v-live)] hover:bg-[var(--v-live-soft)]" : "text-[var(--v-text)] hover:bg-[var(--v-surface-3)]"
+      }`}
+    >
+      {icon} {label}
+    </button>
+  );
+
+  return (
+    <div
+      className="fixed z-50 w-52 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-1.5 shadow-2xl"
+      style={{ left, top }}
+      onClick={(e) => e.stopPropagation()}
+      onContextMenu={(e) => { e.preventDefault(); onClose(); }}
+    >
+      {projectorOpen
+        ? item(<MonitorX className="h-4 w-4" />, "Close projection", onCloseProjection)
+        : item(<Monitor className="h-4 w-4" />, "Open projection", onOpenProjection)}
+      <div className="my-1 h-px bg-[var(--v-border)]" />
+      {item(<Square className="h-4 w-4" />, "Blank screen", onBlank)}
+      {item(<Ban className="h-4 w-4" />, "Clear", onClear, true)}
+    </div>
+  );
 }
 
 function SongRow({
@@ -937,35 +1131,14 @@ function ProjectorControls({
   desktop,
   settings,
   patchSettings,
+  projector,
 }: {
   desktop: ReturnType<typeof useDesktop>;
   settings: AppSettings | undefined;
   patchSettings: (p: Partial<AppSettings>) => void;
+  projector: ReturnType<typeof useProjector>;
 }) {
-  const [displays, setDisplays] = useState<DisplayInfo[]>([]);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!desktop) return;
-    desktop.listDisplays().then(setDisplays).catch(() => {});
-    desktop.projectorStatus().then((s) => setOpen(s.open)).catch(() => {});
-    const off = desktop.onProjectorState((s) => setOpen(s.open));
-    return off;
-  }, [desktop]);
-
-  const openProjector = async () => {
-    if (!desktop) {
-      window.open("/#/projector", "vifug-projector", "width=960,height=540");
-      setOpen(true);
-      return;
-    }
-    await desktop.openProjector({ displayId: settings?.output.displayId ?? undefined, fullscreen: true });
-    setOpen(true);
-  };
-  const closeProjector = async () => {
-    if (desktop) await desktop.closeProjector();
-    setOpen(false);
-  };
+  const { displays, open, justDetected, openProjector, closeProjector } = projector;
 
   return (
     <div className="rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-3">
@@ -973,6 +1146,11 @@ function ProjectorControls({
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">Projector</span>
         <span className={`h-2 w-2 rounded-full ${open ? "bg-[var(--v-ok)]" : "bg-[var(--v-text-faint)]"}`} />
       </div>
+      {justDetected && (
+        <p className="mb-2 flex items-center gap-1.5 rounded-md border border-[var(--v-accent)]/40 bg-[var(--v-accent-soft)] px-2 py-1.5 text-[11px] font-medium text-[var(--v-accent)]">
+          <Monitor className="h-3.5 w-3.5 shrink-0" /> New screen detected — pick it below
+        </p>
+      )}
       {desktop && displays.length > 1 && (
         <select
           value={settings?.output.displayId ?? ""}

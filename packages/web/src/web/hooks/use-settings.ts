@@ -14,6 +14,8 @@ export type ThemeOverride = {
   verticalPos?: "top" | "center" | "bottom" | null;
   /** Bible only: color of the scripture reference caption (e.g. "John 3:16"). */
   referenceColor?: string | null;
+  /** Color of the secondary/translation line; null = textColor at reduced opacity. */
+  translationColor?: string | null;
   /** Drop shadow behind the text; null = none, undefined = inherit. */
   textShadow?: { color: string; blur: number; x: number; y: number } | null;
 };

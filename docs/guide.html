@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How to use Vifug Lyrics — the complete guide</title>
+<meta name="description" content="A friendly, complete walkthrough of Vifug Lyrics: the song library, Preview → Live workflow, the offline Bible, backgrounds and themes, service plans, streaming, the stage display and phone remote, and every keyboard shortcut." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23a3e635'/%3E%3Cg fill='none' stroke='%23080a0f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' transform='translate(3.4 3.4) scale(0.72)'%3E%3Cpath d='M9 18V5l12-2v13'/%3E%3Cpath d='m9 9 12-2'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Ccircle cx='18' cy='16' r='3'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:#080a0f; --sanctuary:#0d1220; --surface:#151b2a; --raise:#1b2334;
+    --line:#232c42; --line-soft:#1a2133; --paper:#eef1f6; --dim:#9aa3b8; --faint:#5e6883;
+    --live:#a3e635; --live-2:#7cc00a; --halo:rgba(163,230,53,.30); --amber:#f4b740; --live-red:#ef4444;
+    --font-display:"Sora",system-ui,sans-serif; --font-ui:"IBM Plex Sans",system-ui,sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--ink); color:var(--paper); font-family:var(--font-ui); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a { color:var(--live); text-decoration:none; }
+  a:hover { text-decoration:underline; text-underline-offset:2px; }
+  .wrap { max-width:860px; margin:0 auto; padding:0 24px; }
+
+  header { border-bottom:1px solid var(--line-soft); position:sticky; top:0; z-index:30; background:rgba(8,10,15,.86); backdrop-filter:blur(12px); }
+  .nav { max-width:1140px; margin:0 auto; padding:0 24px; height:64px; display:flex; align-items:center; gap:28px; }
+  .brand { display:flex; align-items:center; gap:11px; font-family:var(--font-display); font-weight:700; font-size:16px; color:var(--paper); }
+  .brand-mark { width:28px; height:28px; border-radius:8px; color:var(--ink); display:grid; place-items:center; background:linear-gradient(150deg,var(--live),var(--live-2)); box-shadow:0 3px 12px var(--halo); }
+  .brand-mark svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-links { display:flex; gap:22px; font-size:13.5px; color:var(--dim); margin-left:auto; }
+  .nav-links a { color:var(--dim); }
+  .nav-links a:hover { color:var(--paper); text-decoration:none; }
+  @media (max-width:820px) { .nav-links { display:none; } }
+  .back { font-size:14px; color:var(--dim); white-space:nowrap; }
+  .back:hover { color:var(--paper); text-decoration:none; }
+
+  main { padding:60px 0 100px; }
+  .eyebrow { font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--live); display:inline-flex; align-items:center; gap:9px; }
+  .eyebrow::before { content:""; width:22px; height:1px; background:var(--live); opacity:.7; }
+  h1 { font-family:var(--font-display); font-weight:800; letter-spacing:-0.025em; font-size:clamp(32px,5vw,48px); line-height:1.06; margin:18px 0 14px; }
+  .sub { color:var(--dim); font-size:17px; max-width:640px; margin-bottom:6px; }
+
+  /* table of contents */
+  .toc { margin:32px 0 54px; display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
+  .toc a {
+    display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--line); border-radius:12px;
+    background:var(--sanctuary); color:var(--paper); font-size:13.5px; font-weight:500; transition:border-color .15s, transform .15s;
+  }
+  .toc a:hover { border-color:#33405e; transform:translateY(-2px); text-decoration:none; }
+  .toc a b { color:var(--live); font-family:var(--font-display); font-weight:700; font-size:12px; }
+  .toc-ic { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; flex:0 0 30px; background:rgba(163,230,53,.10); color:var(--live); }
+  .toc-ic svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  section.chapter { padding-top:64px; scroll-margin-top:84px; border-top:1px solid var(--line-soft); }
+  section.chapter:first-of-type { border-top:none; }
+  .chapter-head { display:flex; align-items:center; gap:14px; margin-bottom:8px; }
+  .chapter-num { font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--live); letter-spacing:.08em; }
+  h2 { font-family:var(--font-display); font-weight:700; font-size:clamp(23px,3vw,29px); letter-spacing:-0.01em; margin:0 0 14px; }
+  .lead { color:var(--dim); font-size:15.5px; max-width:640px; margin-bottom:22px; }
+
+  .callout { display:flex; gap:13px; align-items:flex-start; margin:22px 0; padding:16px 18px; border:1px solid var(--line); border-radius:14px; background:var(--sanctuary); }
+  .callout svg { flex:0 0 20px; height:20px; margin-top:2px; color:var(--live); }
+  .callout.tip svg { color:var(--amber); }
+  .callout p { font-size:14.5px; color:var(--dim); }
+  .callout b { color:var(--paper); font-weight:600; }
+
+  ol.steps { list-style:none; counter-reset:step; margin:24px 0; }
+  ol.steps > li { position:relative; counter-increment:step; padding:0 0 26px 56px; }
+  ol.steps > li::before {
+    content:counter(step); position:absolute; left:0; top:0; width:36px; height:36px; border-radius:10px;
+    display:grid; place-items:center; font-family:var(--font-display); font-weight:700; font-size:15px;
+    color:var(--ink); background:linear-gradient(150deg,var(--live),var(--live-2)); box-shadow:0 4px 14px var(--halo);
+  }
+  ol.steps > li::after { content:""; position:absolute; left:17px; top:42px; bottom:4px; width:2px; background:var(--line); }
+  ol.steps > li:last-child::after { display:none; }
+  ol.steps h3 { font-family:var(--font-display); font-weight:600; font-size:16.5px; margin-bottom:5px; }
+  ol.steps p { color:var(--dim); font-size:14.5px; }
+
+  .path { display:inline-flex; align-items:center; gap:7px; flex-wrap:wrap; padding:8px 12px; border:1px solid var(--line); border-radius:10px; background:var(--sanctuary); font-size:13.5px; margin-top:8px; }
+  .path .seg { color:var(--paper); font-weight:500; }
+  .path .sep { color:var(--faint); }
+  .path .end { color:var(--live); font-weight:600; }
+  code, .inline-code { font-family:"IBM Plex Sans",monospace; background:var(--raise); border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:13px; color:#dfe6f2; }
+
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:22px 0; }
+  @media (max-width:640px) { .grid2 { grid-template-columns:1fr; } }
+  .mini-card { border:1px solid var(--line); border-radius:14px; padding:18px; background:var(--sanctuary); }
+  .mini-card .ic { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; margin-bottom:12px; background:rgba(163,230,53,.10); color:var(--live); border:1px solid rgba(163,230,53,.22); }
+  .mini-card .ic svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .mini-card h3 { font-family:var(--font-display); font-size:15.5px; font-weight:600; margin-bottom:6px; }
+  .mini-card p { color:var(--dim); font-size:13.5px; }
+
+  /* keyboard shortcuts */
+  .kbd-table { width:100%; border-collapse:collapse; margin:20px 0; font-size:14px; }
+  .kbd-table tr { border-bottom:1px solid var(--line-soft); }
+  .kbd-table td { padding:11px 6px; color:var(--dim); }
+  .kbd-table td:first-child { width:180px; }
+  kbd {
+    display:inline-block; font-family:"IBM Plex Sans",monospace; font-size:12.5px; font-weight:600; color:var(--paper);
+    background:var(--raise); border:1px solid #33405e; border-bottom-width:2px; border-radius:6px; padding:3px 8px; margin-right:3px;
+  }
+
+  .pane-demo { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:22px 0; }
+  @media (max-width:640px) { .pane-demo { grid-template-columns:1fr; } }
+  .pane { border:1px solid var(--line); border-radius:14px; padding:18px; background:var(--sanctuary); }
+  .pane.preview { border-color:rgba(244,183,64,.28); }
+  .pane.golive { border-color:rgba(163,230,53,.32); }
+  .pane-label { display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; margin-bottom:12px; }
+  .pane.preview .pane-label { color:var(--amber); }
+  .pane.golive .pane-label { color:var(--live); }
+  .pane-label i { width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .pane p { font-size:13.5px; color:var(--dim); }
+
+  .faq { margin-top:20px; }
+  details { border:1px solid var(--line); border-radius:12px; background:var(--sanctuary); margin-bottom:10px; overflow:hidden; }
+  summary { cursor:pointer; padding:15px 18px; font-weight:600; font-size:14.5px; list-style:none; display:flex; justify-content:space-between; gap:14px; align-items:center; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--live); font-size:19px; }
+  details[open] summary::after { content:"\2013"; }
+  details .a { padding:0 18px 16px; color:var(--dim); font-size:14px; }
+
+  .cta { margin-top:64px; padding:34px; border:1px solid var(--line); border-radius:18px; background:linear-gradient(160deg,var(--surface),var(--ink)); text-align:center; }
+  .cta h2 { margin:0 0 8px; }
+  .cta p { color:var(--dim); margin-bottom:18px; font-size:15px; }
+  .btn { display:inline-flex; align-items:center; gap:9px; font-weight:700; font-size:14.5px; padding:12px 22px; border-radius:12px; background:var(--live); color:#0a0f04; }
+  .btn:hover { background:#b6f14a; text-decoration:none; box-shadow:0 10px 30px var(--halo); }
+  .btn.ghost { background:var(--raise); color:var(--paper); border:1px solid var(--line); }
+  .btn.ghost:hover { background:var(--surface); box-shadow:none; }
+  .cta-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+  footer { border-top:1px solid var(--line-soft); padding:32px 0; }
+  .foot { max-width:1140px; margin:0 auto; padding:0 24px; display:flex; flex-wrap:wrap; gap:16px; justify-content:space-between; align-items:center; color:var(--faint); font-size:13px; }
+  .foot-links { display:flex; gap:20px; }
+  .foot-links a { color:var(--faint); }
+  .foot-links a:hover { color:var(--paper); text-decoration:none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="index.html">
+      <span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><path d="m9 9 12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+      Vifug Lyrics
+    </a>
+    <div class="nav-links">
+      <a href="#quickstart">Quick start</a>
+      <a href="#library">Library</a>
+      <a href="#bible">Bible</a>
+      <a href="#shortcuts">Shortcuts</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="back" href="index.html">← Back to home</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <span class="eyebrow">The complete guide</span>
+    <h1>Running a service in Vifug Lyrics</h1>
+    <p class="sub">
+      Everything from your first launch to a full Sunday morning: the library, the Preview → Live workflow that
+      makes mistakes hard to make, the offline Bible, and every screen Vifug can light up at once. Grab a coffee —
+      by the end of this page you'll know the app better than most media teams learn it in a month.
+    </p>
+
+    <div class="toc">
+      <a href="#quickstart"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg></span><b>01</b>&nbsp; Quick start</a>
+      <a href="#library"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><b>02</b>&nbsp; The library</a>
+      <a href="#workflow"><span class="toc-ic"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><b>03</b>&nbsp; Preview → Live</a>
+      <a href="#bible"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><b>04</b>&nbsp; The Bible tab</a>
+      <a href="#look"><span class="toc-ic"><svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2Z"/></svg></span><b>05</b>&nbsp; Look & feel</a>
+      <a href="#plans"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M9 11H3v9h6v-9ZM21 6h-6v14h6V6ZM15 3H9v18h6V3Z"/></svg></span><b>06</b>&nbsp; Service plans</a>
+      <a href="#everywhere"><span class="toc-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></span><b>07</b>&nbsp; Every screen</a>
+      <a href="#shortcuts"><span class="toc-ic"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg></span><b>08</b>&nbsp; Shortcuts</a>
+    </div>
+
+    <!-- 01 QUICK START -->
+    <section class="chapter" id="quickstart">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 01</span></div>
+      <h2>Quick start — your first five minutes</h2>
+      <p class="lead">Install it, open it, and you're already looking at a working library. Nothing to configure before your first slide.</p>
+      <ol class="steps">
+        <li>
+          <h3>Install and launch</h3>
+          <p>Run the Windows installer and open Vifug Lyrics. It ships with 1,100+ songs and hymns and the full offline Bible already loaded — no downloads, no account, no internet required.</p>
+        </li>
+        <li>
+          <h3>Pick a song from the library</h3>
+          <p>Use the search box on the left to find a song, or click <b>New</b> to write one from scratch. Click a song to open it in the center panel.</p>
+        </li>
+        <li>
+          <h3>Preview a slide, then send it live</h3>
+          <p>Click a slide to load it into <b>Preview</b> on the right, check it looks right, then press <kbd>Enter</kbd> or hit <b>GO LIVE</b>. That's the whole rhythm of running a service.</p>
+        </li>
+        <li>
+          <h3>Open the projector</h3>
+          <p>In the bottom-right <b>Projector</b> panel, click <b>Open projector</b>. On the desktop app it fills your second monitor automatically; in the browser it opens a preview window.</p>
+        </li>
+      </ol>
+      <div class="callout tip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14a5 5 0 1 0-6.18 0c.86.63 1.09 1.15 1.09 2h4c0-.85.23-1.37 1.09-2Z"/></svg>
+        <p><b>Nothing goes to the projector until you say so.</b> Preview is completely private — the congregation only ever sees what you deliberately send live. That's the whole design philosophy of the app.</p>
+      </div>
+    </section>
+
+    <!-- 02 LIBRARY -->
+    <section class="chapter" id="library">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 02</span></div>
+      <h2>The library — your songs, organized</h2>
+      <p class="lead">Every song lives as structured text (verses, choruses, bridges), not a fixed slide deck — so changing your theme, font or lines-per-slide never means rebuilding anything.</p>
+      <div class="grid2">
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+          <h3>Search</h3>
+          <p>The search box filters by title, author or tag as you type — fast enough to find a song mid-transition.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <h3>Import</h3>
+          <p>Paste plain text and Vifug auto-detects verses and choruses, or import <span class="inline-code">.pro6</span>, <span class="inline-code">.pro</span>, <span class="inline-code">.txt</span> and <span class="inline-code">.docx</span> files straight from ProPresenter or a document.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg></div>
+          <h3>Edit</h3>
+          <p>Reorder sections, repeat a chorus, or add a new verse straight from the editor — changes apply live without re-importing anything.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg></div>
+          <h3>Translate</h3>
+          <p>Add a second-language line per section from the song's <b>Translate</b> panel, then enable dual-language display in Settings to show both at once, in whatever color you choose.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 WORKFLOW -->
+    <section class="chapter" id="workflow">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 03</span></div>
+      <h2>Preview → Live: the core idea</h2>
+      <p class="lead">This one habit is what separates a calm, professional media booth from a stressed one. Two stages, one output.</p>
+      <div class="pane-demo">
+        <div class="pane preview">
+          <span class="pane-label"><i></i> Preview — only you see this</span>
+          <p>Click any slide, or press the arrow keys, to load it here. Fix a typo, double-check a Bible reference — the congregation sees none of it.</p>
+        </div>
+        <div class="pane golive">
+          <span class="pane-label"><i></i> Live — on every screen</span>
+          <p>Press <kbd>Enter</kbd> or click <b>GO LIVE</b> and Preview becomes Live everywhere at once: projector, stage display, OBS overlay and NDI receivers, perfectly in sync.</p>
+        </div>
+      </div>
+      <p class="lead">Two more transport controls are worth knowing:</p>
+      <ul style="margin-left:20px;color:var(--dim);font-size:14.5px">
+        <li style="margin-bottom:6px"><kbd>Space</kbd> — <b>Blank</b> the output to black without losing your place, for prayer or a transition.</li>
+        <li><kbd>Esc</kbd> — <b>Clear</b> the live slide entirely.</li>
+      </ul>
+    </section>
+
+    <!-- 04 BIBLE -->
+    <section class="chapter" id="bible">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 04</span></div>
+      <h2>The Bible tab</h2>
+      <p class="lead">Switch from the Lyrics tab to Bible at the top of the operator window. Everything below is fully offline.</p>
+      <ol class="steps">
+        <li>
+          <h3>Pick a version</h3>
+          <p>KJV, WEB, ASV and BBE are always available. Turn on Yoruba, Hausa or Igbo from <span class="inline-code">Settings → Bible</span> and they'll show up in the version picker too.</p>
+        </li>
+        <li>
+          <h3>Jump straight to a reference</h3>
+          <p>Type something like <span class="inline-code">John 3:16</span> or even <span class="inline-code">john 3 16</span> in the search box — Vifug parses loose formats and jumps straight to the verse, scrolled into view.</p>
+        </li>
+        <li>
+          <h3>Search by keyword</h3>
+          <p>Type any phrase instead of a reference and Vifug searches the full text of the current version and lists every match.</p>
+        </li>
+        <li>
+          <h3>Preview, then send</h3>
+          <p>Same rhythm as songs: click a verse to preview it, <kbd>Enter</kbd> to send it live. Pressing <kbd>Enter</kbd> again on a reference you've already previewed sends it straight live.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 05 LOOK & FEEL -->
+    <section class="chapter" id="look">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 05</span></div>
+      <h2>Look & feel — make it yours</h2>
+      <p class="lead">Open <b>Settings</b> from the top bar for a side-nav of everything visual, split into Lyrics, Bible and General so scripture and songs can look completely different if you want.</p>
+      <div class="grid2">
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <h3>Theme, font & color</h3>
+          <p>Pick a base theme, then override font family, size, weight, alignment and color independently for lyrics, Bible text, and even the translation line.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
+          <h3>Backgrounds</h3>
+          <p>Use an image, a looping video, or a solid color behind your lyrics. Upload your own or paste a URL — it flows through to the projector, stream overlay and stage display automatically.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="13" x2="22" y2="13"/></svg></div>
+          <h3>Fullscreen or lower third</h3>
+          <p>Show text fullscreen, or as a lower third pinned to the top, middle or bottom — with an optional solid backdrop bar behind the text band.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+          <h3>Lines per slide</h3>
+          <p>Vifug re-paginates on the fly, so changing this from 2 to 4 lines reshuffles every slide in the song instantly — nothing to rebuild.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 SERVICE PLANS -->
+    <section class="chapter" id="plans">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 06</span></div>
+      <h2>Service plans — line up the whole morning</h2>
+      <p class="lead">The <b>Plans</b> tab lets you build a run-of-show ahead of time: songs, scripture references, section headers and blanks, in the order you'll actually use them.</p>
+      <ol class="steps">
+        <li>
+          <h3>Create a plan</h3>
+          <p>Name it (e.g. "Sunday 9am") and optionally set a service date.</p>
+        </li>
+        <li>
+          <h3>Add items</h3>
+          <p>Add songs, scripture references, header labels for sections like "Announcements", or blank spacers — drag to reorder.</p>
+        </li>
+        <li>
+          <h3>Cue on the day</h3>
+          <p>Click <b>Cue</b> on any item during the service and Vifug switches to the right tab and loads it, ready for Preview → Live.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 07 EVERY SCREEN -->
+    <section class="chapter" id="everywhere">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 07</span></div>
+      <h2>Every screen, always in sync</h2>
+      <p class="lead">One live state, rendered everywhere it needs to be.</p>
+      <div class="grid2">
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <h3>Projector</h3>
+          <p>Right-click the Preview or Live screen for a quick menu, or use the Projector panel — Vifug detects newly connected monitors live and lets you pick which one to use, no restart needed.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></div>
+          <h3>Stage display & remote</h3>
+          <p>Open the stage URL on a screen facing the worship team for current + next slide and your service notes, and the remote URL on a phone to advance slides while you walk the stage.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></div>
+          <h3>OBS & native NDI</h3>
+          <p>Copy the stream URL into OBS or vMix as a transparent Browser source, or publish a real NDI source straight from the desktop app — no capture card needed.</p>
+        </div>
+        <div class="mini-card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></div>
+          <h3>AI auto-follow</h3>
+          <p>Turn this on in <span class="inline-code">Settings → General</span> and Vifug listens to the room and advances slides as the words are sung — your manual next/prev always wins. Needs a free <a href="deepgram-api-key.html">Deepgram API key</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 SHORTCUTS -->
+    <section class="chapter" id="shortcuts">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 08</span></div>
+      <h2>Keyboard shortcuts</h2>
+      <p class="lead">Learn these four and you'll rarely touch the mouse during a service.</p>
+      <table class="kbd-table">
+        <tr><td><kbd>→</kbd> <kbd>↓</kbd> <kbd>Page Down</kbd></td><td>Preview the next slide</td></tr>
+        <tr><td><kbd>←</kbd> <kbd>↑</kbd> <kbd>Page Up</kbd></td><td>Preview the previous slide</td></tr>
+        <tr><td><kbd>Enter</kbd></td><td>Send the previewed slide live</td></tr>
+        <tr><td><kbd>Space</kbd></td><td>Blank the live output to black</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Clear the live slide</td></tr>
+        <tr><td><kbd>Esc</kbd> <i style="font-style:normal;color:var(--faint)">(on the projector)</i></td><td>Close the projector window</td></tr>
+      </table>
+      <div class="callout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <p>Shortcuts are disabled automatically while a text field, dropdown or modal is focused, so you can safely type song titles without triggering Blank or Clear.</p>
+      </div>
+    </section>
+
+    <div class="faq" id="faq">
+      <h2 style="margin-top:56px">A few things people ask early on</h2>
+      <details open>
+        <summary>Do I need internet for any of this?</summary>
+        <div class="a">No. Songs, all seven Bible versions, themes and settings live in a local database on your machine. The only feature that needs a connection is AI auto-follow, because its speech recognition runs on Deepgram's servers.</div>
+      </details>
+      <details>
+        <summary>Can lyrics and Bible verses look different from each other?</summary>
+        <div class="a">Yes — Settings → Bible has its own "scripture look" override for font, color, alignment and display mode, layered on top of your lyric theme. Leave it off and scripture just inherits the lyric look.</div>
+      </details>
+      <details>
+        <summary>What if I plug in a projector mid-service?</summary>
+        <div class="a">Vifug watches for display changes live. A new screen shows up in the Projector panel's dropdown within a second or two — no restart required.</div>
+      </details>
+      <details>
+        <summary>Where do I go for setup help on streaming or AI auto-follow?</summary>
+        <div class="a">See the <a href="https://github.com/abahvictor360-sketch/vifug-lyrics/blob/main/docs/STREAMING_AND_NDI.md" target="_blank" rel="noreferrer">Streaming &amp; NDI guide</a> and the <a href="deepgram-api-key.html">Deepgram API key guide</a> — both linked from the Help menu inside the app too.</div>
+      </details>
+    </div>
+
+    <div class="cta">
+      <h2>Ready to run your first service?</h2>
+      <p>The library and Bible are already loaded — open the app and try it.</p>
+      <div class="cta-row">
+        <a class="btn" href="index.html#download">Download Vifug Lyrics →</a>
+        <a class="btn ghost" href="contact.html">Have a question? Contact us</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="foot">
+    <span>© <span id="year"></span> Vifug Lyrics · Free worship presentation software</span>
+    <nav class="foot-links">
+      <a href="index.html">Home</a>
+      <a href="guide.html">Guide</a>
+      <a href="contact.html">Contact</a>
+      <a href="contact.html">Support us</a>
+      <a href="https://github.com/abahvictor360-sketch/vifug-lyrics" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+  </div>
+</footer>
+<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>
