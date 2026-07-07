@@ -94,23 +94,31 @@ export function BiblePanel({
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [searching, setSearching] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Verse a typed reference points at (e.g. "john 3 16" → 16). We scroll to it
+  // and let Enter preview→send it without the operator hunting for the verse.
+  const [targetVerse, setTargetVerse] = useState<number | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (!version || !manifest.data || query.trim().length < 2) {
       setHits(null);
       setSearching(false);
+      setTargetVerse(null);
       return;
     }
-    // Instant jump when the query is a reference like "John 3:16".
+    // Instant jump when the query is a reference like "John 3:16" / "john 3 16".
     const ref = parseReference(query, manifest.data);
     if (ref && version.books.includes(ref.code)) {
       setHits(null);
       setSearching(false);
       setCode(ref.code);
       setChapter(ref.chapter);
+      // Remember the verse so we scroll to it (and Enter can preview/send it).
+      setTargetVerse(ref.verse);
       return;
     }
+    setTargetVerse(null);
     setSearching(true);
     searchTimer.current = setTimeout(async () => {
       const res = await searchVersion(version, manifest.data!, query);
@@ -158,6 +166,29 @@ export function BiblePanel({
     onSlidesChange(activeSlides);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSlides]);
+
+  // Once the referenced chapter is loaded, scroll its target verse into view so
+  // the operator never has to hunt for it.
+  useEffect(() => {
+    if (hits || targetVerse == null || !verses.length) return;
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-verse="${targetVerse}"]`);
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [verses, targetVerse, hits]);
+
+  // Enter in the search box drives Preview → Live for a typed reference:
+  //   1st Enter → preview the referenced verse · 2nd Enter → send it live.
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter" || !version || !manifest.data) return;
+    const ref = parseReference(query, manifest.data);
+    if (!ref || !version.books.includes(ref.code) || hits) return;
+    e.preventDefault();
+    // The reference effect has already navigated to code/chapter, so the verse
+    // list is (or will be) this chapter. Target index = verse number - 1.
+    const idx = Math.min(Math.max(ref.verse - 1, 0), Math.max(activeSlides.length - 1, 0));
+    const targetSlideId = activeSlides[idx]?.slideId ?? null;
+    if (targetSlideId && previewId === targetSlideId) onSendLive(idx);
+    else onPreview(idx);
+  };
 
   if (manifest.isLoading) {
     return (
@@ -218,14 +249,15 @@ export function BiblePanel({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search text or jump to reference (John 3:16 or john 3 16)…"
+            onKeyDown={onSearchKeyDown}
+            placeholder="Reference (john 3 16) — Enter to preview, Enter again to go live"
             className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] py-2 pl-8 pr-8 text-sm outline-none focus:border-[var(--v-accent)]"
           />
         </div>
       </div>
 
       {/* Verse / result list */}
-      <div className="v-scroll min-h-0 flex-1 overflow-y-auto p-4">
+      <div ref={listRef} className="v-scroll min-h-0 flex-1 overflow-y-auto p-4">
         <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[var(--v-text-dim)]">
           <BookOpen className="h-4 w-4" />
           {hits ? `${hits.length} result${hits.length === 1 ? "" : "s"}` : `${name} ${chapter}`}
@@ -238,15 +270,19 @@ export function BiblePanel({
             {activeSlides.map((s, i) => {
               const isLive = liveId === s.slideId;
               const isPreview = previewId === s.slideId;
+              const isTarget = !hits && targetVerse === i + 1;
               return (
                 <li key={s.slideId}>
                   <div
+                    data-verse={hits ? undefined : i + 1}
                     className={`group flex items-start gap-2 rounded-md border px-3 py-2 text-left transition-colors ${
                       isLive
                         ? "border-[var(--v-live)] bg-[var(--v-live-soft)]"
                         : isPreview
                           ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)]"
-                          : "border-transparent hover:bg-[var(--v-surface-3)]"
+                          : isTarget
+                            ? "border-[var(--v-accent)]/50 bg-[var(--v-accent-soft)]/50"
+                            : "border-transparent hover:bg-[var(--v-surface-3)]"
                     }`}
                   >
                     <button
