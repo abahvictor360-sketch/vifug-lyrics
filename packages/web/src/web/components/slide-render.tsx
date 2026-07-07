@@ -20,13 +20,20 @@ function longestLineEm(lines: string[], font: string): number {
   return max / 100;
 }
 
+// Combined text effects: the outline glow and the optional drop shadow are both
+// CSS text-shadows, layered into one comma-separated value.
 function outlineStyle(t: LiveTheme): React.CSSProperties {
-  if (!t.textOutline || !t.textOutline.width) return {};
-  const w = t.textOutline.width;
-  const c = t.textOutline.color;
-  return {
-    textShadow: `0 0 ${w}px ${c}, ${w}px ${w}px ${w}px ${c}, -${w}px -${w}px ${w}px ${c}`,
-  };
+  const parts: string[] = [];
+  if (t.textOutline && t.textOutline.width) {
+    const w = t.textOutline.width;
+    const c = t.textOutline.color;
+    parts.push(`0 0 ${w}px ${c}`, `${w}px ${w}px ${w}px ${c}`, `-${w}px -${w}px ${w}px ${c}`);
+  }
+  if (t.textShadow) {
+    const { x, y, blur, color } = t.textShadow;
+    parts.push(`${x}px ${y}px ${blur}px ${color}`);
+  }
+  return parts.length ? { textShadow: parts.join(", ") } : {};
 }
 
 export function SlideRender({

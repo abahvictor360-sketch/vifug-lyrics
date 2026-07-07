@@ -197,13 +197,16 @@ export function SettingsPage({
 
 /* ---------------- shared bits ---------------- */
 
+// Grouped panel styled after classic presentation-software settings: a titled
+// header bar sitting on top of a bordered content panel.
 function Group({ title, icon: Icon, children }: { title: string; icon?: typeof Music4; children: React.ReactNode }) {
   return (
-    <section className="mb-6">
-      <h3 className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
-        {Icon && <Icon className="h-3.5 w-3.5" />} {title}
-      </h3>
-      <div className="rounded-xl border border-[var(--v-border)] bg-[var(--v-surface-2)] p-4">{children}</div>
+    <section className="mb-5 overflow-hidden rounded-xl border border-[var(--v-border)] bg-[var(--v-surface-2)] shadow-sm">
+      <div className="flex items-center gap-2 border-b border-[var(--v-border)] bg-[var(--v-surface-3)] px-4 py-2.5">
+        {Icon && <Icon className="h-4 w-4 text-[var(--v-accent)]" />}
+        <h3 className="text-sm font-semibold tracking-tight text-[var(--v-accent)]">{title}</h3>
+      </div>
+      <div className="p-4">{children}</div>
     </section>
   );
 }
@@ -374,6 +377,61 @@ function OverrideEditor({
           fallback="#0a0a0c"
           onChange={(v) => set({ bgColor: v })}
         />
+      </div>
+
+      {/* Text shadow — a soft drop shadow for legibility over busy backgrounds */}
+      <div className="border-t border-[var(--v-border)] pt-4">
+        <label className="flex items-center justify-between">
+          <span className="text-sm">Text shadow</span>
+          <Toggle
+            checked={!!o.textShadow}
+            onChange={(on) => set({ textShadow: on ? { color: "#000000", blur: 6, x: 2, y: 2 } : null })}
+          />
+        </label>
+        <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+          A soft drop shadow behind the text — helps readability over photo / video backgrounds.
+        </p>
+        {o.textShadow && (
+          <div className="mt-3 space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <label className="block">
+                <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Shadow color</span>
+                <input
+                  type="color"
+                  value={o.textShadow.color}
+                  onChange={(e) => set({ textShadow: { ...o.textShadow!, color: e.target.value } })}
+                  className="h-9 w-full cursor-pointer rounded-md border border-[var(--v-border)] bg-transparent"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Blur · {o.textShadow.blur}px</span>
+                <input
+                  type="range" min={0} max={40} value={o.textShadow.blur}
+                  onChange={(e) => set({ textShadow: { ...o.textShadow!, blur: Number(e.target.value) } })}
+                  className="mt-2.5 w-full accent-[var(--v-accent)]"
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <label className="block">
+                <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Offset X · {o.textShadow.x}px</span>
+                <input
+                  type="range" min={-30} max={30} value={o.textShadow.x}
+                  onChange={(e) => set({ textShadow: { ...o.textShadow!, x: Number(e.target.value) } })}
+                  className="mt-2.5 w-full accent-[var(--v-accent)]"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Offset Y · {o.textShadow.y}px</span>
+                <input
+                  type="range" min={-30} max={30} value={o.textShadow.y}
+                  onChange={(e) => set({ textShadow: { ...o.textShadow!, y: Number(e.target.value) } })}
+                  className="mt-2.5 w-full accent-[var(--v-accent)]"
+                />
+              </label>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

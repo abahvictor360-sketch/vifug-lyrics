@@ -26,6 +26,8 @@ export type LiveTheme = {
   transition: string;
   transitionMs: number;
   textOutline: { color: string; width: number } | null;
+  /** Drop shadow behind the text for readability over busy backgrounds. */
+  textShadow?: { color: string; blur: number; x: number; y: number } | null;
   background: LiveBackground;
   /** Show the caption (scripture reference / section label) on the output. */
   showCaption?: boolean;
@@ -60,6 +62,7 @@ export const DEFAULT_THEME: LiveTheme = {
   transition: "fade",
   transitionMs: 300,
   textOutline: { color: "rgba(0,0,0,0.6)", width: 2 },
+  textShadow: null,
   background: null,
   showCaption: false,
   captionColor: null,

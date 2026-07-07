@@ -56,6 +56,11 @@ function themeToLive(t: Record<string, unknown> | undefined): LiveTheme {
         ? JSON.parse(t.textOutline as string)
         : t.textOutline
       : DEFAULT_THEME.textOutline) as LiveTheme["textOutline"],
+    textShadow: (t.textShadow
+      ? typeof t.textShadow === "string"
+        ? JSON.parse(t.textShadow as string)
+        : t.textShadow
+      : DEFAULT_THEME.textShadow) as LiveTheme["textShadow"],
     background: DEFAULT_THEME.background,
   };
 }
@@ -77,6 +82,7 @@ function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): Li
     displayMode: o.displayMode ?? base.displayMode,
     verticalPos: o.verticalPos ?? base.verticalPos,
     captionColor: o.referenceColor ?? base.captionColor ?? null,
+    textShadow: o.textShadow === undefined ? base.textShadow : o.textShadow,
   };
 }
 
