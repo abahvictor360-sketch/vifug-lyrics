@@ -75,12 +75,16 @@ ipcMain.handle("displays:list", () => serializeDisplays());
 
 // Live display detection — a monitor plugged/unplugged mid-service should
 // show up (or drop out) in the Projector picker without an app restart.
-const broadcastDisplays = () => {
-  win?.webContents.send("displays:changed", serializeDisplays());
-};
-screen.on("display-added", broadcastDisplays);
-screen.on("display-removed", broadcastDisplays);
-screen.on("display-metrics-changed", broadcastDisplays);
+// Registered from app.whenReady() below: the `screen` module throws if
+// touched before Electron's 'ready' event fires.
+function watchDisplays() {
+  const broadcastDisplays = () => {
+    win?.webContents.send("displays:changed", serializeDisplays());
+  };
+  screen.on("display-added", broadcastDisplays);
+  screen.on("display-removed", broadcastDisplays);
+  screen.on("display-metrics-changed", broadcastDisplays);
+}
 
 ipcMain.handle("projector:open", (_e, opts: { displayId?: number; fullscreen?: boolean }) => {
   const displays = screen.getAllDisplays();
@@ -237,6 +241,7 @@ app.on("activate", () => {
 });
 
 app.whenReady().then(async () => {
+  watchDisplays();
   await ensureProductionServer();
   createWindow();
 });
