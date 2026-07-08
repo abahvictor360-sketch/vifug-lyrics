@@ -24,6 +24,45 @@ import {
 
 const nowIso = () => new Date().toISOString();
 
+/**
+ * Built-in themes guaranteed to exist (inserted lazily by GET /themes).
+ * Matched by name — renaming one in the DB effectively forks it.
+ */
+const BUILTIN_THEMES: Omit<typeof schema.themes.$inferInsert, "id">[] = [
+  {
+    name: "Navy Blue",
+    fontSize: null,
+    fontWeight: 600,
+    textColor: "#FFFFFF",
+    textAlign: "center",
+    textOutline: JSON.stringify({ color: "rgba(0,0,0,0.6)", width: 2 }),
+    bgColor: "#0b1f3f",
+    overlayScrim: 0,
+    displayMode: "fullscreen",
+    maxLines: 2,
+    verticalPos: "center",
+    safeMargin: 8,
+    transition: "fade",
+    transitionMs: 300,
+  },
+  {
+    name: "Emerald Green",
+    fontSize: null,
+    fontWeight: 600,
+    textColor: "#FFFFFF",
+    textAlign: "center",
+    textOutline: JSON.stringify({ color: "rgba(0,0,0,0.6)", width: 2 }),
+    bgColor: "#064e3b",
+    overlayScrim: 0,
+    displayMode: "fullscreen",
+    maxLines: 2,
+    verticalPos: "center",
+    safeMargin: 8,
+    transition: "fade",
+    transitionMs: 300,
+  },
+];
+
 const app = new Hono()
   .basePath("api")
   .use(cors({ origin: (origin) => origin ?? "*", credentials: true, exposeHeaders: ["set-auth-token"] }))
@@ -241,7 +280,14 @@ const app = new Hono()
 
   // ---------- THEMES ----------
   .get("/themes", async (c) => {
-    const rows = await db.select().from(schema.themes);
+    let rows = await db.select().from(schema.themes);
+    // Self-heal the built-in palette themes so existing installs (whose DB was
+    // seeded before these were added) pick them up without a migration.
+    const missing = BUILTIN_THEMES.filter((b) => !rows.some((r) => r.name === b.name));
+    if (missing.length) {
+      for (const t of missing) await db.insert(schema.themes).values({ ...t, id: uuid() });
+      rows = await db.select().from(schema.themes);
+    }
     return c.json({ themes: rows }, 200);
   })
   .post("/themes", async (c) => {

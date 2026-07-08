@@ -242,11 +242,26 @@ export default function OperatorPage() {
   // Bible slides are lifted up from the BiblePanel (current chapter or search).
   const [bibleSlides, setBibleSlides] = useState<StageSlide[]>([]);
 
+  // Scripture-only background: undefined = share the lyric background,
+  // null = explicitly plain, media id = that background.
+  const bibleBackground = useMemo<LiveBackground>(() => {
+    const id = settings?.bibleBackgroundId;
+    if (!id) return null;
+    const m = media.data?.find((x) => x.id === id);
+    if (!m) return null;
+    const fit = m.fit === "contain" || m.fit === "fill" ? m.fit : "cover";
+    return { type: m.type, url: m.url, fit, loop: !!m.loop };
+  }, [settings?.bibleBackgroundId, media.data]);
+
   // Bible theme = active lyric theme with per-display Bible overrides merged in.
   // Bible slides always show the scripture reference caption on the output.
   const bibleTheme = useMemo<LiveTheme>(
-    () => ({ ...mergeOverride(activeTheme, settings?.bibleTheme), showCaption: true }),
-    [activeTheme, settings?.bibleTheme],
+    () => ({
+      ...mergeOverride(activeTheme, settings?.bibleTheme),
+      ...(settings?.bibleBackgroundId !== undefined ? { background: bibleBackground } : {}),
+      showCaption: true,
+    }),
+    [activeTheme, settings?.bibleTheme, settings?.bibleBackgroundId, bibleBackground],
   );
 
   const stageSlides = mode === "bible" ? bibleSlides : lyricStageSlides;

@@ -4,6 +4,7 @@ import {
   Trash2, Film, Palette, Link2, Monitor, Ear, Type, LayoutList, Languages,
 } from "lucide-react";
 import { VButton } from "./bits";
+import { FontPicker } from "./font-picker";
 import { SlideRender } from "./slide-render";
 import type { AppSettings, ThemeOverride } from "../hooks/use-settings";
 import { useMedia, useAddMediaUrl, useDeleteMedia, useUploadMedia, type MediaItem } from "../hooks/use-media";
@@ -25,18 +26,6 @@ const SECTIONS: { id: SectionId; label: string; icon: typeof Music4; hint: strin
   { id: "lyrics", label: "Lyrics", icon: Music4, hint: "Theme, background & fonts" },
   { id: "bible", label: "Bible", icon: BookOpen, hint: "Versions & scripture look" },
   { id: "general", label: "General", icon: Settings2, hint: "Output & app behavior" },
-];
-
-export const FONT_OPTIONS: { label: string; value: string }[] = [
-  { label: "Archivo (default)", value: "" },
-  { label: "Sora", value: '"Sora", system-ui, sans-serif' },
-  { label: "IBM Plex Sans", value: '"IBM Plex Sans", system-ui, sans-serif' },
-  { label: "Georgia", value: 'Georgia, "Times New Roman", serif' },
-  { label: "Times New Roman", value: '"Times New Roman", Times, serif' },
-  { label: "Arial", value: "Arial, Helvetica, sans-serif" },
-  { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
-  { label: "Impact", value: 'Impact, "Arial Black", sans-serif' },
-  { label: "Courier New", value: '"Courier New", Courier, monospace' },
 ];
 
 /** Languages offered for AI auto-follow transcription (Deepgram codes). */
@@ -305,17 +294,7 @@ function OverrideEditor({
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
           <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Font</span>
-          <select
-            value={o.fontFamily ?? ""}
-            onChange={(e) => set({ fontFamily: e.target.value || null })}
-            className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
-          >
-            {FONT_OPTIONS.map((f) => (
-              <option key={f.label} value={f.value} style={{ fontFamily: f.value || undefined }}>
-                {f.label}
-              </option>
-            ))}
-          </select>
+          <FontPicker value={o.fontFamily ?? null} onChange={(v) => set({ fontFamily: v })} />
         </label>
         <label className="block">
           <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Font size (px)</span>
@@ -669,6 +648,27 @@ function BibleSection({
               value={bt}
               onChange={(next) => patchSettings({ bibleTheme: next })}
               inheritLabel="Same as lyrics"
+            />
+          </div>
+        )}
+      </Group>
+
+      <Group title="Scripture background" icon={ImageIcon}>
+        <label className="flex items-center justify-between">
+          <span className="text-sm">Use a different background for Bible verses</span>
+          <Toggle
+            checked={settings?.bibleBackgroundId !== undefined}
+            onChange={(v) => patchSettings({ bibleBackgroundId: v ? null : undefined })}
+          />
+        </label>
+        <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+          Off = scripture shares the lyric background. On = pick a scripture-only background below ("None" = plain theme color).
+        </p>
+        {settings?.bibleBackgroundId !== undefined && (
+          <div className="mt-4 border-t border-[var(--v-border)] pt-4">
+            <BackgroundsEditor
+              activeId={settings?.bibleBackgroundId ?? null}
+              onSelect={(id) => patchSettings({ bibleBackgroundId: id })}
             />
           </div>
         )}

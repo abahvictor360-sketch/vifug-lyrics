@@ -68,6 +68,11 @@ export type AppSettings = {
    * theme. Any field left null/undefined inherits the lyric look.
    */
   bibleTheme?: ThemeOverride | null;
+  /**
+   * Scripture-only background. undefined = same background as lyrics,
+   * null = explicitly plain (theme color only), string = a media id.
+   */
+  bibleBackgroundId?: string | null;
   output: { displayId: number | null; resolution: string };
   ui: { language: string };
 };
