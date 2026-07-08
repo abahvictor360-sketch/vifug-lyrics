@@ -808,8 +808,11 @@ function TopBar({
   liveStatus: string;
   onSettings: () => void;
 }) {
+  // z-40: v-glass's backdrop-filter makes the header a stacking context, so
+  // the Help dropdown's own z-index can't escape it — the header itself must
+  // outrank the preview/live panels below.
   return (
-    <header className="v-glass flex h-12 shrink-0 items-center justify-between border-b px-4">
+    <header className="v-glass relative z-40 flex h-12 shrink-0 items-center justify-between border-b px-4">
       <div className="flex items-center gap-2">
         <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-[var(--v-accent)] to-[var(--v-accent-2)] text-black shadow-[0_2px_10px_var(--v-accent-glow)]">
           <Music4 className="h-4 w-4" />
