@@ -3,6 +3,10 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.vifug.lyrics",
   "asar": true,
+  // Explicit so electron-builder never has to sniff node_modules for the
+  // version — bun hoists electron to the workspace root, where detection
+  // fails ("Cannot compute electron version"). Keep in sync with bun.lock.
+  "electronVersion": "30.5.1",
   // The native NDI addon is N-API (ABI-stable) and is compiled explicitly in
   // CI, so electron-builder must NOT try to rebuild native deps against Electron
   // headers (that would need the NDI SDK at rebuild time and can fail). libsql
