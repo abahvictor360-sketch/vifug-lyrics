@@ -213,9 +213,19 @@ export function BiblePanel({
             onChange={(e) => setVersionId(e.target.value)}
             className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-2.5 py-1.5 text-sm outline-none focus:border-[var(--v-accent)]"
           >
-            {versions.map((v) => (
-              <option key={v.id} value={v.id}>{v.label}</option>
-            ))}
+            {/* ~30 English versions — group by language so the list stays scannable */}
+            <optgroup label="English">
+              {versions.filter((v) => v.lang === "en").map((v) => (
+                <option key={v.id} value={v.id}>{v.label}</option>
+              ))}
+            </optgroup>
+            {versions.some((v) => v.lang !== "en") && (
+              <optgroup label="Other languages">
+                {versions.filter((v) => v.lang !== "en").map((v) => (
+                  <option key={v.id} value={v.id}>{v.label}</option>
+                ))}
+              </optgroup>
+            )}
           </select>
 
           <select
