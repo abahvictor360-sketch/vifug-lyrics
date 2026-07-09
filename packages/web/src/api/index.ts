@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import { v4 as uuid } from "uuid";
+import fsp from "node:fs/promises";
+import nodePath from "node:path";
 import { eq, asc, desc } from "drizzle-orm";
 import mammoth from "mammoth";
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
@@ -313,6 +315,44 @@ const app = new Hono()
     );
     return c.json({ media: withUrls }, 200);
   })
+  // Direct upload to LOCAL storage — the offline path used by the desktop app
+  // (and any deployment without S3 creds). Files land in MEDIA_DIR (defaults
+  // to ./media next to the process cwd; the Electron server points it at
+  // userData/media) and are served back from /media/file/:name below.
+  .post("/media/upload", async (c) => {
+    const body = await c.req.parseBody();
+    const file = body.file;
+    if (!(file instanceof File)) return c.json({ error: "no file" }, 400);
+    const safe = (file.name || "file").replace(/[^a-zA-Z0-9._-]/g, "_");
+    const name = `${Date.now()}-${uuid().slice(0, 8)}-${safe}`;
+    await fsp.mkdir(mediaDir(), { recursive: true });
+    await fsp.writeFile(nodePath.join(mediaDir(), name), new Uint8Array(await file.arrayBuffer()));
+    const type = (file.type || "").startsWith("video") ? "video" : "image";
+    const id = uuid();
+    await db.insert(schema.media).values({ id, type, uri: `local:${name}`, loop: 1, fit: "cover" });
+    const [row] = await db.select().from(schema.media).where(eq(schema.media.id, id));
+    return c.json({ media: { ...row, url: await resolveMediaUrl(row!.uri) } }, 201);
+  })
+  // Serve a locally stored background. Same-origin, so the operator preview,
+  // projector window and stream overlay can all load it.
+  .get("/media/file/:name", async (c) => {
+    const name = nodePath.basename(c.req.param("name")); // no traversal
+    try {
+      const data = await fsp.readFile(nodePath.join(mediaDir(), name));
+      const ext = nodePath.extname(name).toLowerCase();
+      const mime: Record<string, string> = {
+        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif",
+        ".webp": "image/webp", ".svg": "image/svg+xml", ".bmp": "image/bmp", ".avif": "image/avif",
+        ".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime", ".m4v": "video/mp4",
+      };
+      return c.body(new Uint8Array(data).buffer as ArrayBuffer, 200, {
+        "Content-Type": mime[ext] ?? "application/octet-stream",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      });
+    } catch {
+      return c.json({ error: "not found" }, 404);
+    }
+  })
   // Presign an upload target on Tigris/S3. Client PUTs the file directly.
   .post("/media/presign", async (c) => {
     const { filename, contentType } = await c.req.json<{ filename: string; contentType: string }>();
@@ -607,9 +647,16 @@ const app = new Hono()
  * - external http(s) URL → returned as-is
  * - anything else is treated as an S3 key → presigned GET URL (7-day expiry)
  */
+/** Directory for locally stored background media (offline / desktop mode). */
+function mediaDir(): string {
+  return process.env.MEDIA_DIR || nodePath.join(process.cwd(), "media");
+}
+
 async function resolveMediaUrl(uri: string): Promise<string> {
   if (!uri) return "";
   if (uri.startsWith("#") || uri.startsWith("http://") || uri.startsWith("https://")) return uri;
+  // Locally stored file → same-origin API route (works in every window).
+  if (uri.startsWith("local:")) return `/api/media/file/${encodeURIComponent(uri.slice(6))}`;
   try {
     return await getSignedUrl(s3, new GetObjectCommand({ Bucket: S3_BUCKET, Key: uri }), {
       expiresIn: 60 * 60 * 24 * 7,

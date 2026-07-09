@@ -22,17 +22,32 @@ export function useMedia() {
   });
 }
 
-/** Upload a file to Tigris/S3 via presigned URL, then register a media record. */
+/**
+ * Upload a background file. Tries Tigris/S3 via presigned URL first (hosted
+ * deployments); when S3 isn't configured/reachable — the offline desktop app —
+ * falls back to the server's local storage endpoint.
+ */
 export async function uploadMediaFile(file: File): Promise<MediaItem> {
-  const presign = await api.media.presign.$post({
-    json: { filename: file.name, contentType: file.type },
-  });
-  const { url, key } = await presign.json();
-  await fetch(url, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-  const type = file.type.startsWith("video") ? "video" : "image";
-  const res = await api.media.$post({ json: { type, uri: key, fit: "cover", loop: true } });
-  const data = await res.json();
-  return data.media as MediaItem;
+  try {
+    const presign = await api.media.presign.$post({
+      json: { filename: file.name, contentType: file.type },
+    });
+    if (!presign.ok) throw new Error("presign unavailable");
+    const { url, key } = await presign.json();
+    const put = await fetch(url, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+    if (!put.ok) throw new Error("s3 upload failed");
+    const type = file.type.startsWith("video") ? "video" : "image";
+    const res = await api.media.$post({ json: { type, uri: key, fit: "cover", loop: true } });
+    const data = await res.json();
+    return data.media as MediaItem;
+  } catch {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/media/upload", { method: "POST", body: form });
+    if (!res.ok) throw new Error(`upload failed (${res.status})`);
+    const data = await res.json();
+    return data.media as MediaItem;
+  }
 }
 
 export function useAddMediaUrl() {

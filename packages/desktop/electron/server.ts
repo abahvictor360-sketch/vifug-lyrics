@@ -31,6 +31,9 @@ const MIME: Record<string, string> = {
 export async function startEmbeddedServer(webDist: string, dbFile: string): Promise<number> {
   // Must be set before the API (and its db client) is imported.
   process.env.DATABASE_URL = "file:" + dbFile.replace(/\\/g, "/");
+  // Uploaded backgrounds live beside the database (userData/media) — the API
+  // stores files there and serves them from /api/media/file/:name.
+  process.env.MEDIA_DIR = path.join(path.dirname(dbFile), "media");
   const { default: api } = await import("../../web/src/api");
   const { serve } = await import("@hono/node-server");
 

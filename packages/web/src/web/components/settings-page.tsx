@@ -613,7 +613,7 @@ function BibleSection({
 
       <Group title="Reference & verse colors" icon={Palette}>
         <p className="mb-3 text-[11px] text-[var(--v-text-faint)]">
-          The scripture reference (e.g. "John 3:16") is shown under the verse on the projector and stream.
+          The scripture reference (e.g. "John 3:16") is shown above the verse on the projector and stream.
         </p>
         <div className="grid grid-cols-2 gap-4">
           <ColorField

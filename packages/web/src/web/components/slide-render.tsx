@@ -73,24 +73,33 @@ export function SlideRender({
   if (t.fontSize) {
     fontSize = scale ? `${t.fontSize * 0.28}cqw` : `${t.fontSize}px`;
   } else if (!isLowerThird) {
-    // Fullscreen: FILL the display. Grow until the longest line spans the
-    // usable width or the line stack spans the usable height, whichever binds
-    // first. The safe margin keeps text off the screen edges.
+    // Fullscreen: FILL the display. A long verse must WRAP, not shrink to fit
+    // on one line — so plan the wrap: for each candidate rendered-line count,
+    // compute the font that fits both width (text wrapped across n lines) and
+    // height (n lines stacked), and keep whichever count fills the most
+    // screen. Assumes ~16:9 to compare vw vs vh candidates.
     const margin = Math.max(2, t.safeMargin ?? 8);
     const usable = 100 - margin * 2;
-    const effLines = Math.max(1, state.sourceLines.length + state.translationLines.length * 0.75);
-    // Measure with the real font: translation lines render at 0.7em.
     const fontSpec = `${t.fontWeight || 600} 100px ${t.fontFamily || '"Archivo", system-ui, sans-serif'}`;
-    const em = Math.max(
-      longestLineEm(state.sourceLines, fontSpec),
-      longestLineEm(state.translationLines, fontSpec) * 0.7,
+    // Total text width in em; translation renders at 0.7em, so scale it down.
+    const emTotal = Math.max(
       1.5, // floor so a 1-2 char slide doesn't explode
+      state.sourceLines.reduce((s, l) => s + longestLineEm([l], fontSpec), 0) +
+        state.translationLines.reduce((s, l) => s + longestLineEm([l], fontSpec) * 0.7, 0),
     );
-    const fillW = (usable * 0.98) / em;       // 2% slack against measurement drift
-    const fillH = usable / (1.3 * effLines);  // line-height + breathing room
+    const blockCount = Math.max(1, state.sourceLines.length + state.translationLines.length);
+    // The scripture reference / section caption adds roughly half a line.
+    const captionLines = t.showCaption && state.sectionLabel ? 0.7 : 0;
+    let best = { fillW: 0, fillH: 0, score: 0 };
+    for (let n = blockCount; n <= blockCount + 8; n++) {
+      const fillW = (usable * 0.92 * n) / emTotal;         // width if wrapped over n lines
+      const fillH = usable / (1.3 * (n + captionLines));   // height of the n-line stack
+      const score = Math.min(fillW * 1.78, fillH);         // compare in vh (16:9)
+      if (score > best.score) best = { fillW, fillH, score };
+    }
     fontSize = scale
-      ? `clamp(0.6rem, min(${fillW.toFixed(2)}cqw, ${fillH.toFixed(2)}cqh), 90cqh)`
-      : `clamp(1.4rem, min(${fillW.toFixed(2)}vw, ${fillH.toFixed(2)}vh), 55vh)`;
+      ? `clamp(0.6rem, min(${best.fillW.toFixed(2)}cqw, ${best.fillH.toFixed(2)}cqh), 90cqh)`
+      : `clamp(1.4rem, min(${best.fillW.toFixed(2)}vw, ${best.fillH.toFixed(2)}vh), 55vh)`;
   } else {
     // Lower thirds keep the conservative broadcast sizing.
     const autoVw = Math.max(2.4, Math.min(7.5, 46 / Math.max(longest, 10)));
@@ -194,6 +203,21 @@ export function SlideRender({
               : {}),
           }}
         >
+          {/* Scripture reference ABOVE the verse \u2014 the classic projection layout */}
+          {t.showCaption && state.sectionLabel && (
+            <div
+              style={{
+                marginBottom: "0.45em",
+                fontSize: `calc(${fontSize} * 0.55)`,
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+                color: t.captionColor || "#f4c025",
+                ...outlineStyle(t),
+              }}
+            >
+              {state.sectionLabel}
+            </div>
+          )}
           <div
             style={{
               fontSize,
@@ -223,20 +247,6 @@ export function SlideRender({
               {state.translationLines.map((line, i) => (
                 <div key={i}>{line || "\u00A0"}</div>
               ))}
-            </div>
-          )}
-          {t.showCaption && state.sectionLabel && (
-            <div
-              style={{
-                marginTop: "0.7em",
-                fontSize: `calc(${fontSize} * 0.42)`,
-                fontWeight: 600,
-                letterSpacing: "0.04em",
-                color: t.captionColor || "#a3e635",
-                ...outlineStyle(t),
-              }}
-            >
-              {state.sectionLabel}
             </div>
           )}
         </div>
