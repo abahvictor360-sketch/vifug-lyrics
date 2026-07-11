@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import type { LiveState, LiveTheme } from "../lib/live-bus";
 
 /**
@@ -121,8 +122,53 @@ export function SlideRender({
   const align = t.textAlign;
   const alignItems = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
 
+  // Guaranteed safe margin on all four edges. Text wraps inside it (width),
+  // and the shrink pass below keeps it inside vertically too.
+  const safeMargin = Math.max(4, t.safeMargin ?? 8);
+
+  // --- Fit guard ---
+  // A user-set font size can be arbitrarily large; the text wraps within the
+  // side margins but would run off the top/bottom. After layout, measure the
+  // text block against the space inside the margins and scale the font down
+  // just enough to fit. Auto-fit sizes are computed to fit, but the guard
+  // covers them too (odd aspect ratios, long captions).
+  const boxRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const [shrink, setShrink] = useState(1);
+  const contentKey = [
+    state.slideId, state.sourceLines.join("\n"), state.translationLines.join("\n"),
+    state.sectionLabel, t.fontSize, t.fontFamily, t.fontWeight, t.safeMargin,
+    t.displayMode, t.showCaption,
+  ].join("|");
+  useLayoutEffect(() => {
+    setShrink(1); // content or type changed — re-measure from full size
+  }, [contentKey]);
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const txt = textRef.current;
+    if (!box || !txt || !showText) return;
+    const fit = () => {
+      const cs = getComputedStyle(box);
+      const availH = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      if (availH <= 0) return;
+      const needH = txt.scrollHeight;
+      // 2% slack avoids oscillating on sub-pixel rounding.
+      if (needH > availH + 1) {
+        setShrink((s) => Math.max(0.05, s * (availH / needH) * 0.98));
+      }
+    };
+    fit();
+    // Re-fit from scratch when the output surface changes size (window moved
+    // to another display, preview pane resized, …).
+    const ro = new ResizeObserver(() => setShrink(1));
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [shrink, contentKey, showText]);
+  const fittedSize = shrink < 1 ? `calc(${fontSize} * ${shrink.toFixed(4)})` : fontSize;
+
   return (
     <div
+      ref={boxRef}
       className="slide-fade"
       style={{
         position: scale ? "relative" : "fixed",
@@ -134,7 +180,7 @@ export function SlideRender({
         flexDirection: "column",
         justifyContent: justify,
         alignItems,
-        padding: `${t.safeMargin}%`,
+        padding: `${safeMargin}%`,
         color: t.textColor,
         fontFamily: t.fontFamily || "var(--font-lyric)",
         fontWeight: t.fontWeight,
@@ -193,6 +239,7 @@ export function SlideRender({
 
       {showText && (
         <div
+          ref={textRef}
           style={{
             position: "relative",
             width: "100%",
@@ -208,7 +255,7 @@ export function SlideRender({
             <div
               style={{
                 marginBottom: "0.45em",
-                fontSize: `calc(${fontSize} * 0.55)`,
+                fontSize: `calc(${fittedSize} * 0.55)`,
                 fontWeight: 700,
                 letterSpacing: "0.02em",
                 color: t.captionColor || "#f4c025",
@@ -220,7 +267,7 @@ export function SlideRender({
           )}
           <div
             style={{
-              fontSize,
+              fontSize: fittedSize,
               lineHeight: 1.22,
               ...outlineStyle(t),
               whiteSpace: "pre-wrap",
@@ -235,7 +282,7 @@ export function SlideRender({
             <div
               style={{
                 marginTop: "0.5em",
-                fontSize: `calc(${fontSize} * 0.7)`,
+                fontSize: `calc(${fittedSize} * 0.7)`,
                 color: t.translationColor || undefined,
                 opacity: t.translationColor ? 1 : 0.78,
                 lineHeight: 1.2,
