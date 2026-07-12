@@ -38,7 +38,10 @@
     "target": [
       "dmg"
     ],
-    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+    // Version-independent name (no spaces): the landing page hardcodes
+    // .../releases/latest/download/<name>, which must stay stable across
+    // releases. The release tag carries the version.
+    "artifactName": "VifugLyrics-Mac-Installer.${ext}"
   },
   "win": {
     "icon": "build/icon.ico",
@@ -50,7 +53,7 @@
         ]
       }
     ],
-    "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
+    "artifactName": "VifugLyrics-Windows-Setup.${ext}"
   },
   "nsis": {
     "oneClick": false,
@@ -64,6 +67,6 @@
     "target": [
       "AppImage"
     ],
-    "artifactName": "${productName}-Linux-${version}.${ext}"
+    "artifactName": "VifugLyrics-Linux.${ext}"
   }
 }
