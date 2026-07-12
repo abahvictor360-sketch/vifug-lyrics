@@ -2,6 +2,7 @@ import { ipcRenderer, contextBridge } from "electron";
 
 contextBridge.exposeInMainWorld("electronAPI", {
   platform: process.platform,
+  getAppVersion: () => ipcRenderer.invoke("app:version"),
 
   // Dialog
   showOpenDialog: (opts: Electron.OpenDialogOptions) =>

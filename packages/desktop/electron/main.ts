@@ -214,6 +214,10 @@ ipcMain.handle("notification:show", (_, title: string, body: string) => {
   new Notification({ title, body }).show();
 });
 
+// App version — the renderer's update check compares this to the newest
+// GitHub release tag.
+ipcMain.handle("app:version", () => app.getVersion());
+
 // Window controls
 ipcMain.handle("window:minimize", () => win?.minimize());
 ipcMain.handle("window:maximize", () => {

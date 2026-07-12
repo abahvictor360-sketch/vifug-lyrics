@@ -1,6 +1,8 @@
 /** Type definition for the Electron preload API exposed via contextBridge */
 export interface ElectronAPI {
   platform: string;
+  /** Installed app version, e.g. "1.3.1". Optional: older installs lack it. */
+  getAppVersion?: () => Promise<string>;
 
   // Dialog
   showOpenDialog: (opts: {

@@ -6,7 +6,7 @@ import {
   Image as ImageIcon, Radio, Languages, Ear, Copy, Check, Film, Palette, Link2, Loader2,
   BookOpen, SendHorizontal, Eye, MonitorSmartphone, Smartphone, NotebookPen,
   ListChecks, ArrowUp, ArrowDown, CalendarDays, PlayCircle, GripVertical, History,
-  Mic, HelpCircle, Mail,
+  Mic, HelpCircle, Mail, Download,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { VButton, SectionChip, Spinner } from "../components/bits";
@@ -21,6 +21,7 @@ import { useLiveController } from "../hooks/use-live-controller";
 import { useStage, type StageController } from "../hooks/use-stage";
 import { useLiveState } from "../hooks/use-live";
 import { useDesktop } from "../hooks/use-desktop";
+import { useUpdateCheck, DOWNLOAD_PAGE } from "../hooks/use-update-check";
 import { useMedia, useAddMediaUrl, useDeleteMedia, useUploadMedia, type MediaItem } from "../hooks/use-media";
 import { useTranslations, useSaveTranslation, LANGS, langLabel } from "../hooks/use-translations";
 import { useAutoFollow } from "../hooks/use-autofollow";
@@ -838,6 +839,7 @@ function TopBar({
         </span>
       </div>
       <div className="flex items-center gap-3">
+        <UpdateNotice desktop={desktop} />
         <StatusPill status={liveStatus} />
         <HelpMenu />
         <VButton variant="ghost" size="sm" onClick={onSettings}>
@@ -845,6 +847,30 @@ function TopBar({
         </VButton>
       </div>
     </header>
+  );
+}
+
+/**
+ * "Update available" pill — shown when a newer release exists on GitHub.
+ * Click opens the landing page's download section in the system browser;
+ * the small × mutes the notice for that version.
+ */
+function UpdateNotice({ desktop }: { desktop: ReturnType<typeof useDesktop> }) {
+  const update = useUpdateCheck(desktop);
+  if (!update) return null;
+  return (
+    <span className="flex items-center gap-1 rounded-full border border-[var(--v-accent)]/40 bg-[var(--v-accent-soft)] py-0.5 pl-2.5 pr-1 text-[11px] font-semibold text-[var(--v-accent)]">
+      <a href={DOWNLOAD_PAGE} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:underline">
+        <Download className="h-3 w-3" /> Update {update.tag} available
+      </a>
+      <button
+        onClick={update.dismiss}
+        title="Not now"
+        className="rounded-full p-0.5 text-[var(--v-accent)]/60 hover:bg-black/20 hover:text-[var(--v-accent)]"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
   );
 }
 
