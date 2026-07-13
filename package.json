@@ -1,6 +1,7 @@
 {
   "name": "sandbox-app-template",
   "private": true,
+  "author": "Victor Abah <abahvictor360@gmail.com> (https://github.com/abahvictor360-sketch)",
   "packageManager": "bun@1.3.14",
   "workspaces": [
     "packages/*"

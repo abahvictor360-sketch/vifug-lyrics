@@ -2,6 +2,7 @@
   "name": "@template/web",
   "private": true,
   "type": "module",
+  "author": "Victor Abah <abahvictor360@gmail.com> (https://github.com/abahvictor360-sketch)",
   "exports": {
     ".": "./src/api/index.ts"
   },

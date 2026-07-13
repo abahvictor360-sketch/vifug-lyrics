@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   X, Music4, BookOpen, Settings2, Image as ImageIcon, Upload, Loader2,
   Trash2, Film, Palette, Link2, Monitor, Ear, Type, LayoutList, Languages,
+  Info, Github, Mail, Heart,
 } from "lucide-react";
 import { VButton } from "./bits";
 import { FontPicker } from "./font-picker";
@@ -860,7 +861,61 @@ function GeneralSection({
           ))}
         </ul>
       </Group>
+
+      <AboutGroup desktop={desktop} />
     </div>
+  );
+}
+
+/* ---------------- About / credits ---------------- */
+
+function AboutGroup({ desktop }: { desktop: ReturnType<typeof useDesktop> }) {
+  const [version, setVersion] = useState<string | null>(null);
+  useEffect(() => {
+    desktop?.getAppVersion?.().then(setVersion).catch(() => {});
+  }, [desktop]);
+
+  return (
+    <Group title="About" icon={Info}>
+      <div className="flex items-center gap-3">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[var(--v-accent)] to-[var(--v-accent-2)] text-black shadow-[0_2px_10px_var(--v-accent-glow)]">
+          <Music4 className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-display text-sm font-semibold">
+            Vifug Lyrics{version ? <span className="ml-1.5 font-normal text-[var(--v-text-faint)]">v{version}</span> : null}
+          </p>
+          <p className="text-[11px] text-[var(--v-text-faint)]">Free, offline-first worship presentation software.</p>
+        </div>
+      </div>
+      <p className="mt-3.5 flex items-center gap-1.5 text-[12.5px] text-[var(--v-text-dim)]">
+        <Heart className="h-3.5 w-3.5 text-[var(--v-live)]" /> Made by{" "}
+        <a
+          href="https://github.com/abahvictor360-sketch"
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium text-[var(--v-accent)] hover:underline"
+        >
+          Victor Abah
+        </a>
+      </p>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-[var(--v-text-faint)]">
+        <a
+          href="https://github.com/abahvictor360-sketch/vifug-lyrics"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 hover:text-[var(--v-text)]"
+        >
+          <Github className="h-3.5 w-3.5" /> Source on GitHub
+        </a>
+        <a
+          href="mailto:abahvictor360@gmail.com?subject=Vifug%20Lyrics"
+          className="inline-flex items-center gap-1.5 hover:text-[var(--v-text)]"
+        >
+          <Mail className="h-3.5 w-3.5" /> abahvictor360@gmail.com
+        </a>
+      </div>
+    </Group>
   );
 }
 

@@ -4,6 +4,7 @@
   "version": "1.3.2",
   "type": "module",
   "main": "dist-electron/main.js",
+  "author": "Victor Abah <abahvictor360@gmail.com> (https://github.com/abahvictor360-sketch)",
   "repository": {
     "type": "git",
     "url": "https://github.com/abahvictor360-sketch/vifug-lyrics.git"

@@ -1,6 +1,7 @@
 {
   "name": "@template/mobile",
   "version": "1.0.0",
+  "author": "Victor Abah <abahvictor360@gmail.com> (https://github.com/abahvictor360-sketch)",
   "main": "expo-router/entry",
   "scripts": {
     "dev": "expo start",

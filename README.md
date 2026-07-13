@@ -1,4 +1,8 @@
-# sandbox-app-template
+# Vifug Lyrics
+
+Free, offline-first worship presentation software — song lyrics, offline Bible
+versions, projector/NDI output, AI auto-follow, phone remote and more.
+Created and maintained by **[Victor Abah](https://github.com/abahvictor360-sketch)**.
 
 Monorepo: Bun workspaces + Turborepo.
 
@@ -63,3 +67,9 @@ bun run db:generate    # Generate migration files
 bun run db:migrate     # Run migrations
 bun run db:studio      # Open Drizzle Studio
 ```
+
+## Author
+
+Vifug Lyrics is created and maintained by **Victor Abah**
+([GitHub](https://github.com/abahvictor360-sketch) ·
+[abahvictor360@gmail.com](mailto:abahvictor360@gmail.com)).

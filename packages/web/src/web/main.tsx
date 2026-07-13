@@ -1,3 +1,7 @@
+/**
+ * Vifug Lyrics — free, offline-first worship presentation software.
+ * Created by Victor Abah (github.com/abahvictor360-sketch).
+ */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Router } from "wouter";
