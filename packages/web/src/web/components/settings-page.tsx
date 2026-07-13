@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   X, Music4, BookOpen, Settings2, Image as ImageIcon, Upload, Loader2,
   Trash2, Film, Palette, Link2, Monitor, Ear, Type, LayoutList, Languages,
-  Info, Github, Mail, Heart,
+  Info, Github, Mail, Heart, Megaphone,
 } from "lucide-react";
 import { VButton } from "./bits";
 import { FontPicker } from "./font-picker";
@@ -751,6 +751,8 @@ function GeneralSection({
         </p>
       </Group>
 
+      <AnnouncementGroup settings={settings} patchSettings={patchSettings} />
+
       <Group title="AI auto-follow" icon={Ear}>
         <label className="flex items-center justify-between">
           <span className="text-sm">Advance slides automatically by listening to the room</span>
@@ -864,6 +866,79 @@ function GeneralSection({
 
       <AboutGroup desktop={desktop} />
     </div>
+  );
+}
+
+/* ---------------- Announcement ticker ---------------- */
+
+function AnnouncementGroup({
+  settings,
+  patchSettings,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+}) {
+  const a = settings?.announcement ?? { enabled: false, text: "", speed: 22 };
+  const set = (patch: Partial<NonNullable<AppSettings["announcement"]>>) =>
+    patchSettings({ announcement: { ...a, ...patch } });
+
+  return (
+    <Group title="Announcement ticker" icon={Megaphone}>
+      <label className="flex items-center justify-between">
+        <span className="text-sm">Scroll a message across the bottom of the screen</span>
+        <Toggle checked={a.enabled} onChange={(v) => set({ enabled: v })} />
+      </label>
+      <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+        Shows on the projector and stream overlay — independent of whatever's live, so it keeps
+        scrolling even when the screen is blank.
+      </p>
+
+      <label className="mt-3 block">
+        <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Message</span>
+        <textarea
+          value={a.text}
+          onChange={(e) => set({ text: e.target.value })}
+          placeholder="e.g. Potluck lunch after service in the hall — everyone welcome!"
+          rows={2}
+          className="w-full resize-none rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+        />
+      </label>
+
+      <label className="mt-3 block">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">Scroll speed</span>
+          <span className="text-[10px] font-medium text-[var(--v-accent)]">{a.speed}s per loop</span>
+        </div>
+        <input
+          type="range"
+          min={8}
+          max={50}
+          value={a.speed}
+          onChange={(e) => set({ speed: Number(e.target.value) })}
+          className="w-full accent-[var(--v-accent)]"
+        />
+        <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">Lower = faster scroll.</span>
+      </label>
+
+      {a.enabled && a.text.trim() && (
+        <div className="relative mt-4 h-12 overflow-hidden rounded-lg border border-[var(--v-border)] bg-black">
+          <div
+            className="flex h-full items-stretch"
+            style={{ borderTop: "2px solid var(--v-accent)" }}
+          >
+            <span className="flex shrink-0 items-center bg-[var(--v-accent)] px-3 text-[10px] font-bold uppercase tracking-wide text-black">
+              Announcement
+            </span>
+            <div className="flex min-w-0 flex-1 items-center overflow-hidden">
+              <div className="v-ticker-track" style={{ animationDuration: `${Math.max(6, a.speed)}s` }}>
+                <span className="v-ticker-item font-lyric text-sm font-semibold text-white">{a.text}</span>
+                <span className="v-ticker-item font-lyric text-sm font-semibold text-white" aria-hidden="true">{a.text}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Group>
   );
 }
 

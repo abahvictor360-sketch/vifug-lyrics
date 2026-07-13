@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { SlideRender } from "../components/slide-render";
+import { AnnouncementTicker } from "../components/announcement-ticker";
+import { useSettings } from "../hooks/use-settings";
 import { IDLE_STATE, DEFAULT_THEME, type LiveState } from "../lib/live-bus";
 
 /**
@@ -14,6 +16,8 @@ import { IDLE_STATE, DEFAULT_THEME, type LiveState } from "../lib/live-bus";
  */
 export default function StreamPage() {
   const [state, setState] = useState<LiveState>(IDLE_STATE);
+  const settings = useSettings({ refetchInterval: 4000 }).data;
+  const announcement = settings?.announcement;
 
   useEffect(() => {
     document.body.style.background = "transparent";
@@ -53,6 +57,7 @@ export default function StreamPage() {
   return (
     <div style={{ position: "fixed", inset: 0, background: "transparent" }}>
       <SlideRender state={state} transparent />
+      {announcement?.enabled && <AnnouncementTicker text={announcement.text} speed={announcement.speed} />}
     </div>
   );
 }

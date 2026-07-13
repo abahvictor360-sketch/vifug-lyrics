@@ -690,6 +690,7 @@ function defaultSettings() {
     bibleTheme: null as Record<string, unknown> | null,
     output: { displayId: null as number | null, resolution: "auto" },
     ui: { language: "en" },
+    announcement: { enabled: false, text: "", speed: 22 },
   };
 }
 

@@ -75,9 +75,15 @@ export type AppSettings = {
   bibleBackgroundId?: string | null;
   output: { displayId: number | null; resolution: string };
   ui: { language: string };
+  /**
+   * Scrolling announcement bar pinned to the bottom of the projector and
+   * stream outputs (not the operator's own preview thumbnails). Independent
+   * of the live slide — shows even when nothing is live.
+   */
+  announcement?: { enabled: boolean; text: string; speed: number } | null;
 };
 
-export function useSettings() {
+export function useSettings(opts?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: ["settings"],
     queryFn: async () => {
@@ -85,6 +91,7 @@ export function useSettings() {
       const data = await res.json();
       return data.config as AppSettings;
     },
+    ...(opts?.refetchInterval ? { refetchInterval: opts.refetchInterval } : {}),
   });
 }
 

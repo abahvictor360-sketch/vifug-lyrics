@@ -1,11 +1,17 @@
 import { useEffect } from "react";
 import { SlideRender } from "../components/slide-render";
+import { AnnouncementTicker } from "../components/announcement-ticker";
 import { useLiveState } from "../hooks/use-live";
+import { useSettings } from "../hooks/use-settings";
 import { getDesktopAPI } from "../lib/desktop";
 
 /** Pure lyric output. Loaded in the second-monitor Electron window (or a browser tab). */
 export default function ProjectorPage() {
   const state = useLiveState();
+  // Polls (rather than a new push channel) so the announcement bar picks up
+  // operator edits within a few seconds without extra plumbing.
+  const settings = useSettings({ refetchInterval: 4000 }).data;
+  const announcement = settings?.announcement;
 
   useEffect(() => {
     document.title = "Vifug Projector";
@@ -37,6 +43,7 @@ export default function ProjectorPage() {
   return (
     <div style={{ position: "fixed", inset: 0, background: "#000" }}>
       <SlideRender state={state} />
+      {announcement?.enabled && <AnnouncementTicker text={announcement.text} speed={announcement.speed} />}
     </div>
   );
 }
