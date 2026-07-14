@@ -27,6 +27,13 @@ import {
   buildDefaultArrangement,
   getFullSong,
 } from "./lib/songs";
+import {
+  createPresentation,
+  getFullPresentation,
+  replacePresentation,
+  deletePresentation,
+} from "./lib/presentations";
+import { parsePptx } from "./lib/pptx";
 
 const nowIso = () => new Date().toISOString();
 
@@ -284,6 +291,99 @@ const app = new Hono()
     return c.json({ title: finalTitle, sections }, 200);
   })
 
+  // ---------- PRESENTATIONS ----------
+  // "Store words, not slide images" applied to freeform decks: build slides
+  // in-app, or import a .pptx (best-effort text + first image per slide —
+  // not a pixel-exact PowerPoint renderer).
+  .get("/presentations", async (c) => {
+    const rows = await db.select().from(schema.presentations).orderBy(desc(schema.presentations.updatedAt));
+    const withCounts = await Promise.all(
+      rows.map(async (p) => {
+        const slides = await db
+          .select()
+          .from(schema.presentationSlides)
+          .where(eq(schema.presentationSlides.presentationId, p.id));
+        return { ...p, slideCount: slides.length };
+      }),
+    );
+    return c.json({ presentations: withCounts }, 200);
+  })
+  .get("/presentations/:id", async (c) => {
+    const full = await getFullPresentation(c.req.param("id"));
+    if (!full) return c.json({ error: "not found" }, 404);
+    const slidesWithUrls = await Promise.all(
+      full.slides.map(async (s) => {
+        let backgroundUrl: string | null = null;
+        if (s.backgroundId) {
+          const [m] = await db.select().from(schema.media).where(eq(schema.media.id, s.backgroundId));
+          if (m) backgroundUrl = await resolveMediaUrl(m.uri);
+        }
+        return { ...s, backgroundUrl };
+      }),
+    );
+    return c.json({ presentation: full.presentation, slides: slidesWithUrls }, 200);
+  })
+  .post("/presentations", async (c) => {
+    const body = await c.req.json<{
+      title?: string;
+      slides?: { heading?: string; body?: string; backgroundId?: string | null }[];
+    }>();
+    const id = await createPresentation({
+      title: body.title?.trim() || "Untitled Presentation",
+      slides: body.slides ?? [],
+    });
+    return c.json({ id }, 201);
+  })
+  .put("/presentations/:id", async (c) => {
+    const id = c.req.param("id");
+    const body = await c.req.json<{
+      title?: string;
+      slides?: { heading?: string; body?: string; backgroundId?: string | null }[];
+    }>();
+    const ok = await replacePresentation(id, body);
+    if (!ok) return c.json({ error: "not found" }, 404);
+    return c.json({ ok: true }, 200);
+  })
+  .delete("/presentations/:id", async (c) => {
+    await deletePresentation(c.req.param("id"));
+    return c.json({ ok: true }, 200);
+  })
+  // Import a .pptx file: extracted text becomes heading/body, the first
+  // embedded image per slide becomes its background (stored like any other
+  // local media item, so it works fully offline).
+  .post("/presentations/import-pptx", async (c) => {
+    const body = await c.req.parseBody();
+    const file = body.file;
+    if (!(file instanceof File)) return c.json({ error: "no file" }, 400);
+    const buf = Buffer.from(await file.arrayBuffer());
+    const fallbackTitle = (typeof body.title === "string" && body.title) || file.name.replace(/\.pptx$/i, "");
+
+    let parsed: Awaited<ReturnType<typeof parsePptx>>;
+    try {
+      parsed = await parsePptx(buf, fallbackTitle);
+    } catch {
+      return c.json({ error: "Couldn't read this .pptx file — it may be corrupted or password-protected." }, 400);
+    }
+    if (!parsed.slides.length) return c.json({ error: "No readable slides found in this file." }, 400);
+
+    await fsp.mkdir(mediaDir(), { recursive: true });
+    const slideInputs: { heading: string; body: string; backgroundId: string | null }[] = [];
+    for (const s of parsed.slides) {
+      let backgroundId: string | null = null;
+      if (s.image) {
+        const name = `${Date.now()}-${uuid().slice(0, 8)}.${s.image.ext}`;
+        await fsp.writeFile(nodePath.join(mediaDir(), name), s.image.data);
+        const mediaId = uuid();
+        await db.insert(schema.media).values({ id: mediaId, type: "image", uri: `local:${name}`, loop: 1, fit: "cover" });
+        backgroundId = mediaId;
+      }
+      slideInputs.push({ heading: s.heading, body: s.body, backgroundId });
+    }
+
+    const id = await createPresentation({ title: parsed.title, source: "import_pptx", slides: slideInputs });
+    return c.json({ id, slideCount: slideInputs.length }, 201);
+  })
+
   // ---------- THEMES ----------
   .get("/themes", async (c) => {
     let rows = await db.select().from(schema.themes);
@@ -376,6 +476,8 @@ const app = new Hono()
       uri: string; // s3 key, external url, or hex color
       loop?: boolean;
       fit?: "cover" | "contain" | "fill";
+      /** Video only: true = plays silently (the usual "background" case). */
+      muted?: boolean;
     }>();
     const id = uuid();
     await db.insert(schema.media).values({
@@ -384,10 +486,24 @@ const app = new Hono()
       uri: body.uri,
       loop: body.loop === false ? 0 : 1,
       fit: body.fit ?? "cover",
+      muted: body.muted === false ? 0 : 1,
     });
     const [row] = await db.select().from(schema.media).where(eq(schema.media.id, id));
     if (!row) return c.json({ error: "media not found after insert" }, 500);
     return c.json({ media: { ...row, url: await resolveMediaUrl(row.uri) } }, 201);
+  })
+  // Edit an existing item's playback (loop / fit / sound) without re-uploading.
+  .put("/media/:id", async (c) => {
+    const id = c.req.param("id");
+    const body = await c.req.json<{ loop?: boolean; fit?: "cover" | "contain" | "fill"; muted?: boolean }>();
+    const patch: Partial<typeof schema.media.$inferInsert> = {};
+    if (body.loop !== undefined) patch.loop = body.loop ? 1 : 0;
+    if (body.fit !== undefined) patch.fit = body.fit;
+    if (body.muted !== undefined) patch.muted = body.muted ? 1 : 0;
+    await db.update(schema.media).set(patch).where(eq(schema.media.id, id));
+    const [row] = await db.select().from(schema.media).where(eq(schema.media.id, id));
+    if (!row) return c.json({ error: "not found" }, 404);
+    return c.json({ media: { ...row, url: await resolveMediaUrl(row.uri) } }, 200);
   })
   .delete("/media/:id", async (c) => {
     const id = c.req.param("id");
@@ -688,9 +804,11 @@ function defaultSettings() {
     bibleLangs: { yor: true, hau: true, ibo: true },
     lyricTheme: null as Record<string, unknown> | null,
     bibleTheme: null as Record<string, unknown> | null,
+    presentationTheme: null as Record<string, unknown> | null,
     output: { displayId: null as number | null, resolution: "auto" },
     ui: { language: "en" },
-    announcement: { enabled: false, text: "", speed: 22 },
+    announcement: { enabled: false, text: "", speed: 22, bgColor: null as string | null, textColor: null as string | null },
+    mediaDefaults: { fit: "cover" as const, videoSound: false },
   };
 }
 

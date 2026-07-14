@@ -8,6 +8,8 @@ export type MediaItem = {
   url: string;
   loop: number | null;
   fit: string | null;
+  /** Video only: 1 = plays silently (the usual "background" case). */
+  muted: number | null;
   createdAt: string;
 };
 
@@ -53,10 +55,28 @@ export async function uploadMediaFile(file: File): Promise<MediaItem> {
 export function useAddMediaUrl() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { type: "image" | "video" | "color"; uri: string }) => {
+    mutationFn: async (input: {
+      type: "image" | "video" | "color";
+      uri: string;
+      fit?: "cover" | "contain" | "fill";
+      muted?: boolean;
+    }) => {
       const res = await api.media.$post({
-        json: { type: input.type, uri: input.uri, fit: "cover", loop: true },
+        json: { type: input.type, uri: input.uri, fit: input.fit ?? "cover", loop: true, muted: input.muted },
       });
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["media"] }),
+  });
+}
+
+/** Edit an existing item's loop / fit / sound without re-uploading. */
+export function useUpdateMedia() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; loop?: boolean; fit?: "cover" | "contain" | "fill"; muted?: boolean }) => {
+      const { id, ...patch } = input;
+      const res = await api.media[":id"].$put({ param: { id }, json: patch });
       return res.json();
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["media"] }),

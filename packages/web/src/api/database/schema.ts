@@ -66,7 +66,34 @@ export const media = sqliteTable("media", {
   uri: text("uri").notNull(),
   loop: integer("loop").default(1),
   fit: text("fit").default("cover"),
+  // Videos are silent by default (matches how backgrounds are normally used —
+  // playing under lyrics/scripture). Toggle off per item when a video should
+  // play WITH sound (e.g. a welcome or testimony video shown on its own).
+  muted: integer("muted").default(1),
   createdAt: text("created_at").notNull().$defaultFn(now),
+});
+
+/**
+ * Presentations — the same "store words, not slide images" philosophy as
+ * songs, extended to freeform slides (title/body text over a background).
+ * Built in-app or imported from PPTX (best-effort text + first image per
+ * slide, not a pixel-exact PPTX renderer).
+ */
+export const presentations = sqliteTable("presentations", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  source: text("source").notNull().default("manual"), // manual|import_pptx
+  createdAt: text("created_at").notNull().$defaultFn(now),
+  updatedAt: text("updated_at").notNull().$defaultFn(now),
+});
+
+export const presentationSlides = sqliteTable("presentation_slides", {
+  id: text("id").primaryKey(),
+  presentationId: text("presentation_id").notNull(),
+  orderIndex: integer("order_index").notNull().default(0),
+  heading: text("heading"),
+  body: text("body"), // newline-separated
+  backgroundId: text("background_id"), // FK -> media.id, nullable (color/none)
 });
 
 export const themes = sqliteTable("themes", {

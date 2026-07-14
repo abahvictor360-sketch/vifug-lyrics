@@ -211,7 +211,7 @@ export function SlideRender({
         <video
           src={media.url}
           autoPlay
-          muted
+          muted={media.muted !== false}
           playsInline
           loop={media.loop}
           style={{

@@ -78,9 +78,23 @@ export type AppSettings = {
   /**
    * Scrolling announcement bar pinned to the bottom of the projector and
    * stream outputs (not the operator's own preview thumbnails). Independent
-   * of the live slide — shows even when nothing is live.
+   * of the live slide — shows even when nothing is live. bgColor/textColor
+   * null = built-in defaults (near-black bar, white text).
    */
-  announcement?: { enabled: boolean; text: string; speed: number } | null;
+  announcement?: {
+    enabled: boolean;
+    text: string;
+    speed: number;
+    bgColor?: string | null;
+    textColor?: string | null;
+  } | null;
+  /**
+   * Presentation display overrides (theme look) — same shape as lyricTheme/
+   * bibleTheme, layered over the active theme when a presentation is live.
+   */
+  presentationTheme?: ThemeOverride | null;
+  /** Defaults applied to newly added background media (not retroactive). */
+  mediaDefaults?: { fit: "cover" | "contain" | "fill"; videoSound: boolean };
 };
 
 export function useSettings(opts?: { refetchInterval?: number }) {

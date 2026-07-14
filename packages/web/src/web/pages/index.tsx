@@ -6,10 +6,11 @@ import {
   Image as ImageIcon, Radio, Languages, Ear, Copy, Check, Film, Palette, Link2, Loader2,
   BookOpen, SendHorizontal, Eye, MonitorSmartphone, Smartphone, NotebookPen,
   ListChecks, ArrowUp, ArrowDown, CalendarDays, PlayCircle, GripVertical, History,
-  Mic, HelpCircle, Mail, Download,
+  Mic, HelpCircle, Mail, Download, MonitorPlay,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { VButton, SectionChip, Spinner } from "../components/bits";
+import { PresentationsPanel } from "../components/presentation-panel";
 import { SlideRender } from "../components/slide-render";
 import { SongEditor } from "../components/song-editor";
 import { ImportModal } from "../components/import-modal";
@@ -182,7 +183,7 @@ export default function OperatorPage() {
     const m = media.data?.find((x) => x.id === id);
     if (!m) return null;
     const fit = m.fit === "contain" || m.fit === "fill" ? m.fit : "cover";
-    return { type: m.type, url: m.url, fit, loop: !!m.loop };
+    return { type: m.type, url: m.url, fit, loop: !!m.loop, muted: m.muted !== 0 };
   }, [settings?.activeBackgroundId, media.data]);
 
   const activeTheme = useMemo(() => {
@@ -208,7 +209,7 @@ export default function OperatorPage() {
 
   // Operator mode: drive the live output from song lyrics OR the Bible.
   // "plans" is a service-plan builder that cues songs/scripture into lyrics/bible.
-  const [mode, setMode] = useState<"lyrics" | "bible" | "plans" | "history">("lyrics");
+  const [mode, setMode] = useState<"lyrics" | "bible" | "presentation" | "plans" | "history">("lyrics");
   // Bible cue: set when a plan item cues a scripture into the Bible panel.
   const [bibleCue, setBibleCue] = useState<{ versionId?: string; ref: string; nonce: number } | null>(null);
 
@@ -251,7 +252,7 @@ export default function OperatorPage() {
     const m = media.data?.find((x) => x.id === id);
     if (!m) return null;
     const fit = m.fit === "contain" || m.fit === "fill" ? m.fit : "cover";
-    return { type: m.type, url: m.url, fit, loop: !!m.loop };
+    return { type: m.type, url: m.url, fit, loop: !!m.loop, muted: m.muted !== 0 };
   }, [settings?.bibleBackgroundId, media.data]);
 
   // Bible theme = active lyric theme with per-display Bible overrides merged in.
@@ -265,8 +266,17 @@ export default function OperatorPage() {
     [activeTheme, settings?.bibleTheme, settings?.bibleBackgroundId, bibleBackground],
   );
 
-  const stageSlides = mode === "bible" ? bibleSlides : lyricStageSlides;
-  const stageTheme = mode === "bible" ? bibleTheme : activeTheme;
+  // Presentation slides are lifted up from PresentationsPanel; each slide
+  // carries its OWN background (image/video/color), so the theme here only
+  // supplies text look — stage.ts layers the per-slide background on top.
+  const [presentationSlides, setPresentationSlides] = useState<StageSlide[]>([]);
+  const presentationTheme = useMemo<LiveTheme>(
+    () => mergeOverride(activeTheme, settings?.presentationTheme),
+    [activeTheme, settings?.presentationTheme],
+  );
+
+  const stageSlides = mode === "bible" ? bibleSlides : mode === "presentation" ? presentationSlides : lyricStageSlides;
+  const stageTheme = mode === "bible" ? bibleTheme : mode === "presentation" ? presentationTheme : activeTheme;
   const stage = useStage({ slides: stageSlides, theme: stageTheme });
 
   const liveState = useLiveState();
@@ -567,6 +577,16 @@ export default function OperatorPage() {
               <BookOpen className="h-4 w-4" /> Bible
             </button>
             <button
+              onClick={() => setMode("presentation")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === "presentation"
+                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
+              }`}
+            >
+              <MonitorPlay className="h-4 w-4" /> Presentations
+            </button>
+            <button
               onClick={() => setMode("plans")}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 mode === "plans"
@@ -604,6 +624,14 @@ export default function OperatorPage() {
               liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
               langs={settings?.bibleLangs ?? { yor: true, hau: true, ibo: true }}
               cue={bibleCue}
+            />
+          ) : mode === "presentation" ? (
+            <PresentationsPanel
+              onSlidesChange={setPresentationSlides}
+              onPreview={(i) => stage.preview(i)}
+              onSendLive={(i) => stage.goLive(i)}
+              previewId={stage.previewSlide?.slideId ?? null}
+              liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
             />
           ) : (
             <>
@@ -797,6 +825,7 @@ export default function OperatorPage() {
           desktop={desktop}
           lyricPreviewTheme={activeTheme}
           biblePreviewTheme={bibleTheme}
+          presentationPreviewTheme={presentationTheme}
           autoFollowStatus={autoFollow.status}
           autoFollowHeard={autoFollow.heard}
         />

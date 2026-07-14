@@ -43,7 +43,14 @@ export default function ProjectorPage() {
   return (
     <div style={{ position: "fixed", inset: 0, background: "#000" }}>
       <SlideRender state={state} />
-      {announcement?.enabled && <AnnouncementTicker text={announcement.text} speed={announcement.speed} />}
+      {announcement?.enabled && (
+        <AnnouncementTicker
+          text={announcement.text}
+          speed={announcement.speed}
+          bgColor={announcement.bgColor}
+          textColor={announcement.textColor}
+        />
+      )}
     </div>
   );
 }

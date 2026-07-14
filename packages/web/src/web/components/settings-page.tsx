@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  X, Music4, BookOpen, Settings2, Image as ImageIcon, Upload, Loader2,
-  Trash2, Film, Palette, Link2, Monitor, Ear, Type, LayoutList, Languages,
-  Info, Github, Mail, Heart, Megaphone,
+  X, Music4, BookOpen, Settings2, Image as ImageIcon,
+  Film, Palette, Link2, Monitor, Ear, Type, LayoutList, Languages,
+  Info, Github, Mail, Heart, Megaphone, MonitorPlay,
 } from "lucide-react";
 import { VButton } from "./bits";
 import { FontPicker } from "./font-picker";
 import { SlideRender } from "./slide-render";
+import { hexToRgba } from "./announcement-ticker";
+import { MediaPicker } from "./media-picker";
 import type { AppSettings, ThemeOverride } from "../hooks/use-settings";
-import { useMedia, useAddMediaUrl, useDeleteMedia, useUploadMedia, type MediaItem } from "../hooks/use-media";
 import { LANGS } from "../hooks/use-translations";
 import type { LiveState, LiveTheme } from "../lib/live-bus";
 import type { useDesktop } from "../hooks/use-desktop";
@@ -21,11 +22,12 @@ import type { DisplayInfo } from "../lib/desktop";
  *   General → output display, auto-follow, output links
  */
 
-type SectionId = "lyrics" | "bible" | "general";
+type SectionId = "lyrics" | "bible" | "presentations" | "general";
 
 const SECTIONS: { id: SectionId; label: string; icon: typeof Music4; hint: string }[] = [
   { id: "lyrics", label: "Lyrics", icon: Music4, hint: "Theme, background & fonts" },
   { id: "bible", label: "Bible", icon: BookOpen, hint: "Versions & scripture look" },
+  { id: "presentations", label: "Presentations", icon: MonitorPlay, hint: "Slide look & media defaults" },
   { id: "general", label: "General", icon: Settings2, hint: "Output & app behavior" },
 ];
 
@@ -79,6 +81,7 @@ export function SettingsPage({
   desktop,
   lyricPreviewTheme,
   biblePreviewTheme,
+  presentationPreviewTheme,
   autoFollowStatus = "off",
   autoFollowHeard = "",
 }: {
@@ -91,6 +94,8 @@ export function SettingsPage({
   lyricPreviewTheme: LiveTheme;
   /** Fully merged Bible theme for previews. */
   biblePreviewTheme: LiveTheme;
+  /** Fully merged presentation theme for previews. */
+  presentationPreviewTheme: LiveTheme;
   /** Live auto-follow status/heard-text, surfaced in the General tab. */
   autoFollowStatus?: string;
   autoFollowHeard?: string;
@@ -164,6 +169,9 @@ export function SettingsPage({
             )}
             {section === "bible" && (
               <BibleSection settings={settings} patchSettings={patchSettings} previewTheme={biblePreviewTheme} />
+            )}
+            {section === "presentations" && (
+              <PresentationsSection settings={settings} patchSettings={patchSettings} previewTheme={presentationPreviewTheme} />
             )}
             {section === "general" && (
               <GeneralSection
@@ -491,9 +499,11 @@ function LyricsSection({
       </Group>
 
       <Group title="Background" icon={ImageIcon}>
-        <BackgroundsEditor
+        <MediaPicker
           activeId={settings?.activeBackgroundId ?? null}
           onSelect={(id) => patchSettings({ activeBackgroundId: id })}
+          defaultFit={settings?.mediaDefaults?.fit ?? "cover"}
+          defaultMuted={!(settings?.mediaDefaults?.videoSound ?? false)}
         />
       </Group>
 
@@ -667,12 +677,109 @@ function BibleSection({
         </p>
         {settings?.bibleBackgroundId !== undefined && (
           <div className="mt-4 border-t border-[var(--v-border)] pt-4">
-            <BackgroundsEditor
+            <MediaPicker
               activeId={settings?.bibleBackgroundId ?? null}
               onSelect={(id) => patchSettings({ bibleBackgroundId: id })}
+              defaultFit={settings?.mediaDefaults?.fit ?? "cover"}
+              defaultMuted={!(settings?.mediaDefaults?.videoSound ?? false)}
             />
           </div>
         )}
+      </Group>
+    </div>
+  );
+}
+
+/* ---------------- Presentations ---------------- */
+
+function PresentationsSection({
+  settings,
+  patchSettings,
+  previewTheme,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+  previewTheme: LiveTheme;
+}) {
+  const pt = settings?.presentationTheme ?? null;
+  const overridesOn = !!pt;
+  const md = settings?.mediaDefaults ?? { fit: "cover" as const, videoSound: false };
+
+  return (
+    <div>
+      <PreviewStrip theme={previewTheme} lines={["Welcome to Sunday Service", "All are welcome"]} />
+
+      <Group title="About Presentations" icon={MonitorPlay}>
+        <p className="text-sm text-[var(--v-text-dim)]">
+          Build slide decks in-app or import a PowerPoint (.pptx) — each slide can show a heading,
+          body text, or just a full-screen image or video. Open the <b>Presentations</b> tab on the
+          operator screen to create, import and cue them live.
+        </p>
+      </Group>
+
+      <Group title="Slide look" icon={Type}>
+        <label className="flex items-center justify-between">
+          <span className="text-sm">Override the lyric look for presentation slides</span>
+          <Toggle
+            checked={overridesOn}
+            onChange={(v) => patchSettings({ presentationTheme: v ? { textAlign: "center" } : null })}
+          />
+        </label>
+        <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+          Off = presentation text uses the same theme, font and colors as lyrics. Each slide's own
+          background/image always shows regardless of this setting.
+        </p>
+        {overridesOn && (
+          <div className="mt-4 border-t border-[var(--v-border)] pt-4">
+            <OverrideEditor
+              value={pt}
+              onChange={(next) => patchSettings({ presentationTheme: next })}
+              inheritLabel="Same as lyrics"
+            />
+          </div>
+        )}
+      </Group>
+
+      <Group title="Image & video defaults" icon={Film}>
+        <p className="mb-3 text-[11px] text-[var(--v-text-faint)]">
+          Applied when you add a new background, image or video anywhere in the app — existing
+          items keep their own setting (toggle sound per item from its thumbnail).
+        </p>
+        <label className="block">
+          <span className="mb-1 block text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">
+            How images/video fill the screen
+          </span>
+          <div className="flex gap-1.5">
+            {(["cover", "contain", "fill"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => patchSettings({ mediaDefaults: { ...md, fit: f } })}
+                className={`flex-1 rounded-md border py-2 text-xs capitalize transition-colors ${
+                  md.fit === f
+                    ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                    : "border-[var(--v-border)] bg-[var(--v-surface-3)] text-[var(--v-text-dim)] hover:text-[var(--v-text)]"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">
+            Cover = fills the screen (may crop edges) · Contain = shows the whole image/video · Fill = stretches to fit.
+          </span>
+        </label>
+
+        <label className="mt-4 flex items-center justify-between">
+          <span className="text-sm">New videos play with sound</span>
+          <Toggle
+            checked={md.videoSound}
+            onChange={(v) => patchSettings({ mediaDefaults: { ...md, videoSound: v } })}
+          />
+        </label>
+        <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+          Off = new videos are silent by default (good for backgrounds behind lyrics). On = new
+          videos play with audio (good for a standalone announcement or testimony video).
+        </p>
       </Group>
     </div>
   );
@@ -878,7 +985,7 @@ function AnnouncementGroup({
   settings: AppSettings | undefined;
   patchSettings: (p: Partial<AppSettings>) => void;
 }) {
-  const a = settings?.announcement ?? { enabled: false, text: "", speed: 22 };
+  const a = settings?.announcement ?? { enabled: false, text: "", speed: 22, bgColor: null, textColor: null };
   const set = (patch: Partial<NonNullable<AppSettings["announcement"]>>) =>
     patchSettings({ announcement: { ...a, ...patch } });
 
@@ -920,19 +1027,34 @@ function AnnouncementGroup({
         <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">Lower = faster scroll.</span>
       </label>
 
+      <div className="mt-3 grid grid-cols-2 gap-4">
+        <ColorField
+          label="Bar background"
+          value={a.bgColor ?? null}
+          fallback="#000000"
+          onChange={(v) => set({ bgColor: v })}
+        />
+        <ColorField
+          label="Text color"
+          value={a.textColor ?? null}
+          fallback="#ffffff"
+          onChange={(v) => set({ textColor: v })}
+        />
+      </div>
+
       {a.enabled && a.text.trim() && (
         <div className="relative mt-4 h-12 overflow-hidden rounded-lg border border-[var(--v-border)] bg-black">
           <div
             className="flex h-full items-stretch"
-            style={{ borderTop: "2px solid var(--v-accent)" }}
+            style={{ borderTop: "2px solid var(--v-accent)", backgroundColor: hexToRgba(a.bgColor || "#000000", 0.78) }}
           >
             <span className="flex shrink-0 items-center bg-[var(--v-accent)] px-3 text-[10px] font-bold uppercase tracking-wide text-black">
               Announcement
             </span>
             <div className="flex min-w-0 flex-1 items-center overflow-hidden">
               <div className="v-ticker-track" style={{ animationDuration: `${Math.max(6, a.speed)}s` }}>
-                <span className="v-ticker-item font-lyric text-sm font-semibold text-white">{a.text}</span>
-                <span className="v-ticker-item font-lyric text-sm font-semibold text-white" aria-hidden="true">{a.text}</span>
+                <span className="v-ticker-item font-lyric text-sm font-semibold" style={{ color: a.textColor || "#ffffff" }}>{a.text}</span>
+                <span className="v-ticker-item font-lyric text-sm font-semibold" style={{ color: a.textColor || "#ffffff" }} aria-hidden="true">{a.text}</span>
               </div>
             </div>
           </div>
@@ -1193,126 +1315,6 @@ function NdiPanel({
   );
 }
 
-/* ---------------- Backgrounds (moved from the operator sidebar) ---------------- */
-
-function BackgroundsEditor({
-  activeId,
-  onSelect,
-}: {
-  activeId: string | null;
-  onSelect: (id: string | null) => void;
-}) {
-  const media = useMedia();
-  const upload = useUploadMedia();
-  const addUrl = useAddMediaUrl();
-  const del = useDeleteMedia();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [url, setUrl] = useState("");
-  const [color, setColor] = useState("#0a0a0c");
-  const items: MediaItem[] = media.data ?? [];
-
-  return (
-    <div>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-        <button
-          onClick={() => onSelect(null)}
-          className={`relative aspect-video overflow-hidden rounded-md border-2 bg-[var(--v-surface-3)] text-[10px] text-[var(--v-text-faint)] transition-colors ${
-            !activeId ? "border-[var(--v-accent)]" : "border-[var(--v-border)] hover:border-[var(--v-text-faint)]"
-          }`}
-        >
-          <span className="grid h-full w-full place-items-center">None</span>
-        </button>
-        {items.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => onSelect(m.id)}
-            className={`group relative aspect-video overflow-hidden rounded-md border-2 bg-black transition-colors ${
-              activeId === m.id ? "border-[var(--v-accent)]" : "border-[var(--v-border)] hover:border-[var(--v-text-faint)]"
-            }`}
-          >
-            {m.type === "color" ? (
-              <span className="block h-full w-full" style={{ background: m.url }} />
-            ) : m.type === "video" ? (
-              <>
-                <video src={m.url} muted className="h-full w-full object-cover" />
-                <Film className="absolute right-1 top-1 h-3 w-3 text-white/80" />
-              </>
-            ) : (
-              <img src={m.url} alt="" className="h-full w-full object-cover" />
-            )}
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                del.mutate(m.id);
-                if (activeId === m.id) onSelect(null);
-              }}
-              className="absolute left-1 top-1 hidden rounded bg-black/60 p-0.5 text-white group-hover:block"
-            >
-              <Trash2 className="h-3 w-3" />
-            </span>
-          </button>
-        ))}
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="grid aspect-video place-items-center rounded-md border-2 border-dashed border-[var(--v-border)] text-[var(--v-text-faint)] transition-colors hover:border-[var(--v-accent)] hover:text-[var(--v-accent)]"
-          title="Upload image or video"
-        >
-          {upload.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-        </button>
-      </div>
-      {media.isLoading && <p className="mt-2 text-[11px] text-[var(--v-text-faint)]">Loading media…</p>}
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*,video/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) upload.mutate(f);
-          e.target.value = "";
-        }}
-      />
-
-      <div className="mt-3 flex gap-1.5">
-        <div className="relative flex-1">
-          <Link2 className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--v-text-faint)]" />
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Add image / video by URL"
-            className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] py-1.5 pl-7 pr-2 text-xs outline-none focus:border-[var(--v-accent)]"
-          />
-        </div>
-        <button
-          disabled={!url.trim() || addUrl.isPending}
-          onClick={() => {
-            const u = url.trim();
-            const type = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u) ? "video" : "image";
-            addUrl.mutate({ type, uri: u }, { onSuccess: () => setUrl("") });
-          }}
-          className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2.5 text-xs hover:bg-[var(--v-surface)] disabled:opacity-40"
-        >
-          Add
-        </button>
-        <div className="flex items-center gap-1.5">
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            className="h-8 w-9 cursor-pointer rounded border border-[var(--v-border)] bg-transparent"
-          />
-          <button
-            onClick={() => addUrl.mutate({ type: "color", uri: color })}
-            className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2.5 py-1.5 text-xs hover:bg-[var(--v-surface)]"
-          >
-            Add color
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ---------------- tiny toggle ---------------- */
 

@@ -5,9 +5,9 @@
  * StageSlide, then SENDS it to live. Live output (projector, /stream) only ever
  * sees LiveState, so lyrics and scripture render through the exact same engine.
  */
-import { liveBus, type LiveState, type LiveTheme } from "./live-bus";
+import { liveBus, type LiveBackground, type LiveState, type LiveTheme } from "./live-bus";
 
-export type StageKind = "lyric" | "bible";
+export type StageKind = "lyric" | "bible" | "presentation";
 
 export type StageSlide = {
   kind: StageKind;
@@ -20,6 +20,11 @@ export type StageSlide = {
   slideId: string | null;
   slideIndex: number;
   slideCount: number;
+  /**
+   * Per-slide background (presentation slides only). undefined = inherit the
+   * theme's own background; null = explicitly no background (theme color).
+   */
+  background?: LiveBackground;
 };
 
 export function stageToState(
@@ -28,6 +33,7 @@ export function stageToState(
   theme: LiveTheme,
 ): Omit<LiveState, "rev"> {
   const live = status === "live" && slide;
+  const effectiveTheme = live && slide.background !== undefined ? { ...theme, background: slide.background } : theme;
   return {
     status,
     sourceLines: live ? slide.sourceLines : [],
@@ -37,7 +43,7 @@ export function stageToState(
     slideId: slide?.slideId ?? null,
     slideIndex: slide?.slideIndex ?? 0,
     slideCount: slide?.slideCount ?? 0,
-    theme,
+    theme: effectiveTheme,
   };
 }
 

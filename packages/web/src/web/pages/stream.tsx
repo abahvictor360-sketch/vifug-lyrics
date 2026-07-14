@@ -57,7 +57,14 @@ export default function StreamPage() {
   return (
     <div style={{ position: "fixed", inset: 0, background: "transparent" }}>
       <SlideRender state={state} transparent />
-      {announcement?.enabled && <AnnouncementTicker text={announcement.text} speed={announcement.speed} />}
+      {announcement?.enabled && (
+        <AnnouncementTicker
+          text={announcement.text}
+          speed={announcement.speed}
+          bgColor={announcement.bgColor}
+          textColor={announcement.textColor}
+        />
+      )}
     </div>
   );
 }

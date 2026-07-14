@@ -10,6 +10,8 @@ export type LiveBackground = {
   url: string; // presigned/external url, or hex color when type === "color"
   fit: "cover" | "contain" | "fill";
   loop: boolean;
+  /** Video only: true = plays silently. Default true if omitted. */
+  muted?: boolean;
 } | null;
 
 export type LiveTheme = {
