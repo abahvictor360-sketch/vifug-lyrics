@@ -39,6 +39,9 @@ import { loadHistory, recordHistory, clearHistory, type LiveHistoryEntry } from 
 import type { Slide } from "../lib/paginator";
 import type { DisplayInfo } from "../lib/desktop";
 
+/** Operator top-level content mode — the tabs shown in the top bar. */
+type OperatorMode = "lyrics" | "bible" | "presentation" | "plans" | "history";
+
 function themeToLive(t: Record<string, unknown> | undefined): LiveTheme {
   if (!t) return DEFAULT_THEME;
   return {
@@ -209,7 +212,7 @@ export default function OperatorPage() {
 
   // Operator mode: drive the live output from song lyrics OR the Bible.
   // "plans" is a service-plan builder that cues songs/scripture into lyrics/bible.
-  const [mode, setMode] = useState<"lyrics" | "bible" | "presentation" | "plans" | "history">("lyrics");
+  const [mode, setMode] = useState<OperatorMode>("lyrics");
   // Bible cue: set when a plan item cues a scripture into the Bible panel.
   const [bibleCue, setBibleCue] = useState<{ versionId?: string; ref: string; nonce: number } | null>(null);
 
@@ -501,6 +504,8 @@ export default function OperatorPage() {
         desktop={desktop}
         liveStatus={liveState.status}
         onSettings={() => setSettingsOpen(true)}
+        mode={mode}
+        onModeChange={setMode}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -552,65 +557,8 @@ export default function OperatorPage() {
           </div>
         </aside>
 
-        {/* CENTER: mode tabs → arrangement / slide grid OR Bible browser */}
+        {/* CENTER: arrangement / slide grid OR Bible browser — mode tabs now live in the top bar */}
         <main className="flex min-w-0 flex-1 flex-col">
-          {/* Mode switch */}
-          <div className="flex items-center gap-1 border-b border-[var(--v-border)] bg-[var(--v-surface)] px-3 py-2">
-            <button
-              onClick={() => setMode("lyrics")}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === "lyrics"
-                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
-              }`}
-            >
-              <Music4 className="h-4 w-4" /> Lyrics
-            </button>
-            <button
-              onClick={() => setMode("bible")}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === "bible"
-                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
-              }`}
-            >
-              <BookOpen className="h-4 w-4" /> Bible
-            </button>
-            <button
-              onClick={() => setMode("presentation")}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === "presentation"
-                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
-              }`}
-            >
-              <MonitorPlay className="h-4 w-4" /> Presentations
-            </button>
-            <button
-              onClick={() => setMode("plans")}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === "plans"
-                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
-              }`}
-            >
-              <ListChecks className="h-4 w-4" /> Plans
-            </button>
-            <button
-              onClick={() => setMode("history")}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === "history"
-                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
-              }`}
-            >
-              <History className="h-4 w-4" /> History
-            </button>
-            <span className="ml-auto text-[11px] text-[var(--v-text-faint)]">
-              Click to preview · Enter / double-click sends live
-            </span>
-          </div>
-
           {mode === "history" ? (
             <HistoryPanel entries={history} onRecall={recallHistory} onClear={() => setHistory(clearHistory())} />
           ) : mode === "plans" ? (
@@ -844,30 +792,63 @@ export default function OperatorPage() {
 
 /* ---------------- Sub-components ---------------- */
 
+const MODE_TABS: { id: OperatorMode; label: string; icon: typeof Music4 }[] = [
+  { id: "lyrics", label: "Lyrics", icon: Music4 },
+  { id: "bible", label: "Bible", icon: BookOpen },
+  { id: "presentation", label: "Presentations", icon: MonitorPlay },
+  { id: "plans", label: "Plans", icon: ListChecks },
+  { id: "history", label: "History", icon: History },
+];
+
 function TopBar({
   desktop,
   liveStatus,
   onSettings,
+  mode,
+  onModeChange,
 }: {
   desktop: ReturnType<typeof useDesktop>;
   liveStatus: string;
   onSettings: () => void;
+  mode: OperatorMode;
+  onModeChange: (m: OperatorMode) => void;
 }) {
   // z-40: v-glass's backdrop-filter makes the header a stacking context, so
   // the Help dropdown's own z-index can't escape it — the header itself must
   // outrank the preview/live panels below.
   return (
-    <header className="v-glass relative z-40 flex h-12 shrink-0 items-center justify-between border-b px-4">
-      <div className="flex items-center gap-2">
+    <header className="v-glass relative z-40 flex h-12 shrink-0 items-center gap-3 border-b px-4">
+      <div className="flex shrink-0 items-center gap-2">
         <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-[var(--v-accent)] to-[var(--v-accent-2)] text-black shadow-[0_2px_10px_var(--v-accent-glow)]">
           <Music4 className="h-4 w-4" />
         </div>
-        <span className="font-display text-sm font-bold tracking-tight">Vifug Lyrics</span>
-        <span className="ml-1 rounded bg-[var(--v-surface-3)] px-1.5 py-0.5 text-[10px] text-[var(--v-text-faint)]">
+        <span className="hidden font-display text-sm font-bold tracking-tight lg:inline">Vifug Lyrics</span>
+      </div>
+
+      <nav className="v-scroll flex min-w-0 items-center gap-1 overflow-x-auto">
+        {MODE_TABS.map((t) => {
+          const Icon = t.icon;
+          const active = mode === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => onModeChange(t.id)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                active
+                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
+              }`}
+            >
+              <Icon className="h-4 w-4" /> {t.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="ml-auto flex shrink-0 items-center gap-3">
+        <span className="hidden rounded bg-[var(--v-surface-3)] px-1.5 py-0.5 text-[10px] text-[var(--v-text-faint)] xl:inline-block">
           {desktop ? "Desktop" : "Preview"}
         </span>
-      </div>
-      <div className="flex items-center gap-3">
         <UpdateNotice desktop={desktop} />
         <StatusPill status={liveStatus} />
         <HelpMenu />
