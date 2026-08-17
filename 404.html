@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vifug Lyrics has moved to vifug.com</title>
+
+<!--
+  This address is retired. The site lives at vifug.com now.
+
+  It cannot simply be deleted. Versions of the app up to 1.11 shipped with
+  this URL compiled into them as the place to go when an update is available,
+  so an operator on an older build who does exactly the right thing - reads
+  the prompt, clicks through to download - lands here. If this page 404s, that
+  operator is stuck: the app correctly tells them an update exists and gives
+  them no reachable way to get it. This page exists so that never happens.
+
+  The hash is carried across, so a link to #download still arrives at the
+  download section rather than the top of the page. The meta refresh below
+  covers anyone with JavaScript disabled, and the visible link covers the
+  case where both are somehow blocked.
+-->
+<link rel="canonical" href="https://vifug.com/" />
+<meta name="robots" content="noindex, follow" />
+<meta http-equiv="refresh" content="0; url=https://vifug.com/#download" />
+<script>
+  // Preserve whatever hash the old app asked for (#download, and anything a
+  // future build might use) instead of hard-coding one destination.
+  var target = "https://vifug.com/" + (window.location.hash || "#download");
+  window.location.replace(target);
+</script>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #080a0f; color: #eef1f6; text-align: center; padding: 24px;
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif; line-height: 1.6;
+  }
+  .mark {
+    width: 46px; height: 46px; border-radius: 13px; margin: 0 auto 20px;
+    display: grid; place-items: center; color: #080a0f;
+    background: linear-gradient(150deg, #a3e635, #7cc00a);
+    box-shadow: 0 4px 18px rgba(163, 230, 53, .3);
+  }
+  .mark svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  h1 { font-size: 21px; margin: 0 0 10px; font-weight: 700; }
+  p { color: #9aa3b8; margin: 0 0 22px; font-size: 15px; max-width: 30rem; }
+  a.btn {
+    display: inline-block; background: #a3e635; color: #0a0f04; font-weight: 700;
+    padding: 13px 24px; border-radius: 13px; text-decoration: none; font-size: 15px;
+  }
+  a.btn:hover { background: #b6f14a; }
+</style>
+</head>
+<body>
+  <main>
+    <span class="mark"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><path d="m9 9 12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+    <h1>Vifug Lyrics has moved</h1>
+    <p>Downloads and updates now live at vifug.com. Taking you there&hellip;</p>
+    <a class="btn" href="https://vifug.com/#download">Go to the download page</a>
+  </main>
+</body>
+</html>
