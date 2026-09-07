@@ -102,19 +102,6 @@ function tightenMargin(theme: LiveTheme): LiveTheme {
  */
 const LYRIC_FONT_SCALE = 0.9;
 
-/**
- * Presentation slides are drawn a little under the size auto-fit would choose.
- *
- * A deck slide is not one line meant to be sung off a wall. It is a heading
- * with a few points under it, and auto-fit has no way to know that - it sizes
- * to fill the space, so a three-word heading would arrive the height of the
- * screen. But half was too much of a trim: on a real hall screen the slide sat
- * marooned in the middle of the wall, far smaller than the same words as
- * lyrics. This sits just below the lyric trim, so a slide reads at roughly the
- * scale of a chorus while a short heading still stays in proportion.
- */
-const PRESENTATION_FONT_SCALE = 0.8;
-
 function scaleFont(theme: LiveTheme, factor: number): LiveTheme {
   return { ...theme, fontScale: (theme.fontScale ?? 1) * factor };
 }
@@ -562,12 +549,19 @@ export default function OperatorPage() {
   const [mediaSlides, setMediaSlides] = useState<StageSlide[]>([]);
   /** Camera/screen chosen but not yet sent out; shown in the preview column. */
   const [pendingCapture, setPendingCapture] = useState<LiveCapture>(null);
+  /*
+   * No trim on a presentation slide - auto-fit's size is the size.
+   *
+   * Deck slides used to be scaled down (to half, then 0.8) on the theory that
+   * a heading with points under it is read rather than projected large. On a
+   * real hall screen that just made slides small: the same words carried more
+   * of the wall as lyrics than as a slide. Auto-fit already solves the type
+   * against the real box and the real word wrap, and the tighter safe margin
+   * below gives it the room to use, so letting it fill is what matches what
+   * the operator sees in the preview.
+   */
   const presentationTheme = useMemo<LiveTheme>(
-    () =>
-      scaleFont(
-        tightenMargin(mergeOverride(activeTheme, settings?.presentationTheme)),
-        PRESENTATION_FONT_SCALE,
-      ),
+    () => tightenMargin(mergeOverride(activeTheme, settings?.presentationTheme)),
     [activeTheme, settings?.presentationTheme],
   );
 
