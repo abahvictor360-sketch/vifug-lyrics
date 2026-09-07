@@ -103,14 +103,17 @@ function tightenMargin(theme: LiveTheme): LiveTheme {
 const LYRIC_FONT_SCALE = 0.9;
 
 /**
- * Presentation slides are drawn at half the size auto-fit would choose.
+ * Presentation slides are drawn a little under the size auto-fit would choose.
  *
  * A deck slide is not one line meant to be sung off a wall. It is a heading
- * with a few points under it, often read rather than projected large, and
- * auto-fit has no way to know that - it sizes to fill the space, so a
- * three-word heading arrives the height of the screen.
+ * with a few points under it, and auto-fit has no way to know that - it sizes
+ * to fill the space, so a three-word heading would arrive the height of the
+ * screen. But half was too much of a trim: on a real hall screen the slide sat
+ * marooned in the middle of the wall, far smaller than the same words as
+ * lyrics. This sits just below the lyric trim, so a slide reads at roughly the
+ * scale of a chorus while a short heading still stays in proportion.
  */
-const PRESENTATION_FONT_SCALE = 0.5;
+const PRESENTATION_FONT_SCALE = 0.8;
 
 function scaleFont(theme: LiveTheme, factor: number): LiveTheme {
   return { ...theme, fontScale: (theme.fontScale ?? 1) * factor };
