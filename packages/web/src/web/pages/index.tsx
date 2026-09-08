@@ -14,6 +14,7 @@ import { api } from "../lib/api";
 import { VButton, SectionChip, Spinner, LevelMeter } from "../components/bits";
 import { PresentationsPanel } from "../components/presentation-panel";
 import { SlideRender } from "../components/slide-render";
+import { usePublishAudioOutput } from "../hooks/use-audio-output";
 import { LiveOutput } from "../components/live-output";
 import { SongEditor } from "../components/song-editor";
 import { ImportModal } from "../components/import-modal";
@@ -82,12 +83,17 @@ type OperatorMode = "lyrics" | "bible" | "presentation" | "media" | "plans" | "h
  * keep the roomier setting, where the space is what makes a short line look
  * deliberate rather than stranded.
  *
- * Neither display exposes safeMargin in its override editor, so this is always
- * the inherited lyric value and never something the operator chose here.
+ * Applied only to an inherited lyric margin: a display whose own margin the
+ * operator has set keeps exactly what they set (see below).
  */
 const TIGHT_MARGIN_SCALE = 0.48;
 
-function tightenMargin(theme: LiveTheme): LiveTheme {
+function tightenMargin(theme: LiveTheme, override?: ThemeOverride | null): LiveTheme {
+  // A margin the operator set for THIS display is the margin they want. The
+  // scale below is a default for the inherited lyric value, so applying it
+  // over a chosen number would answer "move the text in a bit" by moving it
+  // half as far and leave them dragging a slider that lies.
+  if (override?.safeMargin != null || override?.safeMarginEdges) return theme;
   return { ...theme, safeMargin: Number((theme.safeMargin * TIGHT_MARGIN_SCALE).toFixed(2)) };
 }
 
@@ -114,6 +120,30 @@ function trimLyricFont(theme: LiveTheme): LiveTheme {
  * Layer operator overrides (from Settings) over a base theme.
  * undefined = inherit; fontSize null = explicit auto-fit.
  */
+/**
+ * A library row as a live background.
+ *
+ * One function because four places needed the same six fields and the same
+ * narrowing: MediaItem can be audio, which has no picture and cannot be a
+ * backdrop, so it resolves to "no background" rather than being forced into a
+ * shape it does not fit.
+ */
+function mediaToBackground(
+  m: MediaItem | undefined,
+  role: "background" | "slide" = "background",
+): LiveBackground {
+  if (!m) return null;
+  if (m.type !== "image" && m.type !== "video" && m.type !== "color") return null;
+  return {
+    type: m.type,
+    url: m.url,
+    fit: resolveFit(m.fit, role),
+    loop: !!m.loop,
+    muted: m.muted !== 0,
+    colorFilter: m.colorFilter,
+  };
+}
+
 function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): LiveTheme {
   if (!o) return base;
   return {
@@ -129,6 +159,8 @@ function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): Li
     captionColor: o.referenceColor ?? base.captionColor ?? null,
     translationColor: o.translationColor ?? base.translationColor ?? null,
     textShadow: o.textShadow === undefined ? base.textShadow : o.textShadow,
+    safeMargin: o.safeMargin ?? base.safeMargin,
+    safeMarginEdges: o.safeMarginEdges === undefined ? base.safeMarginEdges : o.safeMarginEdges,
   };
 }
 
@@ -376,6 +408,8 @@ export default function OperatorPage() {
     settings?.output.displayId,
     settings?.output.autoProjector ?? true,
   );
+  // Everything this window plays goes to the speakers chosen in Settings.
+  usePublishAudioOutput(settings?.audio?.outputDeviceId, settings?.audio?.outputMuted);
   // The OBS/vMix browser-source address. Same-origin: OBS is usually on this
   // machine, and Settings lists the LAN addresses for a separate stream PC.
   const streamUrl = typeof window !== "undefined" ? `${window.location.origin}/#/stream` : "/#/stream";
@@ -422,10 +456,7 @@ export default function OperatorPage() {
   const activeBackground = useMemo<LiveBackground>(() => {
     const id = settings?.activeBackgroundId;
     if (!id) return null;
-    const m = media.data?.find((x) => x.id === id);
-    if (!m) return null;
-    const fit = resolveFit(m.fit, "background");
-    return { type: m.type, url: m.url, fit, loop: !!m.loop, muted: m.muted !== 0, colorFilter: m.colorFilter };
+    return mediaToBackground(media.data?.find((x) => x.id === id));
   }, [settings?.activeBackgroundId, media.data]);
 
   const activeTheme = useMemo(() => {
@@ -452,11 +483,8 @@ export default function OperatorPage() {
     }
     let background = base.background;
     if (song.backgroundId) {
-      const m = media.data?.find((x) => x.id === song.backgroundId);
-      if (m) {
-        const fit = resolveFit(m.fit, "background");
-        background = { type: m.type, url: m.url, fit, loop: !!m.loop, muted: m.muted !== 0, colorFilter: m.colorFilter };
-      }
+      const own = mediaToBackground(media.data?.find((x) => x.id === song.backgroundId));
+      if (own) background = own;
     }
     return trimLyricFont({ ...base, background, textColor: song.textColor || base.textColor });
   }, [full.data?.song, activeTheme, themes.data, settings?.lyricTheme, media.data]);
@@ -525,22 +553,26 @@ export default function OperatorPage() {
   const bibleBackground = useMemo<LiveBackground>(() => {
     const id = settings?.bibleBackgroundId;
     if (!id) return null;
-    const m = media.data?.find((x) => x.id === id);
-    if (!m) return null;
-    const fit = resolveFit(m.fit, "background");
-    return { type: m.type, url: m.url, fit, loop: !!m.loop, muted: m.muted !== 0, colorFilter: m.colorFilter };
+    return mediaToBackground(media.data?.find((x) => x.id === id));
   }, [settings?.bibleBackgroundId, media.data]);
 
   // Bible theme = active lyric theme with per-display Bible overrides merged in.
   // Bible slides always show the scripture reference caption on the output.
   const bibleTheme = useMemo<LiveTheme>(
     () => ({
-      ...tightenMargin(mergeOverride(activeTheme, settings?.bibleTheme)),
+      ...tightenMargin(mergeOverride(activeTheme, settings?.bibleTheme), settings?.bibleTheme),
       ...(settings?.bibleBackgroundId !== undefined ? { background: bibleBackground } : {}),
       showCaption: true,
     }),
     [activeTheme, settings?.bibleTheme, settings?.bibleBackgroundId, bibleBackground],
   );
+
+  // Presentation background: same three states as the Bible's (see above).
+  const presentationBackground = useMemo<LiveBackground>(() => {
+    const id = settings?.presentationBackgroundId;
+    if (!id) return null;
+    return mediaToBackground(media.data?.find((x) => x.id === id));
+  }, [settings?.presentationBackgroundId, media.data]);
 
   // Presentation slides are lifted up from PresentationsPanel; each slide
   // carries its OWN background (image/video/color), so the theme here only
@@ -561,8 +593,15 @@ export default function OperatorPage() {
    * the operator sees in the preview.
    */
   const presentationTheme = useMemo<LiveTheme>(
-    () => tightenMargin(mergeOverride(activeTheme, settings?.presentationTheme)),
-    [activeTheme, settings?.presentationTheme],
+    () => ({
+      ...tightenMargin(mergeOverride(activeTheme, settings?.presentationTheme), settings?.presentationTheme),
+      // Decks get a background of their own, the same three states as the
+      // Bible's: unset inherits the lyric background, null is deliberately
+      // plain, an id is that picture or video. A slide carrying its own
+      // background still wins over it (see lib/stage.ts).
+      ...(settings?.presentationBackgroundId !== undefined ? { background: presentationBackground } : {}),
+    }),
+    [activeTheme, settings?.presentationTheme, settings?.presentationBackgroundId, presentationBackground],
   );
 
   const stageSlides =
@@ -905,7 +944,7 @@ export default function OperatorPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-[var(--v-bg)] text-[var(--v-text)]">
+    <div className="flex h-screen flex-col overflow-x-hidden bg-[var(--v-bg)] text-[var(--v-text)]">
       <TopBar
         desktop={desktop}
         liveStatus={liveState.status}
@@ -919,13 +958,21 @@ export default function OperatorPage() {
         onModeChange={setMode}
       />
 
-      <div className="flex min-h-0 flex-1">
+      {/*
+       * Three columns side by side is the desktop shape and the wrong one on a
+       * phone: the library and the live rail alone are wider than the screen,
+       * so the middle panel - and the top bar's own tabs - were pushed off the
+       * right edge with no way to reach them. Below `lg` the same three panes
+       * stack and this row scrolls; from `lg` up nothing about the desktop
+       * layout changes.
+       */}
+      <div className="v-scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-y-hidden">
         {/* LEFT: the song library, which belongs to Lyrics only. Every other
             mode carries its own list (decks, media, plans, history), so
             leaving this mounted showed songs you cannot use and stole 288px
             from the panel that actually needed the room. */}
         {mode === "lyrics" && (
-        <aside className="flex w-72 shrink-0 flex-col border-r border-[var(--v-border)] bg-[var(--v-surface)]">
+        <aside className="flex max-h-[45vh] w-full shrink-0 flex-col border-b border-[var(--v-border)] bg-[var(--v-surface)] lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r">
           <div className="border-b border-[var(--v-border)] p-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--v-text-faint)]" />
@@ -999,7 +1046,7 @@ export default function OperatorPage() {
         )}
 
         {/* CENTER: arrangement / slide grid OR Bible browser - mode tabs now live in the top bar */}
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main className="flex min-h-[60vh] min-w-0 flex-1 flex-col lg:min-h-0">
           {mode === "history" ? (
             <HistoryPanel entries={history} onRecall={recallHistory} onClear={() => setHistory(clearHistory())} />
           ) : mode === "plans" ? (
@@ -1085,7 +1132,7 @@ export default function OperatorPage() {
             so the rail is sized for them rather than for the panels beneath.
             It widens on roomier displays instead of taking a fixed share,
             which would squeeze the library on a 1366-wide laptop. */}
-        <aside className="v-scroll flex w-[32rem] shrink-0 flex-col overflow-y-auto border-l border-[var(--v-border)] bg-[var(--v-surface)] 2xl:w-[40rem]">
+        <aside className="v-scroll flex w-full shrink-0 flex-col border-t border-[var(--v-border)] bg-[var(--v-surface)] lg:w-[32rem] lg:overflow-y-auto lg:border-t-0 lg:border-l 2xl:w-[40rem]">
           {/* PREVIEW | LIVE - side by side (ProPresenter-style) */}
           <div className="border-b border-[var(--v-border)] p-3">
             <div className="grid grid-cols-2 gap-3">
@@ -1162,7 +1209,20 @@ export default function OperatorPage() {
                   style={{ background: "#000" }}
                   onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
                 >
-                  <CaptureStage state={liveState} scale isLiveOutput />
+                  {/*
+                    * The live thumbnail is a real output, not a preview: with
+                    * no projector window and no full-screen output open, it is
+                    * the only thing playing, so a video cued with sound has to
+                    * be heard from here. When one of those IS open, that
+                    * surface has the sound and this one stays quiet - the same
+                    * clip out of two windows a few frames apart is an echo.
+                    */}
+                  <CaptureStage
+                    state={liveState}
+                    scale
+                    isLiveOutput
+                    playAudio={!projector.open && !fullScreenOutput}
+                  />
                   {/* The timer as the projector draws it. Without this the
                       operator ticks "Main screen" and nothing here changes,
                       which reads as a setting that did not take - and the only
@@ -1507,7 +1567,9 @@ function TopBar({
         <span className="hidden font-display text-sm font-bold tracking-tight lg:inline">Vifug</span>
       </div>
 
-      <nav className="v-scroll flex min-w-0 items-center gap-1 overflow-x-auto">
+      {/* flex-1 so the tabs take the room the controls don't need, and scroll
+          sideways within it rather than pushing anything off the screen. */}
+      <nav className="v-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
         {MODE_TABS.map((t) => {
           const Icon = t.icon;
           const active = mode === t.id;
@@ -1527,7 +1589,15 @@ function TopBar({
         })}
       </nav>
 
-      <div className="ml-auto flex shrink-0 items-center gap-3">
+      {/*
+       * Shrinks rather than pushes. On a phone this cluster used to hold its
+       * full width and shove the mode tabs off the right edge of the screen,
+       * which is how "Presentations" became unreachable in a browser: the
+       * only New button still on screen was the song library's. The download
+       * and status extras drop out first, then the button labels, leaving
+       * icons that still do the same thing.
+       */}
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
         <span className="hidden rounded bg-[var(--v-surface-3)] px-1.5 py-0.5 text-[11px] text-[var(--v-text-faint)] xl:inline-block">
           {desktop ? "Desktop" : "Preview"}
         </span>
@@ -1535,15 +1605,21 @@ function TopBar({
         {/* Browser only. The update pill takes this slot in the desktop app,
             and offering someone a download of what they are already running
             is just noise. */}
-        {!desktop && <InstallAppButton />}
-        {!desktop && <GetTheAppButton />}
-        <StatusPill status={liveStatus} />
+        {!desktop && (
+          <span className="hidden md:contents">
+            <InstallAppButton />
+            <GetTheAppButton />
+          </span>
+        )}
+        <span className="hidden sm:contents">
+          <StatusPill status={liveStatus} />
+        </span>
         <HelpMenu onCheckUpdates={update.checkNow} desktop={desktop} />
-        <VButton variant="ghost" size="sm" onClick={onMedia}>
-          <Clapperboard className="h-4 w-4" /> Media
+        <VButton variant="ghost" size="sm" onClick={onMedia} aria-label="Media">
+          <Clapperboard className="h-4 w-4" /> <span className="hidden lg:inline">Media</span>
         </VButton>
-        <VButton variant="ghost" size="sm" onClick={onSettings}>
-          <Settings2 className="h-4 w-4" /> Settings
+        <VButton variant="ghost" size="sm" onClick={onSettings} aria-label="Settings">
+          <Settings2 className="h-4 w-4" /> <span className="hidden lg:inline">Settings</span>
         </VButton>
       </div>
     </header>
@@ -2500,6 +2576,11 @@ function StreamPanel({
         inputLabel: settings?.audio?.inputLabel ?? null,
         muted: settings?.audio?.muted ?? false,
         noiseSuppression: settings?.audio?.noiseSuppression ?? true,
+        // Spread the whole stored block, not a hand-listed copy of it: the
+        // list is exactly what this comment warns about, and it had already
+        // fallen behind - a mic change from the mixer wiped the chosen
+        // output device with it.
+        ...settings?.audio,
         ...patch,
       },
     });
@@ -2596,6 +2677,15 @@ function StreamPanel({
             onToggleMute={() => setStream({ mediaMuted: !(settings?.stream?.mediaMuted ?? false) })}
           />
         </div>
+        {/* Master out. The two strips above are sources; this is the one
+            switch that silences whatever is coming out of the speakers,
+            wherever it started - the thing a desk reaches for when a video
+            starts talking over the preacher. */}
+        <OutputChannel
+          muted={settings?.audio?.outputMuted ?? false}
+          deviceLabel={settings?.audio?.outputLabel ?? null}
+          onToggleMute={() => setAudio({ outputMuted: !(settings?.audio?.outputMuted ?? false) })}
+        />
       </div>
     </div>
   );
@@ -2680,6 +2770,51 @@ function MediaChannel({
       <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
         {active ? `${volume}% - a video is playing` : "No unmuted video is on air right now."}
       </p>
+    </div>
+  );
+}
+
+/**
+ * Master output strip: which speakers the app is playing through, and one
+ * button that silences all of it. Sits under the two source strips because
+ * that is the order sound travels - mic and media in, one output out.
+ */
+function OutputChannel({
+  muted,
+  deviceLabel,
+  onToggleMute,
+}: {
+  muted: boolean;
+  deviceLabel: string | null;
+  onToggleMute: () => void;
+}) {
+  return (
+    <div
+      className={`mt-3 flex items-center gap-2.5 rounded-lg border p-2.5 ${
+        muted ? "border-[var(--v-live)]/50 bg-[var(--v-live-soft)]" : "border-[var(--v-border)] bg-[var(--v-surface-2)]"
+      }`}
+    >
+      <button
+        onClick={onToggleMute}
+        title={muted ? "Unmute the app's sound output" : "Mute everything the app plays"}
+        aria-pressed={muted}
+        className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-[12px] ${
+          muted
+            ? "border-[var(--v-live)] text-[var(--v-live)]"
+            : "border-[var(--v-border)] text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)] hover:text-[var(--v-text)]"
+        }`}
+      >
+        {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+        {muted ? "Muted" : "Mute"}
+      </button>
+      <div className="min-w-0">
+        <span className="block text-[12px] font-medium text-[var(--v-text-dim)]">Sound output</span>
+        <span className="block truncate text-[11px] text-[var(--v-text-faint)]">
+          {muted
+            ? "Nothing the app plays is being heard."
+            : (deviceLabel ?? "System default device") + " - change it in Settings → General."}
+        </span>
+      </div>
     </div>
   );
 }
@@ -2826,9 +2961,10 @@ function PlansPanel({
   };
 
   return (
-    <div className="flex min-h-0 flex-1">
-      {/* Plan list */}
-      <div className="flex w-64 shrink-0 flex-col border-r border-[var(--v-border)]">
+    <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      {/* Plan list - above the plan itself on a narrow screen, beside it on a
+          desktop (see the presentations panel for the same reasoning). */}
+      <div className="flex max-h-[40vh] w-full shrink-0 flex-col border-b border-[var(--v-border)] md:max-h-none md:w-64 md:border-b-0 md:border-r">
         <div className="border-b border-[var(--v-border)] p-3">
           <div className="flex gap-1.5">
             <input
