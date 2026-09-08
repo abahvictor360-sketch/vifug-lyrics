@@ -20,6 +20,20 @@ export type ThemeOverride = {
   translationColor?: string | null;
   /** Drop shadow behind the text; null = none, undefined = inherit. */
   textShadow?: { color: string; blur: number; x: number; y: number } | null;
+  /**
+   * How much of the screen edge the text keeps clear, as a percentage.
+   * null/undefined = inherit the theme's own margin (and, for Bible and
+   * presentations, the tighter default they start from). Setting it here is
+   * what an operator reaches for when the projector crops the picture or the
+   * words sit too close to the bottom of the wall.
+   */
+  safeMargin?: number | null;
+  /**
+   * The same, per edge, for a screen that is only cropped on one side - a
+   * projector overshooting the top of a wall, a TV with overscan down one
+   * edge. null/undefined = all four edges use safeMargin.
+   */
+  safeMarginEdges?: { top: number; right: number; bottom: number; left: number } | null;
 };
 
 export type AppSettings = {
@@ -75,6 +89,13 @@ export type AppSettings = {
    * null = explicitly plain (theme color only), string = a media id.
    */
   bibleBackgroundId?: string | null;
+  /**
+   * Presentation background, same three states as bibleBackgroundId. A deck
+   * slide with a background of its own still wins - this is what shows behind
+   * the ones that have none, which used to be the lyric background whether
+   * that suited the deck or not.
+   */
+  presentationBackgroundId?: string | null;
   /**
    * autoProjector: put the output on a second screen as soon as one is there,
    * without waiting to be asked. Defaults on - a plugged-in projector is

@@ -92,6 +92,27 @@ function clampMargin(safeMargin: number | null | undefined): number {
   return Math.max(2, safeMargin ?? 8);
 }
 
+/**
+ * The four margins, in percent, as the operator set them.
+ *
+ * Per-edge values exist for the screen that is cropped on one side only - a
+ * projector overshooting the top of a wall, a TV with overscan down one edge -
+ * where a single number can only be raised on all four, wasting the three
+ * edges that were fine. With none set, all four are the single margin, which
+ * is what every theme carries.
+ */
+function marginEdges(t: LiveTheme): { top: number; right: number; bottom: number; left: number } {
+  const all = clampMargin(t.safeMargin);
+  const e = t.safeMarginEdges;
+  if (!e) return { top: all, right: all, bottom: all, left: all };
+  return {
+    top: clampMargin(e.top),
+    right: clampMargin(e.right),
+    bottom: clampMargin(e.bottom),
+    left: clampMargin(e.left),
+  };
+}
+
 function outlineStyle(t: LiveTheme): React.CSSProperties {
   const parts: string[] = [];
   if (t.textOutline && t.textOutline.width) {
@@ -185,8 +206,10 @@ export function SlideRender({
     // compute the font that fits both width (text wrapped across n lines) and
     // height (n lines stacked), and keep whichever count fills the most
     // screen. Assumes ~16:9 to compare vw vs vh candidates.
-    const margin = clampMargin(t.safeMargin);
-    const usable = 100 - margin * 2;
+    // Width is what wrapping is solved against, so the horizontal pair is what
+    // the type has to fit between - a taller top margin does not narrow a line.
+    const edges = marginEdges(t);
+    const usable = 100 - edges.left - edges.right;
     const fontSpec = `${t.fontWeight || 600} 100px ${t.fontFamily || '"Archivo", system-ui, sans-serif'}`;
     // Total text width in em; translation renders at 0.7em, so scale it down.
     const emTotal = Math.max(
@@ -283,7 +306,7 @@ export function SlideRender({
 
   // Guaranteed safe margin on all four edges. Text wraps inside it (width),
   // and the shrink pass below keeps it inside vertically too.
-  const safeMargin = clampMargin(t.safeMargin);
+  const margins = marginEdges(t);
 
   // --- Fit guard ---
   // A user-set font size can be arbitrarily large; the text wraps within the
@@ -397,6 +420,7 @@ export function SlideRender({
   const contentKey = [
     state.slideId, state.sourceLines.join("\n"), state.translationLines.join("\n"),
     state.sectionLabel, t.fontSize, t.fontFamily, t.fontWeight, t.safeMargin,
+    JSON.stringify(t.safeMarginEdges ?? null),
     t.displayMode, t.showCaption,
   ].join("|");
   useLayoutEffect(() => {
@@ -498,7 +522,10 @@ export function SlideRender({
         flexDirection: "column",
         justifyContent: justify,
         alignItems,
-        padding: `${safeMargin}%`,
+        // Percentage padding resolves against the box's WIDTH on all four
+        // sides, top and bottom included - which is what the auto-fit pass
+        // above assumes too, so both agree about the space available.
+        padding: `${margins.top}% ${margins.right}% ${margins.bottom}% ${margins.left}%`,
         color: t.textColor,
         fontFamily: t.fontFamily || "var(--font-lyric)",
         fontWeight: t.fontWeight,

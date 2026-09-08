@@ -83,12 +83,17 @@ type OperatorMode = "lyrics" | "bible" | "presentation" | "media" | "plans" | "h
  * keep the roomier setting, where the space is what makes a short line look
  * deliberate rather than stranded.
  *
- * Neither display exposes safeMargin in its override editor, so this is always
- * the inherited lyric value and never something the operator chose here.
+ * Applied only to an inherited lyric margin: a display whose own margin the
+ * operator has set keeps exactly what they set (see below).
  */
 const TIGHT_MARGIN_SCALE = 0.48;
 
-function tightenMargin(theme: LiveTheme): LiveTheme {
+function tightenMargin(theme: LiveTheme, override?: ThemeOverride | null): LiveTheme {
+  // A margin the operator set for THIS display is the margin they want. The
+  // scale below is a default for the inherited lyric value, so applying it
+  // over a chosen number would answer "move the text in a bit" by moving it
+  // half as far and leave them dragging a slider that lies.
+  if (override?.safeMargin != null || override?.safeMarginEdges) return theme;
   return { ...theme, safeMargin: Number((theme.safeMargin * TIGHT_MARGIN_SCALE).toFixed(2)) };
 }
 
@@ -115,6 +120,30 @@ function trimLyricFont(theme: LiveTheme): LiveTheme {
  * Layer operator overrides (from Settings) over a base theme.
  * undefined = inherit; fontSize null = explicit auto-fit.
  */
+/**
+ * A library row as a live background.
+ *
+ * One function because four places needed the same six fields and the same
+ * narrowing: MediaItem can be audio, which has no picture and cannot be a
+ * backdrop, so it resolves to "no background" rather than being forced into a
+ * shape it does not fit.
+ */
+function mediaToBackground(
+  m: MediaItem | undefined,
+  role: "background" | "slide" = "background",
+): LiveBackground {
+  if (!m) return null;
+  if (m.type !== "image" && m.type !== "video" && m.type !== "color") return null;
+  return {
+    type: m.type,
+    url: m.url,
+    fit: resolveFit(m.fit, role),
+    loop: !!m.loop,
+    muted: m.muted !== 0,
+    colorFilter: m.colorFilter,
+  };
+}
+
 function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): LiveTheme {
   if (!o) return base;
   return {
@@ -130,6 +159,8 @@ function mergeOverride(base: LiveTheme, o: ThemeOverride | null | undefined): Li
     captionColor: o.referenceColor ?? base.captionColor ?? null,
     translationColor: o.translationColor ?? base.translationColor ?? null,
     textShadow: o.textShadow === undefined ? base.textShadow : o.textShadow,
+    safeMargin: o.safeMargin ?? base.safeMargin,
+    safeMarginEdges: o.safeMarginEdges === undefined ? base.safeMarginEdges : o.safeMarginEdges,
   };
 }
 
@@ -425,10 +456,7 @@ export default function OperatorPage() {
   const activeBackground = useMemo<LiveBackground>(() => {
     const id = settings?.activeBackgroundId;
     if (!id) return null;
-    const m = media.data?.find((x) => x.id === id);
-    if (!m) return null;
-    const fit = resolveFit(m.fit, "background");
-    return { type: m.type, url: m.url, fit, loop: !!m.loop, muted: m.muted !== 0, colorFilter: m.colorFilter };
+    return mediaToBackground(media.data?.find((x) => x.id === id));
   }, [settings?.activeBackgroundId, media.data]);
 
   const activeTheme = useMemo(() => {
@@ -455,11 +483,8 @@ export default function OperatorPage() {
     }
     let background = base.background;
     if (song.backgroundId) {
-      const m = media.data?.find((x) => x.id === song.backgroundId);
-      if (m) {
-        const fit = resolveFit(m.fit, "background");
-        background = { type: m.type, url: m.url, fit, loop: !!m.loop, muted: m.muted !== 0, colorFilter: m.colorFilter };
-      }
+      const own = mediaToBackground(media.data?.find((x) => x.id === song.backgroundId));
+      if (own) background = own;
     }
     return trimLyricFont({ ...base, background, textColor: song.textColor || base.textColor });
   }, [full.data?.song, activeTheme, themes.data, settings?.lyricTheme, media.data]);
@@ -528,22 +553,26 @@ export default function OperatorPage() {
   const bibleBackground = useMemo<LiveBackground>(() => {
     const id = settings?.bibleBackgroundId;
     if (!id) return null;
-    const m = media.data?.find((x) => x.id === id);
-    if (!m) return null;
-    const fit = resolveFit(m.fit, "background");
-    return { type: m.type, url: m.url, fit, loop: !!m.loop, muted: m.muted !== 0, colorFilter: m.colorFilter };
+    return mediaToBackground(media.data?.find((x) => x.id === id));
   }, [settings?.bibleBackgroundId, media.data]);
 
   // Bible theme = active lyric theme with per-display Bible overrides merged in.
   // Bible slides always show the scripture reference caption on the output.
   const bibleTheme = useMemo<LiveTheme>(
     () => ({
-      ...tightenMargin(mergeOverride(activeTheme, settings?.bibleTheme)),
+      ...tightenMargin(mergeOverride(activeTheme, settings?.bibleTheme), settings?.bibleTheme),
       ...(settings?.bibleBackgroundId !== undefined ? { background: bibleBackground } : {}),
       showCaption: true,
     }),
     [activeTheme, settings?.bibleTheme, settings?.bibleBackgroundId, bibleBackground],
   );
+
+  // Presentation background: same three states as the Bible's (see above).
+  const presentationBackground = useMemo<LiveBackground>(() => {
+    const id = settings?.presentationBackgroundId;
+    if (!id) return null;
+    return mediaToBackground(media.data?.find((x) => x.id === id));
+  }, [settings?.presentationBackgroundId, media.data]);
 
   // Presentation slides are lifted up from PresentationsPanel; each slide
   // carries its OWN background (image/video/color), so the theme here only
@@ -564,8 +593,15 @@ export default function OperatorPage() {
    * the operator sees in the preview.
    */
   const presentationTheme = useMemo<LiveTheme>(
-    () => tightenMargin(mergeOverride(activeTheme, settings?.presentationTheme)),
-    [activeTheme, settings?.presentationTheme],
+    () => ({
+      ...tightenMargin(mergeOverride(activeTheme, settings?.presentationTheme), settings?.presentationTheme),
+      // Decks get a background of their own, the same three states as the
+      // Bible's: unset inherits the lyric background, null is deliberately
+      // plain, an id is that picture or video. A slide carrying its own
+      // background still wins over it (see lib/stage.ts).
+      ...(settings?.presentationBackgroundId !== undefined ? { background: presentationBackground } : {}),
+    }),
+    [activeTheme, settings?.presentationTheme, settings?.presentationBackgroundId, presentationBackground],
   );
 
   const stageSlides =

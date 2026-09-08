@@ -909,6 +909,139 @@ function PreviewStrip({ theme, lines, caption }: { theme: LiveTheme; lines: stri
   );
 }
 
+const MARGIN_EDGES = [
+  { key: "top", label: "Top" },
+  { key: "right", label: "Right" },
+  { key: "bottom", label: "Bottom" },
+  { key: "left", label: "Left" },
+] as const;
+
+/**
+ * How much screen edge the words keep clear.
+ *
+ * The margin lived on the theme, which is the wrong place to reach for it: it
+ * is a property of the room's screen, not of the look - a projector that
+ * overshoots the top of the wall crops every theme equally. So it sits with
+ * the display it applies to, one number for all four edges, or one per edge
+ * for a screen that is only cropped on one side.
+ */
+function MarginField({
+  value,
+  onChange,
+  inheritLabel,
+  inherited,
+}: {
+  value: ThemeOverride;
+  onChange: (patch: ThemeOverride) => void;
+  inheritLabel: string;
+  /** What the margin would be with nothing set here - shown while inheriting. */
+  inherited: number;
+}) {
+  const edges = value.safeMarginEdges ?? null;
+  const all = value.safeMargin ?? null;
+  const perEdge = !!edges;
+  const shown = edges ?? { top: all ?? inherited, right: all ?? inherited, bottom: all ?? inherited, left: all ?? inherited };
+  const set = all ?? inherited;
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Text margin</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() =>
+              onChange(
+                perEdge
+                  ? { safeMarginEdges: null, safeMargin: shown.top }
+                  : { safeMarginEdges: { ...shown }, safeMargin: value.safeMargin ?? null },
+              )
+            }
+            className="text-[11px] text-[var(--v-text-faint)] underline-offset-2 hover:text-[var(--v-text)] hover:underline"
+          >
+            {perEdge ? "Same on all edges" : "Set each edge"}
+          </button>
+          {(all !== null || perEdge) && (
+            <button
+              onClick={() => onChange({ safeMargin: null, safeMarginEdges: null })}
+              className="text-[11px] text-[var(--v-text-faint)] underline-offset-2 hover:text-[var(--v-text)] hover:underline"
+            >
+              reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-start gap-4">
+        {/* What the numbers mean, at a glance: the screen, and the box the
+            words are kept inside it. Reading four percentages and picturing
+            the result is the part nobody should have to do in their head. */}
+        <div
+          aria-hidden
+          className="relative aspect-video w-28 shrink-0 rounded border border-[var(--v-border)] bg-[var(--v-surface-3)]"
+        >
+          <div
+            className="absolute rounded-sm border border-dashed border-[var(--v-accent)] bg-[var(--v-accent-soft)]"
+            style={{
+              top: `${shown.top * (9 / 16)}%`,
+              bottom: `${shown.bottom * (9 / 16)}%`,
+              left: `${shown.left}%`,
+              right: `${shown.right}%`,
+            }}
+          />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          {perEdge ? (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              {MARGIN_EDGES.map((e) => (
+                <div key={e.key}>
+                  <span className="mb-0.5 flex items-center justify-between text-[11px] text-[var(--v-text-faint)]">
+                    {e.label} <span className="text-[var(--v-accent)]">{shown[e.key]}%</span>
+                  </span>
+                  <input
+                    type="range"
+                    aria-label={`${e.label} margin, percent`}
+                    min={2}
+                    max={25}
+                    value={shown[e.key]}
+                    onChange={(ev) =>
+                      onChange({ safeMarginEdges: { ...shown, [e.key]: Number(ev.target.value) } })
+                    }
+                    className="w-full accent-[var(--v-accent)]"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <span className="mb-1 flex items-center justify-between text-[11px] text-[var(--v-text-faint)]">
+                All edges
+                <span className={all === null ? "" : "text-[var(--v-accent)]"}>
+                  {set}%{all === null ? ` · ${inheritLabel.toLowerCase()}` : ""}
+                </span>
+              </span>
+              <input
+                type="range"
+                aria-label="Text margin on all edges, percent"
+                min={2}
+                max={25}
+                value={set}
+                onChange={(e) => onChange({ safeMargin: Number(e.target.value), safeMarginEdges: null })}
+                className="w-full accent-[var(--v-accent)]"
+              />
+            </div>
+          )}
+          <p className="mt-2 text-[12px] text-[var(--v-text-faint)]">
+            Bigger keeps the words further from the edge of the screen. Raise the edge a projector
+            or TV is cutting off; lower it to use more of the wall. Type that fits itself to the
+            slide is measured against this, so the words get bigger as the margin comes down.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Shared look-and-feel editor for a ThemeOverride (used by Lyrics and Bible).
  * undefined = inherit; null fontSize = auto-fit.
@@ -917,10 +1050,13 @@ function OverrideEditor({
   value,
   onChange,
   inheritLabel,
+  inheritedMargin = 8,
 }: {
   value: ThemeOverride | null | undefined;
   onChange: (next: ThemeOverride) => void;
   inheritLabel: string;
+  /** The margin this display would use with nothing set here. */
+  inheritedMargin?: number;
 }) {
   const o = value ?? {};
   const set = (patch: ThemeOverride) => onChange({ ...o, ...patch });
@@ -988,6 +1124,8 @@ function OverrideEditor({
           </div>
         </label>
       )}
+
+      <MarginField value={o} onChange={set} inheritLabel={inheritLabel} inherited={inheritedMargin} />
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
@@ -1175,6 +1313,7 @@ function LyricsSection({
           value={settings?.lyricTheme}
           onChange={(next) => patchSettings({ lyricTheme: next })}
           inheritLabel="Theme default"
+          inheritedMargin={Math.round(previewTheme.safeMargin)}
         />
       </Group>
 
@@ -1362,6 +1501,7 @@ function BibleSection({
               value={bt}
               onChange={(next) => patchSettings({ bibleTheme: next })}
               inheritLabel="Same as lyrics"
+              inheritedMargin={Math.round(previewTheme.safeMargin)}
             />
           </div>
         )}
@@ -1438,6 +1578,32 @@ function PresentationsSection({
               value={pt}
               onChange={(next) => patchSettings({ presentationTheme: next })}
               inheritLabel="Same as lyrics"
+              inheritedMargin={Math.round(previewTheme.safeMargin)}
+            />
+          </div>
+        )}
+      </Group>
+
+      <Group title="Presentation background" icon={ImageIcon}>
+        <label className="flex items-center justify-between">
+          <span className="text-sm">Use a different background for presentation slides</span>
+          <Toggle
+            checked={settings?.presentationBackgroundId !== undefined}
+            onChange={(v) => patchSettings({ presentationBackgroundId: v ? null : undefined })}
+          />
+        </label>
+        <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
+          Off = decks share the lyric background. On = pick one below - a picture or a looping
+          video ("None" = plain theme color). A slide that carries its own background still shows
+          that instead.
+        </p>
+        {settings?.presentationBackgroundId !== undefined && (
+          <div className="mt-4 border-t border-[var(--v-border)] pt-4">
+            <MediaPicker
+              activeId={settings?.presentationBackgroundId ?? null}
+              onSelect={(id) => patchSettings({ presentationBackgroundId: id })}
+              defaultFit={settings?.mediaDefaults?.fit ?? "cover"}
+              defaultMuted={!(settings?.mediaDefaults?.videoSound ?? true)}
             />
           </div>
         )}
