@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import { useMediaUrl } from "../hooks/use-media-url";
+import { useRoutedAudio } from "../hooks/use-audio-output";
 
 /**
  * <img> and <video> that understand a browser-held file.
@@ -29,6 +31,10 @@ export function MediaAudio({
   ...rest
 }: React.AudioHTMLAttributes<HTMLAudioElement> & { src?: string | null }) {
   const url = useMediaUrl(src);
+  // Auditioning a track from the library plays out of the same device as the
+  // service does - checking it on the laptop speakers is not checking it.
+  const ref = useRef<HTMLAudioElement>(null);
+  useRoutedAudio(ref, url);
   if (!url) return null;
-  return <audio src={url} {...rest} />;
+  return <audio ref={ref} src={url} {...rest} />;
 }

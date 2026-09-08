@@ -32,12 +32,14 @@ import {
   Trash2,
   Check,
   Pencil,
+  Volume2,
 } from "lucide-react";
 import {
   SHORTCUT_ACTIONS, comboFromEvent, conflictsFor, formatCombo, resolveShortcuts,
   type ShortcutAction,
 } from "../lib/shortcuts";
 import { MicPicker } from "./mic-picker";
+import { SpeakerPicker } from "./speaker-picker";
 import { useBibleManifest } from "../hooks/use-bible";
 import { MEDIA_FITS } from "../lib/media-fit";
 import { OUTPUT_CANVASES, DEFAULT_OUTPUT_CANVAS } from "../lib/output-canvas";
@@ -46,6 +48,7 @@ import { FontPicker } from "./font-picker";
 import { SlideRender } from "./slide-render";
 import { hexToRgba } from "./announcement-ticker";
 import { MediaPicker } from "./media-picker";
+import { useSetAllVideoSound } from "../hooks/use-media";
 import type { AppSettings, ThemeOverride } from "../hooks/use-settings";
 import { LANGS } from "../hooks/use-translations";
 import type { LiveState, LiveTheme } from "../lib/live-bus";
@@ -1176,7 +1179,7 @@ function LyricsSection({
           activeId={settings?.activeBackgroundId ?? null}
           onSelect={(id) => patchSettings({ activeBackgroundId: id })}
           defaultFit={settings?.mediaDefaults?.fit ?? "cover"}
-          defaultMuted={!(settings?.mediaDefaults?.videoSound ?? false)}
+          defaultMuted={!(settings?.mediaDefaults?.videoSound ?? true)}
         />
       </Group>
 
@@ -1377,7 +1380,7 @@ function BibleSection({
               activeId={settings?.bibleBackgroundId ?? null}
               onSelect={(id) => patchSettings({ bibleBackgroundId: id })}
               defaultFit={settings?.mediaDefaults?.fit ?? "cover"}
-              defaultMuted={!(settings?.mediaDefaults?.videoSound ?? false)}
+              defaultMuted={!(settings?.mediaDefaults?.videoSound ?? true)}
             />
           </div>
         )}
@@ -1399,7 +1402,7 @@ function PresentationsSection({
 }) {
   const pt = settings?.presentationTheme ?? null;
   const overridesOn = !!pt;
-  const md = settings?.mediaDefaults ?? { fit: "cover" as const, videoSound: false };
+  const md = settings?.mediaDefaults ?? { fit: "cover" as const, videoSound: true };
 
   return (
     <div>
@@ -1476,10 +1479,57 @@ function PresentationsSection({
           />
         </label>
         <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
-          Off = new videos are silent by default (good for backgrounds behind lyrics). On = new
-          videos play with audio (good for a standalone announcement or testimony video).
+          On (the default) = a video you add plays its audio, out of the device set under
+          Settings → General → Sound output. Off = new videos are silent, which is what a
+          background loop behind lyrics usually wants. Either way, any single item can be
+          switched from its thumbnail in the Media tab.
         </p>
+
+        <AllVideoSoundButtons />
       </Group>
+    </div>
+  );
+}
+
+/**
+ * The setting above only reaches videos added from now on, so a library built
+ * while "new videos play with sound" was off stays silent clip by clip - which
+ * reads as the setting not having worked. These do the whole library at once,
+ * in both directions, and only when asked: quietly unmuting every background
+ * loop someone has spent months curating would be its own bug.
+ */
+function AllVideoSoundButtons() {
+  const setAll = useSetAllVideoSound();
+  const [done, setDone] = useState<string | null>(null);
+
+  const run = (sound: boolean) =>
+    setAll.mutate(sound, {
+      onSuccess: (res) => {
+        const n = (res as { updated?: number }).updated ?? 0;
+        const one = n === 1;
+        setDone(
+          sound
+            ? `${n} ${one ? "video" : "videos"} now ${one ? "plays" : "play"} with sound.`
+            : `${n} ${one ? "video is" : "videos are"} now silent.`,
+        );
+      },
+    });
+
+  return (
+    <div className="mt-4 border-t border-[var(--v-border)] pt-4">
+      <span className="mb-2 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">
+        Videos already in the library
+      </span>
+      <div className="flex flex-wrap gap-2">
+        <VButton variant="subtle" onClick={() => run(true)} disabled={setAll.isPending}>
+          {setAll.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
+          Turn sound on for all videos
+        </VButton>
+        <VButton variant="ghost" onClick={() => run(false)} disabled={setAll.isPending}>
+          Silence all videos
+        </VButton>
+      </div>
+      {done && <p className="mt-2 text-[12px] text-[var(--v-ok)]">{done}</p>}
     </div>
   );
 }
@@ -1596,6 +1646,8 @@ function GeneralSection({
         </label>
       </Group>
 
+      <SoundOutputGroup settings={settings} patchSettings={patchSettings} />
+
       <Group title="Live behavior" icon={LayoutList}>
         <label className="flex items-center justify-between">
           <span className="text-sm">Next / Prev sends the slide live immediately</span>
@@ -1614,6 +1666,49 @@ function GeneralSection({
 
       {desktop && <BackupGroup desktop={desktop} />}
     </div>
+  );
+}
+
+/**
+ * Where the app's own sound comes out: video, capture audio, an audition from
+ * the media library. One device for all of it, applied on every surface (this
+ * window, the projector window, a full-screen output) so there is one answer
+ * to "why can't the room hear the video".
+ */
+function SoundOutputGroup({
+  settings,
+  patchSettings,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+}) {
+  const audio = settings?.audio;
+  return (
+    <Group title="Sound output" icon={Volume2}>
+      <p className="mb-3 text-[12px] text-[var(--v-text-faint)]">
+        The speakers, sound card or HDMI output that video sound plays through. Leave it on the
+        system default unless the room's PA is on a device of its own.
+      </p>
+      <SpeakerPicker
+        deviceId={audio?.outputDeviceId ?? null}
+        onChange={(dev) =>
+          patchSettings({
+            audio: {
+              inputDeviceId: audio?.inputDeviceId ?? null,
+              inputLabel: audio?.inputLabel ?? null,
+              muted: audio?.muted ?? false,
+              noiseSuppression: audio?.noiseSuppression ?? true,
+              outputDeviceId: dev?.deviceId ?? null,
+              outputLabel: dev?.label ?? null,
+            },
+          })
+        }
+      />
+      <p className="mt-2 text-[12px] text-[var(--v-text-faint)]">
+        Whether an individual clip has sound at all is set per item - from its thumbnail in the
+        Media tab, or for new ones under Settings → Presentations → Image &amp; video defaults.
+      </p>
+    </Group>
   );
 }
 

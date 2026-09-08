@@ -14,6 +14,7 @@ import { api } from "../lib/api";
 import { VButton, SectionChip, Spinner, LevelMeter } from "../components/bits";
 import { PresentationsPanel } from "../components/presentation-panel";
 import { SlideRender } from "../components/slide-render";
+import { usePublishAudioOutput } from "../hooks/use-audio-output";
 import { LiveOutput } from "../components/live-output";
 import { SongEditor } from "../components/song-editor";
 import { ImportModal } from "../components/import-modal";
@@ -376,6 +377,8 @@ export default function OperatorPage() {
     settings?.output.displayId,
     settings?.output.autoProjector ?? true,
   );
+  // Everything this window plays goes to the speakers chosen in Settings.
+  usePublishAudioOutput(settings?.audio?.outputDeviceId);
   // The OBS/vMix browser-source address. Same-origin: OBS is usually on this
   // machine, and Settings lists the LAN addresses for a separate stream PC.
   const streamUrl = typeof window !== "undefined" ? `${window.location.origin}/#/stream` : "/#/stream";
@@ -1162,7 +1165,20 @@ export default function OperatorPage() {
                   style={{ background: "#000" }}
                   onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
                 >
-                  <CaptureStage state={liveState} scale isLiveOutput />
+                  {/*
+                    * The live thumbnail is a real output, not a preview: with
+                    * no projector window and no full-screen output open, it is
+                    * the only thing playing, so a video cued with sound has to
+                    * be heard from here. When one of those IS open, that
+                    * surface has the sound and this one stays quiet - the same
+                    * clip out of two windows a few frames apart is an echo.
+                    */}
+                  <CaptureStage
+                    state={liveState}
+                    scale
+                    isLiveOutput
+                    playAudio={!projector.open && !fullScreenOutput}
+                  />
                   {/* The timer as the projector draws it. Without this the
                       operator ticks "Main screen" and nothing here changes,
                       which reads as a setting that did not take - and the only

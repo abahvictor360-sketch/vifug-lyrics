@@ -123,10 +123,18 @@ export type AppSettings = {
    * the service. On by default; the PIN is generated server-side on first use.
    */
   remote?: { requirePin: boolean; pin: string | null } | null;
-  /** Microphone for Auto-Follow. null deviceId = system default input. */
+  /**
+   * Sound devices. The microphone is Auto-Follow's; the output is where every
+   * sound the app makes (video and capture audio) is played. null on either =
+   * the system default device.
+   */
   audio?: {
     inputDeviceId: string | null;
     inputLabel: string | null;
+    /** Speakers/interface video sound plays out of. null = system default. */
+    outputDeviceId?: string | null;
+    /** Remembered name of that device, for showing it when it is unplugged. */
+    outputLabel?: string | null;
     /** Mixer mute - also pauses AI auto-follow listening while set. */
     muted?: boolean;
     /**
