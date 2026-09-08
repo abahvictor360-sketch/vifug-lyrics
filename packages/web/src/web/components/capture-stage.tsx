@@ -2,6 +2,7 @@ import { SlideRender } from "./slide-render";
 import { CaptureView } from "./capture";
 import type { LiveState, LiveCapture } from "../lib/live-bus";
 import { useMediaUrl } from "../hooks/use-media-url";
+import { useAudioOutputMuted } from "../hooks/use-audio-output";
 
 /** Preacher/speaker nameplate, composited over any capture layout. */
 function Nameplate({ nameplate, scale }: { nameplate: NonNullable<LiveCapture>["nameplate"]; scale?: boolean }) {
@@ -73,6 +74,9 @@ export function CaptureStage({
   /** Which mic to use when the capture's audioSource is "mic". */
   micDeviceId?: string | null;
 }) {
+  // Hooks before the early return: a slide with no capture is the common
+  // case and still needs the same mute state.
+  const outputMuted = useAudioOutputMuted();
   const capture = state.capture;
   if (!capture) return <SlideRender state={state} scale={scale} isLiveOutput={isLiveOutput} playAudio={playAudio} />;
 
@@ -85,7 +89,7 @@ export function CaptureStage({
     chromaKey: capture.chromaKey,
     audioSource,
     micDeviceId,
-    muted: !playAudio || audioSource === "none",
+    muted: !playAudio || outputMuted || audioSource === "none",
   };
 
   if (layout === "full") {

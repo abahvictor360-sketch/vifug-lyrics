@@ -5,6 +5,15 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.19.0] — 2026-09-08
+
+- **Videos play with sound.** A video added to the app was stored silent, whatever the "new videos play with sound" setting said - so a testimony or announcement clip played to a room that heard nothing. New videos now carry their audio, and Settings → Presentations can turn sound on (or off) for every video already in your library in one click. A background loop meant to be silent is still one click away on its thumbnail.
+- **Choose which speakers the app plays through.** Settings → General → Sound output picks the speakers, sound card or HDMI output - the fix for a laptop plugged into the desk that keeps sending video sound to its own speakers instead of the PA. A Test button plays a tone through it, so the route can be checked before the room fills rather than during the notices. Works on the desktop app and in Chrome/Edge; Firefox and iPhone say so instead of offering a control that does nothing.
+- **A mute for the sound going out, and one for the microphone.** The Audio Mixer on the operator screen gained a master mute that silences everything the app plays, on every screen at once, without touching any clip's own setting - for the moment a video starts talking over the preacher. Both mutes are also in Settings, beside the device they belong to.
+- **The sound comes out of one place, not three.** The projector window, a full-screen output and the operator's own live thumbnail each played the same clip a few frames apart, which in a room is an echo. Whichever screen is the real output now has the sound; the rest stay silent.
+- **The app works on a phone or a tablet in a browser.** The three columns stacked for a narrow screen, the top bar's tabs scroll instead of being pushed off the edge, and Settings puts its section list across the top. Before this, Presentations, Media, Plans and History could not be reached at all on a phone - the tabs were off the right of the screen - so the New button people were tapping belonged to the song library.
+- FIX: changing the microphone from the Audio Mixer quietly forgot the chosen sound output device.
+
 ## [1.16.0] — 2026-09-02
 
 - **A theme editor.** Themes could be picked from a list but never made or changed. Now you can create, duplicate, rename and delete them, and edit every part - display mode, text and background colour, font size and weight, alignment, vertical position, lines per slide, safe margin, background dimming, text outline and transition - with the preview updating as you go. Deleting a theme that songs still use, or the one currently on air, is refused with a sentence saying which, rather than silently leaving those songs pointing at nothing.

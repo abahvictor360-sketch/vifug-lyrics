@@ -1691,6 +1691,8 @@ function defaultSettings() {
       inputLabel: null as string | null,
       outputDeviceId: null as string | null,
       outputLabel: null as string | null,
+      /** Master mute for everything the app plays out loud. */
+      outputMuted: false,
     },
     // Stream/browser-source output geometry and encoding hints. Read by the
     // /stream page and shown in the guide for matching OBS to the app.

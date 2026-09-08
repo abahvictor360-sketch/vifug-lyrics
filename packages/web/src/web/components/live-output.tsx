@@ -42,7 +42,7 @@ export function LiveOutput({
   // Sound from this surface goes to the operator's chosen speakers. Published
   // here as well as on the operator screen because the projector is often its
   // own window (or its own browser tab) with its own copy of these elements.
-  usePublishAudioOutput(settings?.audio?.outputDeviceId);
+  usePublishAudioOutput(settings?.audio?.outputDeviceId, settings?.audio?.outputMuted);
 
   /*
    * Fixed-canvas layout (Settings > General > Projector output).

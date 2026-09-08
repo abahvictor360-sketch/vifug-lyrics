@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { LiveState, LiveTheme } from "../lib/live-bus";
 import { runStyle } from "../lib/rich-text";
 import { registerLiveMediaVideo } from "../lib/audio-taps";
-import { useRoutedAudio } from "../hooks/use-audio-output";
+import { useAudioOutputMuted, useRoutedAudio } from "../hooks/use-audio-output";
 import { colorFilterCss } from "../lib/color-filters";
 import { useMediaUrl } from "../hooks/use-media-url";
 
@@ -303,8 +303,10 @@ export function SlideRender({
     if (videoRef.current) videoRef.current.volume = Math.min(1, Math.max(0, mediaVolume / 100));
   }, [mediaVolume]);
   // Whether this copy of the slide is the one making the noise. A video the
-  // operator has silenced stays silent everywhere.
-  const audible = playAudio && media?.type === "video" && media.muted === false;
+  // operator has silenced stays silent everywhere, and so does everything
+  // while the master output mute is on.
+  const outputMuted = useAudioOutputMuted();
+  const audible = playAudio && !outputMuted && media?.type === "video" && media.muted === false;
   // Play it out of the operator's chosen speakers rather than whatever the OS
   // calls "default" - re-applied on every source change, since the route is
   // attached to the element and a fresh src can drop it.

@@ -16,6 +16,7 @@
  */
 
 const STORAGE_KEY = "vifug.audio-output";
+const MUTE_KEY = "vifug.audio-output-muted";
 
 /** A media element that can be routed to a named output (Chrome/Edge/Electron). */
 type Routable = HTMLMediaElement & {
@@ -42,8 +43,18 @@ function readStored(): string | null {
   }
 }
 
+function readStoredMuted(): boolean {
+  try {
+    return localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 let current: string | null = readStored();
+let muted = readStoredMuted();
 const listeners = new Set<(id: string | null) => void>();
+const muteListeners = new Set<(m: boolean) => void>();
 
 /** The device id every media element should be routed to; null = system default. */
 export function getAudioOutput(): string | null {
@@ -65,6 +76,32 @@ export function setAudioOutput(deviceId: string | null) {
 export function subscribeAudioOutput(fn: (id: string | null) => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
+}
+
+/**
+ * Master mute. Mirrored the same way as the device, so a projector window
+ * opened mid-service comes up silent if the desk has the sound muted, rather
+ * than starting loud and being caught a second later.
+ */
+export function getAudioOutputMuted(): boolean {
+  return muted;
+}
+
+export function setAudioOutputMuted(next: boolean) {
+  if (muted === next) return;
+  muted = next;
+  try {
+    if (next) localStorage.setItem(MUTE_KEY, "1");
+    else localStorage.removeItem(MUTE_KEY);
+  } catch {
+    // As above - the mute still holds for this window.
+  }
+  muteListeners.forEach((l) => l(next));
+}
+
+export function subscribeAudioOutputMuted(fn: (m: boolean) => void): () => void {
+  muteListeners.add(fn);
+  return () => muteListeners.delete(fn);
 }
 
 /**

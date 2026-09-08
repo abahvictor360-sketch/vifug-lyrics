@@ -1,14 +1,22 @@
 import { useEffect, useSyncExternalStore } from "react";
 import {
   getAudioOutput,
+  getAudioOutputMuted,
   routeToAudioOutput,
   setAudioOutput,
+  setAudioOutputMuted,
   subscribeAudioOutput,
+  subscribeAudioOutputMuted,
 } from "../lib/audio-output";
 
 /** The output device every sound in this window should go to. null = system default. */
 export function useAudioOutput(): string | null {
   return useSyncExternalStore(subscribeAudioOutput, getAudioOutput, () => null);
+}
+
+/** True while the master output mute is on - nothing the app plays is heard. */
+export function useAudioOutputMuted(): boolean {
+  return useSyncExternalStore(subscribeAudioOutputMuted, getAudioOutputMuted, () => false);
 }
 
 /**
@@ -19,10 +27,13 @@ export function useAudioOutput(): string | null {
  * background video mounting mid-render is routed without threading the device
  * through half the component tree.
  */
-export function usePublishAudioOutput(deviceId: string | null | undefined) {
+export function usePublishAudioOutput(deviceId: string | null | undefined, outputMuted?: boolean) {
   useEffect(() => {
     setAudioOutput(deviceId ?? null);
   }, [deviceId]);
+  useEffect(() => {
+    setAudioOutputMuted(outputMuted ?? false);
+  }, [outputMuted]);
 }
 
 /**

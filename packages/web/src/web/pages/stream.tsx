@@ -28,7 +28,7 @@ export default function StreamPage() {
   const [state, setState] = useState<LiveState>(IDLE_STATE);
   const settings = useSettings({ refetchInterval: 4000 }).data;
   const announcement = settings?.announcement;
-  usePublishAudioOutput(settings?.audio?.outputDeviceId);
+  usePublishAudioOutput(settings?.audio?.outputDeviceId, settings?.audio?.outputMuted);
   const [cw, ch] = parseCanvas(settings?.stream?.canvas);
   const [viewport, setViewport] = useState({ w: window.innerWidth, h: window.innerHeight });
   /**

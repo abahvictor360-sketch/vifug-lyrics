@@ -213,17 +213,20 @@ export function SettingsPage({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-8">
-      <div className="flex h-full w-full max-w-5xl overflow-hidden rounded-2xl border border-[var(--v-border)] bg-[var(--v-surface)] shadow-2xl">
-        {/* Side nav */}
-        <nav className="flex w-52 min-h-0 shrink-0 flex-col border-r border-[var(--v-border)] bg-[var(--v-surface-2)]">
-          <div className="flex shrink-0 items-center gap-2 px-4 py-4">
+      <div className="flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[var(--v-border)] bg-[var(--v-surface)] shadow-2xl sm:flex-row">
+        {/* Section nav: a column beside the panel on a desktop, a scrolling
+            strip above it on a phone, where 13rem of fixed side nav left the
+            settings themselves about a thumb wide. */}
+        <nav className="flex min-h-0 w-full shrink-0 flex-row border-b border-[var(--v-border)] bg-[var(--v-surface-2)] sm:w-52 sm:flex-col sm:border-b-0 sm:border-r">
+          <div className="hidden shrink-0 items-center gap-2 px-4 py-4 sm:flex">
             <Settings2 className="h-4 w-4 text-[var(--v-accent)]" />
             <span className="font-display text-sm font-bold tracking-tight">Settings</span>
           </div>
           {/* Scrolls on its own: on a laptop in a landscape window the section
               list is taller than the dialog, and without this the last few
-              sections simply could not be reached. */}
-          <div className="v-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2">
+              sections simply could not be reached. Sideways on a phone, for
+              the same reason. */}
+          <div className="v-scroll flex min-h-0 min-w-0 flex-1 flex-row gap-0.5 overflow-x-auto p-2 sm:flex-col sm:overflow-x-visible sm:overflow-y-auto sm:px-2 sm:py-0">
             {SECTIONS.map((s) => {
               const Icon = s.icon;
               const active = section === s.id;
@@ -231,16 +234,17 @@ export function SettingsPage({
                 <button
                   key={s.id}
                   onClick={() => setSection(s.id)}
-                  className={`flex items-start gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors ${
+                  className={`flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors sm:shrink sm:items-start ${
                     active
                       ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
                       : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)] hover:text-[var(--v-text)]"
                   }`}
                 >
-                  <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                  <Icon className="h-4 w-4 shrink-0 sm:mt-0.5" />
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium">{s.label}</span>
-                    <span className={`block truncate text-[11px] ${active ? "text-[var(--v-accent)]/70" : "text-[var(--v-text-faint)]"}`}>
+                    <span className="block whitespace-nowrap text-sm font-medium sm:whitespace-normal">{s.label}</span>
+                    {/* The one-line hint is a luxury the strip has no room for. */}
+                    <span className={`hidden truncate text-[11px] sm:block ${active ? "text-[var(--v-accent)]/70" : "text-[var(--v-text-faint)]"}`}>
                       {s.hint}
                     </span>
                   </span>
@@ -248,7 +252,7 @@ export function SettingsPage({
               );
             })}
           </div>
-          <div className="shrink-0 border-t border-[var(--v-border)] px-4 py-3 text-[11px] text-[var(--v-text-faint)]">
+          <div className="hidden shrink-0 border-t border-[var(--v-border)] px-4 py-3 text-[11px] text-[var(--v-text-faint)] sm:block">
             Changes apply instantly.
           </div>
         </nav>
@@ -1693,17 +1697,25 @@ function SoundOutputGroup({
         deviceId={audio?.outputDeviceId ?? null}
         onChange={(dev) =>
           patchSettings({
-            audio: {
-              inputDeviceId: audio?.inputDeviceId ?? null,
-              inputLabel: audio?.inputLabel ?? null,
-              muted: audio?.muted ?? false,
-              noiseSuppression: audio?.noiseSuppression ?? true,
-              outputDeviceId: dev?.deviceId ?? null,
-              outputLabel: dev?.label ?? null,
-            },
+            audio: { inputDeviceId: null, inputLabel: null, ...audio, outputDeviceId: dev?.deviceId ?? null, outputLabel: dev?.label ?? null },
           })
         }
       />
+
+      <label className="mt-3 flex items-center justify-between">
+        <span className="text-sm">Mute the app&apos;s sound</span>
+        <Toggle
+          checked={audio?.outputMuted ?? false}
+          onChange={(v) =>
+            patchSettings({ audio: { inputDeviceId: null, inputLabel: null, ...audio, outputMuted: v } })
+          }
+        />
+      </label>
+      <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
+        Silences everything the app plays - video and camera sound, on every screen at once -
+        without changing any clip's own setting. The same switch is on the operator screen, under
+        Stream / OBS source, for reaching mid-service.
+      </p>
       <p className="mt-2 text-[12px] text-[var(--v-text-faint)]">
         Whether an individual clip has sound at all is set per item - from its thumbnail in the
         Media tab, or for new ones under Settings → Presentations → Image &amp; video defaults.
@@ -1808,25 +1820,35 @@ function AiSection({
             onChange={(dev) =>
               patchSettings({
                 audio: {
+                  ...settings?.audio,
                   inputDeviceId: dev?.deviceId ?? null,
                   inputLabel: dev?.label ?? null,
-                  muted: settings?.audio?.muted ?? false,
-                  noiseSuppression: settings?.audio?.noiseSuppression ?? true,
                 },
               })
             }
             noiseSuppression={settings?.audio?.noiseSuppression ?? true}
             onNoiseSuppressionChange={(v) =>
               patchSettings({
-                audio: {
-                  inputDeviceId: settings?.audio?.inputDeviceId ?? null,
-                  inputLabel: settings?.audio?.inputLabel ?? null,
-                  muted: settings?.audio?.muted ?? false,
-                  noiseSuppression: v,
-                },
+                audio: { inputDeviceId: null, inputLabel: null, ...settings?.audio, noiseSuppression: v },
               })
             }
           />
+
+          <label className="mt-3 flex items-center justify-between">
+            <span className="text-sm">Mute the microphone</span>
+            <Toggle
+              checked={settings?.audio?.muted ?? false}
+              onChange={(v) =>
+                patchSettings({
+                  audio: { inputDeviceId: null, inputLabel: null, ...settings?.audio, muted: v },
+                })
+              }
+            />
+          </label>
+          <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
+            Stops Auto-Follow listening to the room. The same switch is in the Audio Mixer on the
+            operator screen.
+          </p>
           <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
             Pick the mic that hears the room, then Test before the service - auto-follow can’t
             advance on a mic that isn’t picking anything up.

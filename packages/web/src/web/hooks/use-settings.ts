@@ -135,6 +135,12 @@ export type AppSettings = {
     outputDeviceId?: string | null;
     /** Remembered name of that device, for showing it when it is unplugged. */
     outputLabel?: string | null;
+    /**
+     * Master mute for everything the app plays out loud - video sound and
+     * capture audio, on every output at once. Separate from a single clip's
+     * own mute: this is the "kill the sound now" the desk reaches for.
+     */
+    outputMuted?: boolean;
     /** Mixer mute - also pauses AI auto-follow listening while set. */
     muted?: boolean;
     /**
