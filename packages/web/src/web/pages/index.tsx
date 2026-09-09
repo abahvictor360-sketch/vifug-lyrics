@@ -65,7 +65,8 @@ import { MAIN_SCREEN } from "../lib/screens";
 import { canInstall, isInstalled, promptInstall, subscribeInstall } from "../lib/pwa";
 import {
   browserProjectorOpen, browserScreens, closeBrowserProjector, loadBrowserScreens,
-  looksMultiScreen, openBrowserProjector, restoreBrowserScreens, subscribeBrowserScreens,
+  looksMultiScreen, openBrowserProjector, restoreBrowserScreens, screensGranted,
+  subscribeBrowserScreens, subscribeScreenChange,
   supportsMultiScreen,
 } from "../lib/browser-screens";
 
@@ -321,7 +322,35 @@ function useProjector(
    * offer the button and to stop promising a picker that has nothing in it.
    */
   const multiScreenCapable = !desktop && supportsMultiScreen();
-  const extendedDesktop = !desktop && looksMultiScreen();
+
+  /*
+   * Whether a second monitor is attached, kept live.
+   *
+   * This used to be read straight during render, which froze it at whatever
+   * was true when the component last happened to render - normally page load.
+   * An operator who opened the app first and plugged the projector in second
+   * (which is the usual order) was told "no second screen detected" for the
+   * rest of the service, with no way to make the app look again short of a
+   * reload.
+   */
+  const [extendedDesktop, setExtendedDesktop] = useState(() => !desktop && looksMultiScreen());
+  useEffect(() => {
+    if (desktop) return;
+    const read = () => setExtendedDesktop(looksMultiScreen());
+    read();
+    return subscribeScreenChange(read);
+  }, [desktop]);
+
+  /** Whether asking for the monitor list would prompt, or is already allowed. */
+  const [screensAllowed, setScreensAllowed] = useState(false);
+  useEffect(() => {
+    if (desktop) return;
+    let alive = true;
+    void screensGranted().then((ok) => alive && setScreensAllowed(ok));
+    return () => {
+      alive = false;
+    };
+  }, [desktop, extendedDesktop]);
 
   /*
    * A permission granted last Sunday is still granted, but the browser hands
@@ -346,7 +375,10 @@ function useProjector(
       alive = false;
       off();
     };
-  }, [desktop]);
+    // extendedDesktop is a dependency on purpose: a monitor plugged in after
+    // load changes the answer, and the screenschange listener above only
+    // exists once the list has been fetched at least once.
+  }, [desktop, extendedDesktop]);
 
   /** Prompt for the monitor list, then open on the one that is not theirs. */
   const findScreens = useCallback(async () => {
@@ -372,7 +404,7 @@ function useProjector(
 
   return {
     displays, open, justDetected, targetDisplay, openProjector, closeProjector, toggle,
-    multiScreenCapable, extendedDesktop, browserPlaced, findScreens,
+    multiScreenCapable, extendedDesktop, screensAllowed, browserPlaced, findScreens,
   };
 }
 
@@ -2186,8 +2218,16 @@ function ProjectorStatusLine({
   desktop: ReturnType<typeof useDesktop>;
   projector: ReturnType<typeof useProjector>;
 }) {
-  const { open, justDetected, targetDisplay, openProjector, closeProjector } = projector;
-  const { multiScreenCapable, extendedDesktop, browserPlaced } = projector;
+  const { open, justDetected, targetDisplay, openProjector, closeProjector, displays } = projector;
+  const { multiScreenCapable, extendedDesktop, screensAllowed, browserPlaced, findScreens } = projector;
+  /*
+   * A second monitor is attached but the browser has not been allowed to say
+   * anything about it. Until now the only way to grant that was a menu item
+   * behind a right-click on the preview - unfindable, and impossible on a
+   * touch screen - so the app sat there insisting there was no second screen
+   * while one was plugged in.
+   */
+  const needsScreenAccess = !desktop && multiScreenCapable && !screensAllowed && displays.length === 0;
 
   /*
    * The browser says something different from the desktop app, because it can
@@ -2205,9 +2245,15 @@ function ProjectorStatusLine({
         : "Projecting"
     : desktop && !targetDisplay
       ? "No second screen connected"
-      : !desktop && multiScreenCapable && !extendedDesktop
-        ? "Output closed - no second screen detected"
-        : "Output closed";
+      : needsScreenAccess && extendedDesktop
+        ? "Second screen found - allow access to open the output on it"
+        : !desktop && targetDisplay
+          // Naming it is the whole answer to "has it seen my projector?",
+          // which a bare "Output closed" left the operator guessing at.
+          ? `Output closed - ready on ${targetDisplay.label}`
+          : !desktop && multiScreenCapable && !extendedDesktop
+            ? "Output closed - no second screen detected"
+            : "Output closed";
 
   return (
     <div className="mt-2.5 flex items-center gap-2 text-[12px]">
@@ -2225,6 +2271,17 @@ function ProjectorStatusLine({
           className="ml-auto shrink-0 font-medium text-[var(--v-text-faint)] hover:text-[var(--v-live)]"
         >
           Close
+        </button>
+      ) : needsScreenAccess ? (
+        /* The prompt only appears in response to a click, so this is the
+           click. It lists the monitors by name; opening on one is the next
+           click, which is also what the popup blocker requires. */
+        <button
+          onClick={() => void findScreens()}
+          title="Lets this browser tell the app which monitors are attached, so the output can open on the projector instead of over your controls"
+          className="ml-auto shrink-0 font-medium text-[var(--v-accent)] hover:underline"
+        >
+          {extendedDesktop ? "Allow screen access" : "Find my screens"}
         </button>
       ) : (
         (!desktop || targetDisplay) && (
