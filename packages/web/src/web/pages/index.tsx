@@ -65,7 +65,7 @@ import { MAIN_SCREEN } from "../lib/screens";
 import { canInstall, isInstalled, promptInstall, subscribeInstall } from "../lib/pwa";
 import {
   browserProjectorOpen, browserScreens, closeBrowserProjector, loadBrowserScreens,
-  looksMultiScreen, openBrowserProjector, restoreBrowserScreens, screensGranted,
+  looksMultiScreen, openBrowserProjector, restoreBrowserScreens, screensGranted, screensPermission,
   subscribeBrowserScreens, subscribeScreenChange,
   supportsMultiScreen,
 } from "../lib/browser-screens";
@@ -344,10 +344,13 @@ function useProjector(
 
   /** Whether asking for the monitor list would prompt, or is already allowed. */
   const [screensAllowed, setScreensAllowed] = useState(false);
+  /** Blocked in the browser's site settings: asking again cannot prompt, only fail. */
+  const [screensBlocked, setScreensBlocked] = useState(false);
   useEffect(() => {
     if (desktop) return;
     let alive = true;
     void screensGranted().then((ok) => alive && setScreensAllowed(ok));
+    void screensPermission().then((p) => alive && setScreensBlocked(p === "denied"));
     return () => {
       alive = false;
     };
@@ -387,6 +390,11 @@ function useProjector(
     if (d.length) {
       setDisplays(d);
       knownCountRef.current = d.length;
+      setScreensAllowed(true);
+      setScreensBlocked(false);
+    } else {
+      // Refused just now, or refused before and so refused without asking.
+      setScreensBlocked((await screensPermission()) === "denied");
     }
     // Opening here is a second step after an await, so the popup can be
     // blocked - but the monitors are now listed by name in the same menu, and
@@ -405,7 +413,7 @@ function useProjector(
 
   return {
     displays, open, justDetected, targetDisplay, openProjector, closeProjector, toggle,
-    multiScreenCapable, extendedDesktop, screensAllowed, browserPlaced, findScreens,
+    multiScreenCapable, extendedDesktop, screensAllowed, screensBlocked, browserPlaced, findScreens,
   };
 }
 
@@ -1305,7 +1313,21 @@ export default function OperatorPage() {
                 obsConfigured={!!settings?.stream}
                 extraScreens={settings?.screens ?? []}
                 canSendPreview={stage.previewIndex >= 0}
-                canFindScreens={projector.multiScreenCapable && projector.displays.length === 0}
+                canFindScreens={projector.multiScreenCapable && !projector.screensBlocked && projector.displays.length === 0}
+                browserScreenHelp={
+                  desktop || projector.displays.length > 0
+                    ? null
+                    : !projector.multiScreenCapable
+                      ? "unsupported"
+                      : projector.screensBlocked
+                        ? "blocked"
+                        : null
+                }
+                onOpenWindow={() => {
+                  // Straight from the click, so the popup is not blocked.
+                  void projector.openProjector();
+                  setScreenMenu(null);
+                }}
                 onFindScreens={() => {
                   // The permission prompt only appears in response to a click,
                   // so this is the click. It does not also open the window:
@@ -1863,6 +1885,8 @@ function ScreenContextMenu({
   onSendToScreen,
   canFindScreens,
   onFindScreens,
+  browserScreenHelp,
+  onOpenWindow,
 }: {
   x: number;
   y: number;
@@ -1890,11 +1914,20 @@ function ScreenContextMenu({
   /** Browser only: this browser can place a window on a chosen monitor. */
   canFindScreens?: boolean;
   onFindScreens?: () => void;
+  /**
+   * Browser only, when no monitor can be listed: "unsupported" for a browser
+   * without the Window Management API (Firefox, Safari), "blocked" when the
+   * site's permission has been refused. Either way the menu used to offer
+   * only full screen on this device, with nothing to say why the projector
+   * was not there.
+   */
+  browserScreenHelp?: "unsupported" | "blocked" | null;
+  onOpenWindow?: () => void;
 }) {
   // Keep the menu on-screen near the cursor even close to the window edge.
   // The height grows with the number of screens, so the clamp has to as well.
   const MENU_W = 244;
-  const estHeight = 248 + displays.length * 38 + (liveFit ? 132 : 0);
+  const estHeight = 248 + displays.length * 38 + (liveFit ? 132 : 0) + (browserScreenHelp ? 110 : 0);
   const left = Math.min(x, window.innerWidth - MENU_W - 8);
   const top = Math.max(8, Math.min(y, window.innerHeight - estHeight - 8));
 
@@ -1978,6 +2011,21 @@ function ScreenContextMenu({
           () => onFindScreens?.(),
           { hint: "allow once" },
         )}
+      {browserScreenHelp && !projectorOpen && (
+        <>
+          {item(
+            <MonitorPlay className="h-4 w-4 shrink-0" />,
+            "Open in a window",
+            () => onOpenWindow?.(),
+            { hint: "drag it" },
+          )}
+          <p className="px-3 pb-1.5 pt-1 text-[11.5px] leading-snug text-[var(--v-text-faint)]">
+            {browserScreenHelp === "unsupported"
+              ? "This browser cannot see your other monitors. Open the app in Chrome or Edge to send the output straight to the projector, or use the desktop app."
+              : "Screen access is blocked for this site. Allow \"Window management\" in the site settings (the icon left of the address), then reload."}
+          </p>
+        </>
+      )}
       {displays.map((d) =>
         item(
           <Monitor className="h-4 w-4 shrink-0" />,
@@ -2233,7 +2281,7 @@ function ProjectorStatusLine({
   projector: ReturnType<typeof useProjector>;
 }) {
   const { open, justDetected, targetDisplay, openProjector, closeProjector, displays } = projector;
-  const { multiScreenCapable, extendedDesktop, screensAllowed, browserPlaced, findScreens } = projector;
+  const { multiScreenCapable, extendedDesktop, screensAllowed, screensBlocked, browserPlaced, findScreens } = projector;
   /*
    * A second monitor is attached but the browser has not been allowed to say
    * anything about it. Until now the only way to grant that was a menu item
@@ -2241,7 +2289,10 @@ function ProjectorStatusLine({
    * touch screen - so the app sat there insisting there was no second screen
    * while one was plugged in.
    */
-  const needsScreenAccess = !desktop && multiScreenCapable && !screensAllowed && displays.length === 0;
+  // Not when blocked: the button could only fail silently, so "Project" (a
+  // window to drag across) is offered instead, with the reason in the label.
+  const needsScreenAccess =
+    !desktop && multiScreenCapable && !screensAllowed && !screensBlocked && displays.length === 0;
 
   /*
    * The browser says something different from the desktop app, because it can
@@ -2265,9 +2316,15 @@ function ProjectorStatusLine({
           // Naming it is the whole answer to "has it seen my projector?",
           // which a bare "Output closed" left the operator guessing at.
           ? `Output closed - ready on ${targetDisplay.label}`
-          : !desktop && multiScreenCapable && !extendedDesktop
-            ? "Output closed - no second screen detected"
-            : "Output closed";
+          : !desktop && !multiScreenCapable
+            // Plain "Output closed" read as "nothing is plugged in", when the
+            // truth is that this browser has no way to look.
+            ? "Output closed - this browser can't detect screens"
+            : !desktop && screensBlocked
+              ? "Output closed - screen access is blocked for this site"
+              : !desktop && multiScreenCapable && !extendedDesktop
+                ? "Output closed - no second screen detected"
+                : "Output closed";
 
   return (
     <div className="mt-2.5 flex items-center gap-2 text-[12px]">
