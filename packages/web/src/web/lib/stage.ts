@@ -61,7 +61,17 @@ export function stageToState(
   return {
     status,
     sourceLines: live ? slide.sourceLines : [],
-    ...(live && slide.sourceRuns ? { sourceRuns: slide.sourceRuns } : {}),
+    /*
+     * Always present, even when there is nothing to say.
+     *
+     * Leaving the key out entirely meant a frame could not express "this
+     * slide has no coloured words" - it could only stay silent about them,
+     * and anything merging frames then kept the previous slide's. A verse
+     * went out carrying no runs, the deck slide before it had some, and the
+     * screen drew the deck's words under the scripture reference, because
+     * runs carry their own text and the renderer prefers them to the line.
+     */
+    sourceRuns: live ? slide.sourceRuns : undefined,
     translationLines: live ? slide.translationLines : [],
     sectionLabel: slide?.caption ?? "",
     songTitle: slide?.title ?? "",

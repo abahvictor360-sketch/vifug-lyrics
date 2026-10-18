@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { LIVE_ORIGIN, liveBus, type LiveState } from "../lib/live-bus";
+import { DEFAULT_THEME, IDLE_STATE, LIVE_ORIGIN, liveBus, type LiveState } from "../lib/live-bus";
 import { subscribeSnapshot } from "../lib/realtime";
 import { MAIN_SCREEN, serverChannel } from "../lib/screens";
 
@@ -76,7 +76,23 @@ export function useLiveState(screenId: string = MAIN_SCREEN): LiveState {
           return;
         }
         lastSrev.current = Math.max(lastSrev.current, srev);
-        setState((prev) => ({ ...prev, ...next }));
+        /*
+         * Replace, never merge.
+         *
+         * A frame from the server is a whole published state, so merging it
+         * over what is already on screen can only do harm: any field the new
+         * frame does not mention keeps the old slide's value. That is how a
+         * scripture verse ended up drawn with the words of the deck slide
+         * before it - the verse carried no formatting runs, the merge kept
+         * the deck's, and runs carry their own text. The caption came from
+         * the verse and the words from the presentation.
+         *
+         * Only surfaces fed by the server were affected; the local bus hands
+         * over a whole state and always has. Starting from the idle state
+         * gives every field a definite value, which is what the OBS overlay
+         * has always done.
+         */
+        setState({ ...IDLE_STATE, ...next, theme: { ...DEFAULT_THEME, ...(next.theme ?? {}) } } as LiveState);
       }),
     [screenId],
   );
