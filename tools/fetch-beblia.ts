@@ -70,8 +70,30 @@ const ENGLISH_ORDER = [
   "net", "nirv", "nrsv", "tpt", "rsv", "tlb", "tyn", "ylt", "web", "asv", "bbe",
 ];
 
+// Windows-1252 chars in 0x80–0x9F, keyed by char → byte. Latin-1 covers the rest.
+const CP1252: Record<string, number> = Object.fromEntries(
+  [..."€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ"].map((c, i) => [c, 0x80 + i]),
+);
+const CONT = `[\\u0080-\\u00BF${Object.keys(CP1252).filter((c) => c.charCodeAt(0) > 0xff).join("")}]`;
+const MOJIBAKE = new RegExp(`[\\u00C2-\\u00DF]${CONT}|[\\u00E0-\\u00EF]${CONT}{2}|[\\u00F0-\\u00F4]${CONT}{3}`, "g");
+const utf8 = new TextDecoder("utf-8", { fatal: true });
+
+/**
+ * Some upstream files are double-encoded (UTF-8 read as Windows-1252 and saved
+ * again, e.g. NET has "fiancÃ©e" and "52Â½"). Undo that span by span; spans
+ * that don't form valid UTF-8 are left alone so real accented text survives.
+ */
+const fixMojibake = (s: string) =>
+  s.replace(MOJIBAKE, (m) => {
+    try {
+      return utf8.decode(Uint8Array.from([...m], (c) => CP1252[c] ?? c.charCodeAt(0)));
+    } catch {
+      return m;
+    }
+  });
+
 const decode = (s: string) =>
-  s
+  fixMojibake(s)
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
     .replace(/&#x([0-9a-fA-F]+);/g, (_, n) => String.fromCodePoint(parseInt(n, 16)))
     .replace(/&quot;/g, '"')
@@ -136,6 +158,8 @@ async function main() {
     }
     process.stdout.write(`↓ ${v.id} (${v.file})… `);
     const xml = await fetchXml(v.file);
+    const lost = xml.split("�").length - 1;
+    if (lost) console.warn(`\n  ⚠ ${v.file} has ${lost} U+FFFD replacement chars (lost upstream, can't be repaired)`);
     const books = parseBible(xml);
     if (!books.size) throw new Error(`${v.file}: parsed 0 books`);
     await mkdir(dir, { recursive: true });
