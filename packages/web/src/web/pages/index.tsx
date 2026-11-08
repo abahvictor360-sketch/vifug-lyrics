@@ -925,11 +925,23 @@ export default function OperatorPage() {
   });
   const autoFollowOn = settings?.autoFollow ?? false;
   const micMuted = settings?.audio?.muted ?? false;
+  // Which recogniser is wanted. start() reads these when it runs, so a change
+  // here has to restart a session that is already listening - otherwise
+  // switching Deepgram -> Whisper in Settings leaves the old engine running
+  // and scripture/lyric following appears not to change at all.
+  const recogniserKey = [
+    settings?.autoFollowEngine ?? "deepgram",
+    settings?.autoFollowLocalModel ?? "",
+    settings?.autoFollowModelHost ?? "",
+    settings?.autoFollowAccentedEnglish ? "1" : "0",
+    settings?.autoFollowLang ?? "",
+  ].join("|");
   useEffect(() => {
+    // stop() first: start() on a running session would open a second one.
+    autoFollow.stop();
     if (autoFollowOn && stage.status === "live" && !micMuted) autoFollow.start();
-    else autoFollow.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoFollowOn, stage.status, micMuted]);
+  }, [autoFollowOn, stage.status, micMuted, recogniserKey]);
 
   // Recording the live output. Read through a ref in the key handler so the
   // shortcut always calls the current toggle without re-registering the
