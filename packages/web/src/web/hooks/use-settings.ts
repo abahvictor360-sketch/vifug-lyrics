@@ -1,3 +1,4 @@
+import type { LogoSettings } from "../components/logo-overlay";
 import type { ServiceTimer } from "../lib/timer";
 import type { Screen } from "../lib/screens";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -166,6 +167,12 @@ export type AppSettings = {
     bgColor?: string | null;
     textColor?: string | null;
   } | null;
+  /**
+   * A logo pinned to the top-left or top-right of the live output (projector
+   * and stream), typically over a camera or capture-card feed. See
+   * components/logo-overlay.tsx.
+   */
+  logo?: LogoSettings | null;
   /**
    * Service timer - a countdown or count-up drawn over whichever screens are
    * ticked. Stored here rather than pushed live because it is an anchor, not a

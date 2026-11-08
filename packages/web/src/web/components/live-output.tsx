@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnnouncementTicker } from "./announcement-ticker";
 import { TimerOverlay } from "./timer-overlay";
+import { LogoOverlay } from "./logo-overlay";
 import { CaptureStage } from "./capture-stage";
 import { useLiveState } from "../hooks/use-live";
 import { useSettings } from "../hooks/use-settings";
@@ -124,6 +125,7 @@ export function LiveOutput({
   const picture = (
     <>
       <CaptureStage state={state} scale={!!canvas} playAudio={playAudio} micDeviceId={settings?.audio?.inputDeviceId ?? null} />
+      <LogoOverlay logo={settings?.logo} hasVideo={!!state.capture} />
       <TimerOverlay timer={settings?.timer} screen="live" />
       {announcement?.enabled && (
         <AnnouncementTicker

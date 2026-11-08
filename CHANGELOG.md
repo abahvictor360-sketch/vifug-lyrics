@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.28.0] — 2026-11-08
+
+- NEW: **a logo on the live screen.** Settings → Logo pins an image to the top-left or top-right corner of the projector and the stream overlay, over everything else. It is made for live camera and capture-card video, which has no slide background to carry your branding: turn on "Only while live camera / capture video is showing" and it appears with the video and goes when the video does. Pick an image from the media library or upload one (a PNG with a transparent background looks best), and set its size as a share of the screen width and its opacity. It never takes clicks from what is under it.
+
 ## [1.27.2] — 2026-11-08
 
 - FIX: **switching the auto-follow engine (for example Deepgram to Whisper) did not take effect while auto-follow was already listening.** The settings that choose the recogniser - engine, Whisper model, model host, accented English and language - were only read when a session started, and nothing restarted it when they changed. The old engine kept running, so scripture and lyric following appeared unchanged. Auto-follow now restarts when any of them changes.

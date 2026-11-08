@@ -52,7 +52,9 @@ import { FontPicker } from "./font-picker";
 import { SlideRender } from "./slide-render";
 import { hexToRgba } from "./announcement-ticker";
 import { MediaPicker } from "./media-picker";
-import { useSetAllVideoSound } from "../hooks/use-media";
+import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-media";
+import { MediaImg } from "./media-el";
+import { LogoOverlay, DEFAULT_LOGO, type LogoSettings, type LogoPosition } from "./logo-overlay";
 import type { AppSettings, ThemeOverride } from "../hooks/use-settings";
 import { LANGS } from "../hooks/use-translations";
 import type { LiveState, LiveTheme } from "../lib/live-bus";
@@ -1866,6 +1868,8 @@ function GeneralSection({
         </p>
       </Group>
 
+      <LogoGroup settings={settings} patchSettings={patchSettings} />
+
       <AnnouncementGroup settings={settings} patchSettings={patchSettings} />
 
       {desktop && <BackupGroup desktop={desktop} />}
@@ -2637,6 +2641,154 @@ function ShortcutsSection({
         <ShortcutsPanel settings={settings} patchSettings={patchSettings} />
       </Group>
     </div>
+  );
+}
+
+/* ---------------- Logo ---------------- */
+
+function LogoGroup({
+  settings,
+  patchSettings,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+}) {
+  const logo: LogoSettings = { ...DEFAULT_LOGO, ...(settings?.logo ?? {}) };
+  const set = (patch: Partial<LogoSettings>) => patchSettings({ logo: { ...logo, ...patch } });
+  const media = useMedia();
+  const upload = useUploadMedia();
+  const images = (media.data ?? []).filter((m) => m.type === "image");
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const positions: { id: LogoPosition; label: string }[] = [
+    { id: "top-left", label: "Top left" },
+    { id: "top-right", label: "Top right" },
+  ];
+
+  return (
+    <Group title="Logo" icon={ImageIcon}>
+      <label className="flex items-center justify-between">
+        <span className="text-sm">Show a logo in a corner of the live screen</span>
+        <Toggle checked={logo.enabled} onChange={(v) => set({ enabled: v })} />
+      </label>
+      <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
+        Sits over everything on the projector and stream overlay - handy on live camera or capture-card
+        video, where there is no slide background to carry your branding. A PNG with a transparent
+        background looks best.
+      </p>
+
+      <div className="mt-3">
+        <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Logo image</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {images.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => set({ url: m.url })}
+              aria-label={`Use ${m.name ?? "this image"} as the logo`}
+              aria-pressed={logo.url === m.url}
+              className={`h-12 w-16 overflow-hidden rounded border-2 bg-[var(--v-surface-3)] ${
+                logo.url === m.url
+                  ? "border-[var(--v-accent)]"
+                  : "border-[var(--v-border)] hover:border-[var(--v-accent)]"
+              }`}
+            >
+              <MediaImg src={m.url} alt="" className="h-full w-full object-contain" />
+            </button>
+          ))}
+          <label className="flex h-12 cursor-pointer items-center gap-1.5 rounded border border-dashed border-[var(--v-border)] px-3 text-[12px] hover:border-[var(--v-accent)]">
+            {upload.isPending ? "Uploading…" : "Upload logo"}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f) return;
+                setUploadError(null);
+                try {
+                  const item = await upload.mutateAsync(f);
+                  set({ url: item.url, enabled: true });
+                } catch (err) {
+                  setUploadError(err instanceof Error ? err.message : "Could not upload that image.");
+                }
+              }}
+            />
+          </label>
+          {logo.url && (
+            <button
+              onClick={() => set({ url: null })}
+              className="text-[12px] text-[var(--v-text-faint)] underline hover:text-[var(--v-text)]"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+        {uploadError && <p className="mt-1.5 text-[12px] text-amber-500">{uploadError}</p>}
+      </div>
+
+      <div className="mt-3">
+        <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Corner</span>
+        <div className="flex gap-2">
+          {positions.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => set({ position: p.id })}
+              aria-pressed={logo.position === p.id}
+              className={`flex-1 rounded-md border px-2 py-1.5 text-[12px] transition-colors ${
+                logo.position === p.id
+                  ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                  : "border-[var(--v-border)] hover:bg-[var(--v-surface-3)]"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="mt-3 block">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Size</span>
+          <span className="text-[11px] font-medium text-[var(--v-accent)]">{logo.sizePct}% of the screen width</span>
+        </div>
+        <input
+          type="range"
+          min={4}
+          max={30}
+          value={logo.sizePct}
+          onChange={(e) => set({ sizePct: Number(e.target.value) })}
+          className="w-full accent-[var(--v-accent)]"
+        />
+      </label>
+
+      <label className="mt-3 block">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Opacity</span>
+          <span className="text-[11px] font-medium text-[var(--v-accent)]">{Math.round(logo.opacity * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={20}
+          max={100}
+          value={Math.round(logo.opacity * 100)}
+          onChange={(e) => set({ opacity: Number(e.target.value) / 100 })}
+          className="w-full accent-[var(--v-accent)]"
+        />
+      </label>
+
+      <label className="mt-3 flex items-center justify-between">
+        <span className="text-sm">Only while live camera / capture video is showing</span>
+        <Toggle checked={!!logo.onlyOverVideo} onChange={(v) => set({ onlyOverVideo: v })} />
+      </label>
+
+      {logo.url && (
+        <div className="relative mt-4 aspect-video overflow-hidden rounded-lg border border-[var(--v-border)] bg-gradient-to-br from-slate-700 to-slate-900">
+          <LogoOverlay logo={{ ...logo, enabled: true, onlyOverVideo: false }} hasVideo />
+          <span className="absolute bottom-2 left-3 text-[11px] text-white/60">Preview</span>
+        </div>
+      )}
+    </Group>
   );
 }
 
