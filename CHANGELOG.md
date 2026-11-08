@@ -8,6 +8,7 @@ GitHub Release with Windows, macOS and Linux artifacts.
 ## [1.27.2] — 2026-11-08
 
 - FIX: **switching the auto-follow engine (for example Deepgram to Whisper) did not take effect while auto-follow was already listening.** The settings that choose the recogniser - engine, Whisper model, model host, accented English and language - were only read when a session started, and nothing restarted it when they changed. The old engine kept running, so scripture and lyric following appeared unchanged. Auto-follow now restarts when any of them changes.
+- NEW: **import many songs at once, including from ProPresenter.** The Import dialog's file picker now takes several files together and accepts ProPresenter `.pro6` / `.pro` documents as well as `.txt` and `.docx`. Each file is imported in turn and the dialog reports how many came in and names any that did not, instead of stopping at the first problem. ProPresenter's own section names (Verse, Chorus, Bridge) are kept. EasyWorship's library is not read yet.
 
 ## [1.27.1] — 2026-11-05
 

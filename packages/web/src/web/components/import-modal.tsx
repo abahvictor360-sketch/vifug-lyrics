@@ -17,6 +17,14 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
   const fileRef = useRef<HTMLInputElement>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [link, setLink] = useState("");
+  /** Progress and outcome of a many-file import (a whole ProPresenter library). */
+  const [bulk, setBulk] = useState<{
+    total: number;
+    done: number;
+    ok: number;
+    failed: { name: string; reason: string }[];
+    running: boolean;
+  } | null>(null);
 
   const doFetchLink = useMutation({
     mutationFn: async () => {
@@ -82,6 +90,45 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
     },
   });
 
+  /**
+   * Many files at once: one request each, in order, so a bad file is named
+   * and skipped instead of sinking the rest. Sequential on purpose - the
+   * songs are filed in the order they were picked, and a few hundred small
+   * uploads at once is a good way to get the later ones refused.
+   */
+  const importMany = async (files: File[]) => {
+    const state = { total: files.length, done: 0, ok: 0, failed: [] as { name: string; reason: string }[], running: true };
+    setBulk({ ...state });
+    for (const file of files) {
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/import", { method: "POST", body: fd });
+        if (res.ok) state.ok += 1;
+        else {
+          const d = (await res.json().catch(() => ({}))) as { error?: string };
+          state.failed.push({ name: file.name, reason: d.error || `error ${res.status}` });
+        }
+      } catch {
+        state.failed.push({ name: file.name, reason: "upload failed" });
+      }
+      state.done += 1;
+      setBulk({ ...state, failed: [...state.failed] });
+    }
+    state.running = false;
+    setBulk({ ...state, failed: [...state.failed] });
+    qc.invalidateQueries({ queryKey: ["songs"] });
+  };
+
+  const onFiles = (list: FileList | null) => {
+    const files = Array.from(list ?? []);
+    if (!files.length) return;
+    // One plain-text file still opens in the editor for review; everything
+    // else (several files, or ProPresenter / Word documents) imports directly.
+    if (files.length === 1 && files[0].name.toLowerCase().endsWith(".txt")) void onFile(files[0]);
+    else void importMany(files);
+  };
+
   const onFile = async (file: File) => {
     const name = file.name.toLowerCase();
     if (name.endsWith(".txt")) {
@@ -124,7 +171,7 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
             />
             <div className="mb-2 flex items-center gap-2">
               <VButton variant="subtle" size="sm" onClick={() => fileRef.current?.click()}>
-                <Upload className="h-4 w-4" /> Choose file (.txt / .docx)
+                <Upload className="h-4 w-4" /> Choose files (.txt / .docx / ProPresenter)
               </VButton>
               <VButton variant="subtle" size="sm" onClick={() => setLinkOpen((v) => !v)}>
                 <Link2 className="h-4 w-4" /> From a link
@@ -132,15 +179,35 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
               <input
                 ref={fileRef}
                 type="file"
-                accept=".txt,.docx"
+                accept=".txt,.docx,.pro6,.pro"
+                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) onFile(f);
+                  onFiles(e.target.files);
+                  // So picking the same files again still fires a change.
+                  e.target.value = "";
                 }}
               />
               {doImportFile.isPending && <span className="text-xs text-[var(--v-text-faint)]">Uploading…</span>}
             </div>
+            {bulk && (
+              <div role="status" className="mb-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] p-2.5 text-xs">
+                <p>
+                  {bulk.running
+                    ? `Importing ${bulk.done} of ${bulk.total}…`
+                    : `Imported ${bulk.ok} of ${bulk.total} songs.`}
+                </p>
+                {bulk.failed.length > 0 && (
+                  <ul className="v-scroll mt-1.5 max-h-28 space-y-0.5 overflow-y-auto text-red-400">
+                    {bulk.failed.map((f, i) => (
+                      <li key={i}>
+                        {f.name} - {f.reason}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             {linkOpen && (
               <div className="mb-2 flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
