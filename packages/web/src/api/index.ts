@@ -239,6 +239,35 @@ const BUILTIN_THEMES: Omit<typeof schema.themes.$inferInsert, "id">[] = [
 ];
 
 /**
+ * Themes that ship with a picture of their own.
+ *
+ * The files live in the web app's public/backgrounds folder, so they are served
+ * from the app itself - nothing to upload, nothing to download, and they work
+ * with no internet. Each one is also added to the media library (once) so it
+ * can be picked as a plain background anywhere a background is chosen, and the
+ * theme points at that library row. Picking one of these themes in Settings
+ * also puts its picture behind the words.
+ */
+const BUILTIN_IMAGE_THEMES: { name: string; file: string; bgColor: string; scrim: number }[] = [
+  // bgColor is the picture's own average tone: what shows for the instant
+  // before it loads, and if the file is ever missing.
+  { name: "Violet Haze", file: "violet-haze.jpg", bgColor: "#2c003d", scrim: 0 },
+  { name: "Plum Studio", file: "plum-studio.jpg", bgColor: "#380222", scrim: 0 },
+  { name: "Rose Nebula", file: "rose-nebula.jpg", bgColor: "#240d39", scrim: 15 },
+  { name: "Blue Halftone", file: "blue-halftone.jpg", bgColor: "#011886", scrim: 15 },
+];
+
+/** The media-library row for a bundled picture, created the first time it is needed. */
+async function ensureBundledBackground(file: string): Promise<string> {
+  const uri = `/backgrounds/${file}`;
+  const [existing] = await db.select().from(schema.media).where(eq(schema.media.uri, uri));
+  if (existing) return existing.id;
+  const id = uuid();
+  await db.insert(schema.media).values({ id, type: "image", uri, loop: 1, fit: "cover", muted: 1 });
+  return id;
+}
+
+/**
  * Built-in themes the operator has deleted on purpose.
  *
  * GET /themes re-inserts any built-in that is missing, so that installs seeded
@@ -773,8 +802,31 @@ const app = new Hono()
     const missing = BUILTIN_THEMES.filter(
       (b) => !rows.some((r) => r.name === b.name) && !deleted.includes(b.name),
     );
-    if (missing.length) {
+    const missingPictured = BUILTIN_IMAGE_THEMES.filter(
+      (b) => !rows.some((r) => r.name === b.name) && !deleted.includes(b.name),
+    );
+    if (missing.length || missingPictured.length) {
       for (const t of missing) await db.insert(schema.themes).values({ ...t, id: uuid() });
+      for (const t of missingPictured) {
+        await db.insert(schema.themes).values({
+          id: uuid(),
+          name: t.name,
+          fontSize: null,
+          fontWeight: 600,
+          textColor: "#FFFFFF",
+          textAlign: "center",
+          textOutline: JSON.stringify({ color: "rgba(0,0,0,0.6)", width: 2 }),
+          backgroundId: await ensureBundledBackground(t.file),
+          bgColor: t.bgColor,
+          overlayScrim: t.scrim,
+          displayMode: "fullscreen",
+          maxLines: 2,
+          verticalPos: "center",
+          safeMargin: 8,
+          transition: "fade",
+          transitionMs: 300,
+        });
+      }
       rows = await db.select().from(schema.themes);
     }
     return c.json({ themes: rows }, 200);
@@ -1627,6 +1679,9 @@ function recordingsDir(): string {
 async function resolveMediaUrl(uri: string): Promise<string> {
   if (!uri) return "";
   if (uri.startsWith("#") || uri.startsWith("http://") || uri.startsWith("https://")) return uri;
+  // A file that ships inside the app itself (public/backgrounds/...): already a
+  // URL on this origin, and not an object-storage key to be signed.
+  if (uri.startsWith("/") && !uri.startsWith("//")) return uri;
   // Locally stored file → same-origin API route (works in every window).
   if (uri.startsWith("local:")) return `/api/media/file/${encodeURIComponent(uri.slice(6))}`;
   // An S3 key with no bucket configured cannot be signed; returning the raw

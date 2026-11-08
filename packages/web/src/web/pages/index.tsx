@@ -1296,6 +1296,9 @@ export default function OperatorPage() {
               pendingCapture={pendingCapture}
               onCueCapture={setPendingCapture}
               cue={mediaCue}
+              screens={settings?.screens ?? []}
+              onSendToScreen={(i, screenId) => stage.sendToScreen(screenId, i)}
+              onClearScreen={(screenId) => stage.setScreenStatus(screenId, "clear")}
             />
           ) : (
             <>

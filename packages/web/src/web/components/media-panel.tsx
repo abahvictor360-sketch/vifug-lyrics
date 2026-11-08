@@ -119,6 +119,9 @@ export function MediaPanel({
   pendingCapture,
   onCueCapture,
   cue,
+  screens = [],
+  onSendToScreen,
+  onClearScreen,
 }: {
   onSlidesChange: (slides: StageSlide[]) => void;
   onPreview: (index: number) => void;
@@ -131,6 +134,12 @@ export function MediaPanel({
   onCueCapture: (capture: LiveCapture) => void;
   /** Externally chosen media item (e.g. the phone remote's upload) - switches tab and previews it. */
   cue?: { mediaId: string; nonce: number } | null;
+  /** Output screens beyond the main one, for "Send to a screen". */
+  screens?: { id: string; name: string }[];
+  /** Put item `index` on one named screen, leaving every other screen alone. */
+  onSendToScreen?: (index: number, screenId: string) => void;
+  /** Clear one named screen, leaving every other screen alone. */
+  onClearScreen?: (screenId: string) => void;
 }) {
   const media = useMedia();
   const upload = useUploadMedia();
@@ -786,6 +795,9 @@ export function MediaPanel({
               isPreview={previewId === selected.id}
               onPreview={() => { const i = items.findIndex((m) => m.id === selected.id); if (i >= 0) onPreview(i); }}
               onSendLive={() => { const i = items.findIndex((m) => m.id === selected.id); if (i >= 0) onSendLive(i); }}
+              screens={screens}
+              onSendToScreen={(screenId) => { const i = items.findIndex((m) => m.id === selected.id); if (i >= 0) onSendToScreen?.(i, screenId); }}
+              onClearScreen={onClearScreen}
               onDelete={() => { del.mutate(selected.id); setSelectedId(null); }}
             />
           ) : (
@@ -829,6 +841,9 @@ function MediaInspector({
   isLive,
   isPreview,
   onDelete,
+  screens,
+  onSendToScreen,
+  onClearScreen,
 }: {
   item: MediaItem;
   onPreview: () => void;
@@ -836,8 +851,13 @@ function MediaInspector({
   isLive: boolean;
   isPreview: boolean;
   onDelete: () => void;
+  screens: { id: string; name: string }[];
+  onSendToScreen: (screenId: string) => void;
+  onClearScreen?: (screenId: string) => void;
 }) {
   const update = useUpdateMedia();
+  /** The screen this item was last sent to from here, to say so on the row. */
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const settings = useSettings().data;
   const updateSettings = useUpdateSettings();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -879,6 +899,48 @@ function MediaInspector({
           Go live
         </VButton>
       </div>
+
+      {/* Straight to one screen. Go live above is the main screen; each row
+          here is another output, sent to on its own so the congregation's
+          screen and, say, the stage or lobby monitor can show different things. */}
+      <Field label="Send to a screen">
+        {screens.length === 0 ? (
+          <p className="text-[12px] text-[var(--v-text-faint)]">
+            Go live puts this on the main screen. To send pictures and video to other screens as
+            well, add them under Settings &rsaquo; Streaming &amp; output.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {screens.map((sc) => (
+              <li
+                key={sc.id}
+                className="flex items-center gap-1.5 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] py-1 pl-2.5 pr-1"
+              >
+                <span className="min-w-0 flex-1 truncate text-[12px]" title={sc.name}>
+                  {sc.name}
+                  {sentTo === sc.id && <span className="ml-1.5 text-[var(--v-accent)]">&#10003; sent</span>}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { onSendToScreen(sc.id); setSentTo(sc.id); }}
+                  aria-label={`Send ${item.name ?? (isVideo ? "video" : "image")} to ${sc.name}`}
+                  className="rounded bg-[var(--v-accent-soft)] px-2 py-1 text-[11px] font-semibold text-[var(--v-accent)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v-accent)]"
+                >
+                  Send
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onClearScreen?.(sc.id); if (sentTo === sc.id) setSentTo(null); }}
+                  aria-label={`Clear ${sc.name}`}
+                  className="rounded px-2 py-1 text-[11px] text-[var(--v-text-faint)] hover:text-[var(--v-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v-accent)]"
+                >
+                  Clear
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Field>
 
       <Field label="How it sits on the screen">
         <div className="flex gap-1.5">

@@ -1333,7 +1333,15 @@ function LyricsSection({
       <ThemeEditor
         themes={themes}
         activeId={settings?.activeThemeId ?? null}
-        onActivate={(id) => patchSettings({ activeThemeId: id })}
+        onActivate={(id) => {
+          // A theme that ships with a picture (Violet Haze, Blue Halftone ...)
+          // brings it along - choosing the look and then also having to find
+          // its picture in the Background list would be two steps for one
+          // idea. A theme with no picture leaves the background as it was, as
+          // before. Either way the Background list below still changes it.
+          const bg = themes.find((t) => t.id === id)?.backgroundId;
+          patchSettings(bg ? { activeThemeId: id, activeBackgroundId: bg } : { activeThemeId: id });
+        }}
       />
 
       <Group title="Look & feel" icon={Type}>
