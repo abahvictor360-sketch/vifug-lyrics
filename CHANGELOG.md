@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.27.2] — 2026-11-08
+
+- FIX: **switching the auto-follow engine (for example Deepgram to Whisper) did not take effect while auto-follow was already listening.** The settings that choose the recogniser - engine, Whisper model, model host, accented English and language - were only read when a session started, and nothing restarted it when they changed. The old engine kept running, so scripture and lyric following appeared unchanged. Auto-follow now restarts when any of them changes.
+
 ## [1.27.1] — 2026-11-05
 
 - FIX: **auto-follow set to "Live screen" left the passage in Preview.** Panels hand their slide list to the stage in an effect, so a cue arriving in the same commit as its own content is given a list one render behind. Previewing already knew to wait for the slides; going live did not, and silently dropped the request — so the verse arrived in Preview and stayed there, which read as the Live setting being ignored. Going live now waits the same way.
