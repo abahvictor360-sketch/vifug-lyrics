@@ -22,9 +22,12 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
     total: number;
     done: number;
     ok: number;
+    /** Already in the library, so left alone. */
+    skipped: number;
     failed: { name: string; reason: string }[];
     running: boolean;
   } | null>(null);
+  const ewRef = useRef<HTMLInputElement>(null);
 
   const doFetchLink = useMutation({
     mutationFn: async () => {
@@ -91,33 +94,119 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
   });
 
   /**
-   * Many files at once: one request each, in order, so a bad file is named
-   * and skipped instead of sinking the rest. Sequential on purpose - the
-   * songs are filed in the order they were picked, and a few hundred small
-   * uploads at once is a good way to get the later ones refused.
+   * Run a list of imports in order, reporting as it goes.
+   *
+   * One request each, sequentially, on purpose: a bad item is named and
+   * skipped instead of sinking the rest, songs are filed in the order they
+   * were picked, and a few hundred requests at once is a good way to get the
+   * later ones refused. Each job returns "skipped" for a song that is already
+   * in the library.
    */
-  const importMany = async (files: File[]) => {
-    const state = { total: files.length, done: 0, ok: 0, failed: [] as { name: string; reason: string }[], running: true };
-    setBulk({ ...state });
-    for (const file of files) {
+  const runBulk = async (jobs: { name: string; run: () => Promise<"ok" | "skipped"> }[]) => {
+    const state = { total: jobs.length, done: 0, ok: 0, skipped: 0, failed: [] as { name: string; reason: string }[], running: true };
+    const publish = () => setBulk({ ...state, failed: [...state.failed] });
+    publish();
+    for (const job of jobs) {
       try {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/import", { method: "POST", body: fd });
-        if (res.ok) state.ok += 1;
-        else {
-          const d = (await res.json().catch(() => ({}))) as { error?: string };
-          state.failed.push({ name: file.name, reason: d.error || `error ${res.status}` });
-        }
-      } catch {
-        state.failed.push({ name: file.name, reason: "upload failed" });
+        const r = await job.run();
+        if (r === "skipped") state.skipped += 1;
+        else state.ok += 1;
+      } catch (e) {
+        state.failed.push({ name: job.name, reason: e instanceof Error ? e.message : "failed" });
       }
       state.done += 1;
-      setBulk({ ...state, failed: [...state.failed] });
+      publish();
     }
     state.running = false;
-    setBulk({ ...state, failed: [...state.failed] });
+    publish();
     qc.invalidateQueries({ queryKey: ["songs"] });
+  };
+
+  const uploadFile = async (file: File): Promise<"ok"> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/import", { method: "POST", body: fd });
+    if (!res.ok) {
+      const d = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(d.error || `error ${res.status}`);
+    }
+    return "ok";
+  };
+
+  const importMany = (files: File[]) =>
+    runBulk(files.map((f) => ({ name: f.name, run: () => uploadFile(f) })));
+
+  /**
+   * An EasyWorship 6/7 library: Songs.db and SongWords.db picked together.
+   * Read in the browser (nothing is uploaded but the songs themselves), then
+   * filed through the same text import as a pasted song. Songs already in
+   * the library, by title and first author, are skipped - so moving the
+   * library twice does not double it.
+   */
+  const importEasyWorship = async (list: FileList | null) => {
+    const files = Array.from(list ?? []);
+    const songsFile = files.find((f) => /^songs\.db$/i.test(f.name));
+    const wordsFile = files.find((f) => /^songwords\.db$/i.test(f.name));
+    if (!songsFile || !wordsFile) {
+      setBulk({
+        total: 1, done: 1, ok: 0, skipped: 0, running: false,
+        failed: [{ name: "EasyWorship", reason: "pick both Songs.db and SongWords.db together" }],
+      });
+      return;
+    }
+    setBulk({ total: 0, done: 0, ok: 0, skipped: 0, failed: [], running: true });
+    try {
+      const [{ loadSqlJs }, { readEasyWorshipLibrary }] = await Promise.all([
+        import("../lib/sqljs-loader"),
+        import("../lib/easyworship"),
+      ]);
+      const [SQL, songsBuf, wordsBuf] = await Promise.all([
+        loadSqlJs(),
+        songsFile.arrayBuffer(),
+        wordsFile.arrayBuffer(),
+      ]);
+      const lib = readEasyWorshipLibrary(SQL, songsBuf, wordsBuf);
+
+      const key = (title: string, author: string | undefined) =>
+        `${title}|${author ?? ""}`.toLowerCase().replace(/[^\p{L}\p{N}|]+/gu, "");
+      const have = new Set<string>();
+      const existing = await fetch("/api/songs");
+      if (existing.ok) {
+        const d = (await existing.json()) as { songs: { title: string; authors: string[] }[] };
+        for (const s of d.songs) have.add(key(s.title, s.authors[0]));
+      }
+
+      await runBulk(
+        lib.songs.map((song) => ({
+          name: song.title,
+          run: async () => {
+            const k = key(song.title, song.authors[0]);
+            if (have.has(k)) return "skipped" as const;
+            const res = await fetch("/api/import", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: song.text, title: song.title, authors: song.authors }),
+            });
+            if (!res.ok) {
+              const d = (await res.json().catch(() => ({}))) as { error?: string };
+              throw new Error(d.error || `error ${res.status}`);
+            }
+            have.add(k);
+            return "ok" as const;
+          },
+        })),
+      );
+      if (lib.skipped > 0) {
+        setBulk((b) =>
+          b ? { ...b, failed: [...b.failed, { name: `${lib.skipped} songs with no words`, reason: "left out" }] } : b,
+        );
+      }
+    } catch (e) {
+      setBulk({
+        total: 1, done: 1, ok: 0, skipped: 0, running: false,
+        failed: [{ name: "EasyWorship", reason: e instanceof Error ? e.message : "could not read the library" }],
+      });
+    }
   };
 
   const onFiles = (list: FileList | null) => {
@@ -173,6 +262,9 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
               <VButton variant="subtle" size="sm" onClick={() => fileRef.current?.click()}>
                 <Upload className="h-4 w-4" /> Choose files (.txt / .docx / ProPresenter)
               </VButton>
+              <VButton variant="subtle" size="sm" onClick={() => ewRef.current?.click()}>
+                <Upload className="h-4 w-4" /> EasyWorship library
+              </VButton>
               <VButton variant="subtle" size="sm" onClick={() => setLinkOpen((v) => !v)}>
                 <Link2 className="h-4 w-4" /> From a link
               </VButton>
@@ -188,14 +280,25 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
                   e.target.value = "";
                 }}
               />
+              <input
+                ref={ewRef}
+                type="file"
+                accept=".db"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  void importEasyWorship(e.target.files);
+                  e.target.value = "";
+                }}
+              />
               {doImportFile.isPending && <span className="text-xs text-[var(--v-text-faint)]">Uploading…</span>}
             </div>
             {bulk && (
               <div role="status" className="mb-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] p-2.5 text-xs">
                 <p>
                   {bulk.running
-                    ? `Importing ${bulk.done} of ${bulk.total}…`
-                    : `Imported ${bulk.ok} of ${bulk.total} songs.`}
+                    ? bulk.total ? `Importing ${bulk.done} of ${bulk.total}…` : "Reading the library…"
+                    : `Imported ${bulk.ok} song${bulk.ok === 1 ? "" : "s"}${bulk.skipped ? `, ${bulk.skipped} already in the library` : ""}.`}
                 </p>
                 {bulk.failed.length > 0 && (
                   <ul className="v-scroll mt-1.5 max-h-28 space-y-0.5 overflow-y-auto text-red-400">
