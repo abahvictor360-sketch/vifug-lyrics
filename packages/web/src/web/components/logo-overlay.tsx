@@ -20,7 +20,9 @@ export type LogoSettings = {
 export const DEFAULT_LOGO: LogoSettings = {
   enabled: false,
   url: null,
-  position: "top-right",
+  // Top-left, because the service timer defaults to the top-right and the two
+  // would otherwise sit on top of each other the first time both were on.
+  position: "top-left",
   sizePct: 12,
   opacity: 1,
   onlyOverVideo: false,

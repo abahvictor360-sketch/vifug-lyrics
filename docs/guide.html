@@ -227,6 +227,7 @@
       <a href="#media">Media</a>
       <a href="#sound">Sound</a>
       <a href="#autofollow">Auto-follow</a>
+      <a href="#overlays">Overlays</a>
       <a href="#faq">FAQ</a>
     </div>
     <a class="back" href="index.html">← Back to home</a>
@@ -286,6 +287,7 @@
       <a href="#firewall"><span class="toc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><b>17</b>&nbsp; Letting phones connect</a>
       <a href="#updates"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span><b>18</b>&nbsp; Staying up to date</a>
       <a href="#autofollow"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></span><b>19</b>&nbsp; AI auto-follow</a>
+      <a href="#overlays"><span class="toc-ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M6 7h4M18 13h-3"/><path d="M8 21h8"/></svg></span><b>20</b>&nbsp; Timer, announcement &amp; logo</a>
     </div>
 
     <!-- 01 QUICK START -->
@@ -486,7 +488,8 @@
       <p class="lead">
         A line of text that scrolls along the bottom of the screen - the notice that has to reach
         everyone whatever else is showing. Set it in <span class="inline-code">Settings &rsaquo; General &rsaquo; Announcement ticker</span>:
-        type the message, choose the speed, and pick the bar and text colours.
+        type the message, choose the speed, and pick the bar and text colours. Step by step, with
+        screenshots, in <a href="#overlays">chapter 20</a>.
       </p>
       <div class="callout tip">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14a5 5 0 1 0-6.18 0c.86.63 1.09 1.15 1.09 2h4c0-.85.23-1.37 1.09-2Z"/></svg>
@@ -1172,7 +1175,8 @@
       <p>
         The <b>Timer</b> panel in the left sidebar runs a countdown or a count-up over the output -
         five minutes to the start of the service, how long the speaker has left, how long until the
-        stream goes live.
+        stream goes live. A logo can sit in a corner the same way - see
+        <a href="#overlays">chapter 20</a>.
       </p>
       <p>
         Set the length in the minutes and seconds boxes - or take one of the <b>5m / 10m / 15m /
@@ -1707,6 +1711,114 @@
       <p>Auto-follow is only as good as what it can hear. Pick the mic that hears the room in this same panel - or in the <b>Audio Mixer</b> on the operator screen, which has the same picker and names the device it is metering - and press <b>Test</b> before the service. The mixer's mute pauses auto-follow listening entirely, so muting is a genuine &ldquo;stop listening to the room&rdquo;.</p>
     </section>
 
+    <!-- 20 TIMER, ANNOUNCEMENT, LOGO -->
+    <section class="chapter" id="overlays">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 20</span></div>
+      <h2>Timer, announcement and logo on the live screen</h2>
+      <p class="lead">
+        Three things can sit over whatever is showing, whether that is a song, a verse, a video or a
+        live camera: a <b>countdown timer</b>, a <b>scrolling announcement</b> and your church's
+        <b>logo</b>. None of them is a slide. They stay up while you change slides, and they show on
+        the projector and the stream overlay, never on your own preview thumbnails.
+      </p>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1620" src="img/app-live-overlays.png" alt="The live screen showing a song with a church logo in the top-left corner, a countdown timer in the top-right and a scrolling announcement along the bottom" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">All three at once: the logo top left, the countdown top right and the announcement along the bottom, over the song.</figcaption>
+      </figure>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">Add a countdown timer</h3>
+      <p>For the five minutes before the service, the time the speaker has left, or the wait before a stream goes live.</p>
+      <ol class="steps">
+        <li>
+          <h3>Switch the timer on</h3>
+          <p>In the right-hand column, find the <b>Timer</b> panel and press the <b>Off</b> button so it reads <b>On</b>. The clock appears in the panel.</p>
+        </li>
+        <li>
+          <h3>Set the length</h3>
+          <p>Type the minutes and seconds, or press one of <b>5m / 10m / 15m / 30m</b>. Under <b>Set up</b>, <b>Count up</b> times something that has no fixed end.</p>
+        </li>
+        <li>
+          <h3>Choose which screens show it</h3>
+          <p>Under <b>Show it on</b>, tick <b>Main screen</b> for the projector and any extra output screens. <b>Stage</b> is the stage display and <b>Stream</b> is the OBS / vMix overlay. Out of the box only <b>Stage</b> is ticked, so the congregation sees nothing until you tick <b>Main screen</b>.</p>
+        </li>
+        <li>
+          <h3>Press Start</h3>
+          <p><b>Start</b> becomes <b>Pause</b> while it runs; <b>Reset</b> puts it back to the length you set. Under <b>Set up</b> you can add a label such as &ldquo;Service starts in&rdquo;, move the timer to any corner or the centre, make it bigger or smaller, and choose whether it keeps counting past zero.</p>
+        </li>
+      </ol>
+      <figure style="margin:22px auto;max-width:420px">
+        <img width="1024" height="1760" src="img/app-timer.png" alt="The Timer panel in the right-hand column showing 4:59, with Pause and Reset buttons, the minutes and seconds boxes, the 5m 10m 15m 30m presets and Main screen, Stage and Stream switches" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">The timer is also drawn on the Live thumbnail, in the corner where it will appear on the projector.</figcaption>
+      </figure>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">Scroll an announcement along the bottom</h3>
+      <p>A notice that has to reach everyone, whatever else is showing: a hall change, a car that needs moving, lunch after the service.</p>
+      <ol class="steps">
+        <li>
+          <h3>Open the announcement settings</h3>
+          <p>Press <b>Settings</b> at the top right, choose <b>General</b>, and scroll to <b>Announcement ticker</b>.</p>
+        </li>
+        <li>
+          <h3>Turn it on and type the message</h3>
+          <p>Switch on <b>Scroll a message across the bottom of the screen</b>, then type the words in the <b>Message</b> box. It starts scrolling straight away.</p>
+        </li>
+        <li>
+          <h3>Adjust the speed and colours</h3>
+          <p>The <b>Scroll speed</b> slider sets how many seconds one loop takes, so a lower number is faster. <b>Bar background</b> and <b>Text color</b> change the look. The strip at the bottom of the panel is a live preview.</p>
+        </li>
+        <li>
+          <h3>Switch it off when it has done its job</h3>
+          <p>Flip the same switch off. A ticker nobody needs any more is one people learn to ignore.</p>
+        </li>
+      </ol>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1800" src="img/app-announcement.png" alt="Settings, General page: the Announcement ticker panel with a switch, a message box, a scroll speed slider, bar and text colour pickers and a preview strip" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">Settings &rsaquo; General &rsaquo; Announcement ticker.</figcaption>
+      </figure>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">Put your logo in a corner</h3>
+      <p>
+        The logo is made for live video. A camera or capture-card picture has no slide background to
+        carry your branding, so the logo is what tells people whose service they are watching,
+        in the room and on the stream.
+      </p>
+      <ol class="steps">
+        <li>
+          <h3>Open the logo settings</h3>
+          <p>Press <b>Settings</b>, choose <b>General</b>, and scroll to <b>Logo</b>. Switch on <b>Show a logo in a corner of the live screen</b>.</p>
+        </li>
+        <li>
+          <h3>Choose the image</h3>
+          <p>Pick one of the pictures already in your media library, or press <b>Upload logo</b> and choose a file. A <b>PNG with a transparent background</b> looks best, because a logo with a white box around it shows the box. The image also appears in the Media tab, and <b>Remove</b> takes it off the screen without deleting the file.</p>
+        </li>
+        <li>
+          <h3>Choose the corner, size and opacity</h3>
+          <p><b>Top left</b> or <b>Top right</b>. <b>Size</b> is a share of the screen's width, so the logo keeps its proportions on a small preview and on a large projector alike. <b>Opacity</b> makes it softer over a busy picture. The preview underneath shows exactly where it will sit.</p>
+        </li>
+        <li>
+          <h3>Decide when it shows</h3>
+          <p>Leave <b>Only while live camera / capture video is showing</b> off and the logo stays over everything: songs, scripture and video. Switch it on and the logo appears with a live camera or capture-card picture and disappears when you go back to the words.</p>
+        </li>
+      </ol>
+      <figure style="margin:22px 0">
+        <img width="2880" height="2360" src="img/app-logo.png" alt="Settings, General page: the Logo panel with a switch, the chosen image, Top left and Top right buttons, size and opacity sliders, an only-over-video switch and a preview of the corner" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">Settings &rsaquo; General &rsaquo; Logo. The preview at the bottom shows the corner and size.</figcaption>
+      </figure>
+      <div class="callout tip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14a5 5 0 1 0-6.18 0c.86.63 1.09 1.15 1.09 2h4c0-.85.23-1.37 1.09-2Z"/></svg>
+        <p><b>Keep the logo and the timer in different corners.</b> The timer starts in the top
+        right and the logo in the top left, so they do not meet. If you move both into the same
+        corner, Settings tells you, and one will sit on top of the other on the screen.</p>
+      </div>
+      <div class="callout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14a5 5 0 1 0-6.18 0c.86.63 1.09 1.15 1.09 2h4c0-.85.23-1.37 1.09-2Z"/></svg>
+        <p>The logo also shows on the <b>stream overlay</b> (the OBS / vMix browser source), so if
+        you place that overlay over your camera in OBS, your logo is on the broadcast too. On the
+        desktop app an uploaded logo is saved with your library. In a browser with no storage set
+        up, it is kept in that browser only, so it shows on screens opened from the same browser.</p>
+      </div>
+    </section>
+
     <div class="faq" id="faq">
       <h2 style="margin-top:56px">A few things people ask early on</h2>
       <details open>
@@ -1782,6 +1894,8 @@
    */
   var SYNONYMS = {
     countdown: "timer", clock: "timer", stopwatch: "timer",
+    logo: "overlays watermark branding corner", watermark: "logo overlays", branding: "logo overlays",
+    ticker: "announcement overlays", banner: "announcement overlays", notice: "announcement",
     words: "lyrics", song: "lyrics songs", hymn: "songs lyrics",
     scripture: "bible verse", verse: "bible scripture", passage: "bible scripture",
     projector: "projection screen output display",

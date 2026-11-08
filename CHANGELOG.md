@@ -7,7 +7,7 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [1.28.0] — 2026-11-08
 
-- NEW: **a logo on the live screen.** Settings → Logo pins an image to the top-left or top-right corner of the projector and the stream overlay, over everything else. It is made for live camera and capture-card video, which has no slide background to carry your branding: turn on "Only while live camera / capture video is showing" and it appears with the video and goes when the video does. Pick an image from the media library or upload one (a PNG with a transparent background looks best), and set its size as a share of the screen width and its opacity. It never takes clicks from what is under it.
+- NEW: **a logo on the live screen.** Settings → Logo pins an image to the top-left or top-right corner of the projector and the stream overlay, over everything else. It is made for live camera and capture-card video, which has no slide background to carry your branding: turn on "Only while live camera / capture video is showing" and it appears with the video and goes when the video does. Pick an image from the media library or upload one (a PNG with a transparent background looks best), and set its size as a share of the screen width and its opacity. It never takes clicks from what is under it. It starts in the top-left because the service timer starts in the top-right, and Settings warns you if you put the two in the same corner. The guide has a new chapter, **Timer, announcement and logo**, with screenshots of all three.
 
 ## [1.27.2] — 2026-11-08
 

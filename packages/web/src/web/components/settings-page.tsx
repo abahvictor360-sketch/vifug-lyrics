@@ -2747,6 +2747,15 @@ function LogoGroup({
         </div>
       </div>
 
+      {settings?.timer?.enabled &&
+        settings.timer.position === logo.position &&
+        (settings.timer.screens?.live || settings.timer.screens?.stream) && (
+          <p className="mt-2 text-[12px] text-amber-500">
+            The service timer is also in this corner on the live screen - move one of them so they
+            do not sit on top of each other.
+          </p>
+        )}
+
       <label className="mt-3 block">
         <div className="mb-1 flex items-center justify-between">
           <span className="text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Size</span>
