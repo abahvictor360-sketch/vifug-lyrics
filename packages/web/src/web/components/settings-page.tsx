@@ -552,10 +552,16 @@ function ThemeEditor({
   activeId,
   onActivate,
   previewBackground,
+  activeBackgroundId,
+  onPickBackground,
+  mediaDefaults,
 }: {
   themes: ThemeRow[];
   activeId: string | null;
   onActivate: (id: string) => void;
+  activeBackgroundId?: string | null;
+  onPickBackground?: (id: string | null) => void;
+  mediaDefaults?: { fit?: "cover" | "contain" | "fill"; muted?: boolean };
   /** The picture or colour behind the words on the live screen, so the preview matches it. */
   previewBackground?: LiveTheme["background"];
 }) {
@@ -700,6 +706,9 @@ function ThemeEditor({
             theme={theme}
             patch={patch}
             previewBackground={previewBackground}
+            activeBackgroundId={activeBackgroundId}
+            onPickBackground={onPickBackground}
+            mediaDefaults={mediaDefaults}
             onClose={() => setDesigning(false)}
           />
         )}
@@ -1360,6 +1369,13 @@ function LyricsSection({
         themes={themes}
         activeId={settings?.activeThemeId ?? null}
         previewBackground={previewTheme.background}
+        activeBackgroundId={settings?.activeBackgroundId ?? null}
+        mediaDefaults={{ fit: settings?.mediaDefaults?.fit ?? "cover", muted: !(settings?.mediaDefaults?.videoSound ?? true) }}
+        // A picture chosen while designing is the theme's picture, so it goes on
+        // the screen the same way choosing the theme would put it there.
+        onPickBackground={(id) =>
+          patchSettings({ activeBackgroundId: id, bibleBackgroundId: undefined, presentationBackgroundId: undefined })
+        }
         onActivate={(id) => {
           // A theme that ships with a picture (Violet Haze, Blue Halftone ...)
           // brings it along - choosing the look and then also having to find

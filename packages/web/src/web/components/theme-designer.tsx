@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { X, RotateCcw } from "lucide-react";
 import { SlideRender } from "./slide-render";
 import { FontPicker } from "./font-picker";
+import { MediaPicker } from "./media-picker";
 import { useDialog } from "../hooks/use-dialog";
 import type { Theme as ThemeRow, ThemeDraft } from "../hooks/use-songs";
 import { themeToLive, parseTextFrame, type LiveState, type LiveTheme, type TextFrame } from "../lib/live-bus";
@@ -78,10 +79,18 @@ export function ThemeDesigner({
   theme,
   patch,
   previewBackground,
+  activeBackgroundId,
+  onPickBackground,
+  mediaDefaults,
   onClose,
 }: {
   theme: ThemeRow;
   patch: (p: ThemeDraft) => void;
+  /** The picture on the live screen right now (null = none). */
+  activeBackgroundId?: string | null;
+  /** Put a picture behind the words on the screen; the theme remembers it too. */
+  onPickBackground?: (id: string | null) => void;
+  mediaDefaults?: { fit?: "cover" | "contain" | "fill"; muted?: boolean };
   /** The picture behind the words on the live screen, so the canvas matches it. */
   previewBackground?: LiveTheme["background"];
   onClose: () => void;
@@ -376,7 +385,22 @@ export function ThemeDesigner({
                 Dim the background picture {row.overlayScrim ?? 0}%
                 <input type="range" min={0} max={90} value={row.overlayScrim ?? 0} onChange={(e) => change({ overlayScrim: Number(e.target.value) })} className="w-full" />
               </label>
-              <p className="text-[11px] text-[var(--v-text-faint)]">The background picture itself is chosen under Lyrics &rsaquo; Background.</p>
+            </section>
+
+            <section>
+              <p className={label}>Background picture or video</p>
+              <MediaPicker
+                activeId={draft.backgroundId !== undefined ? draft.backgroundId : (activeBackgroundId ?? theme.backgroundId ?? null)}
+                onSelect={(id) => {
+                  change({ backgroundId: id });
+                  onPickBackground?.(id);
+                }}
+                defaultFit={mediaDefaults?.fit ?? "cover"}
+                defaultMuted={mediaDefaults?.muted ?? false}
+              />
+              <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+                Upload an image or video, paste a link, or pick a colour. It is saved with this theme and shows on the canvas straight away.
+              </p>
             </section>
 
             <section>
