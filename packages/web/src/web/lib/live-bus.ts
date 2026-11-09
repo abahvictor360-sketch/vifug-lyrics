@@ -19,6 +19,23 @@ export type LiveBackground = {
   colorFilter?: string | null;
 } | null;
 
+/** A box on the slide, in percent of its width and height. */
+export type TextFrame = { x: number; y: number; w: number; h: number };
+
+export function parseTextFrame(raw: unknown): TextFrame | null {
+  try {
+    const o = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!o || typeof o !== "object") return null;
+    const { x, y, w, h } = o as Record<string, unknown>;
+    if ([x, y, w, h].some((n) => typeof n !== "number" || !Number.isFinite(n))) return null;
+    const W = Math.min(100, Math.max(10, w as number));
+    const H = Math.min(100, Math.max(8, h as number));
+    return { x: Math.min(100 - W, Math.max(0, x as number)), y: Math.min(100 - H, Math.max(0, y as number)), w: W, h: H };
+  } catch {
+    return null;
+  }
+}
+
 export type LiveTheme = {
   bgColor: string;
   textColor: string;
@@ -39,6 +56,12 @@ export type LiveTheme = {
    * Absent = all four edges use safeMargin.
    */
   safeMarginEdges?: { top: number; right: number; bottom: number; left: number } | null;
+  /**
+   * Where the words sit, as a box in percent of the screen. Absent = the whole
+   * screen inside the margin. The screen's own margin still applies on top, so
+   * a cropped projector never loses words even if a theme places them at an edge.
+   */
+  textFrame?: TextFrame | null;
   overlayScrim: number; // 0-100
   displayMode: "fullscreen" | "lower_third" | "lower_third_bg";
   verticalPos: "top" | "center" | "bottom";
@@ -263,6 +286,7 @@ export function themeToLive(t: Record<string, unknown> | undefined): LiveTheme {
     fontWeight: (t.fontWeight as number) ?? 600,
     fontSize: (t.fontSize as number) ?? null,
     fontFamily: (t.fontFamily as string) ?? null,
+    textFrame: parseTextFrame(t.textFrame),
     safeMargin: (t.safeMargin as number) ?? 8,
     overlayScrim: (t.overlayScrim as number) ?? 0,
     displayMode: (t.displayMode as LiveTheme["displayMode"]) ?? "fullscreen",

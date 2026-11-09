@@ -104,12 +104,20 @@ function clampMargin(safeMargin: number | null | undefined): number {
 function marginEdges(t: LiveTheme): { top: number; right: number; bottom: number; left: number } {
   const all = clampMargin(t.safeMargin);
   const e = t.safeMarginEdges;
-  if (!e) return { top: all, right: all, bottom: all, left: all };
+  const screen = e
+    ? { top: clampMargin(e.top), right: clampMargin(e.right), bottom: clampMargin(e.bottom), left: clampMargin(e.left) }
+    : { top: all, right: all, bottom: all, left: all };
+  // A theme's text box is the same idea as a margin - how far in from each
+  // edge the words stay - so it is applied as one. The screen's own margin is
+  // kept as a floor: a projector that crops the top of the wall must not lose
+  // words just because a theme put its box at the top.
+  const f = t.textFrame;
+  if (!f) return screen;
   return {
-    top: clampMargin(e.top),
-    right: clampMargin(e.right),
-    bottom: clampMargin(e.bottom),
-    left: clampMargin(e.left),
+    top: Math.max(screen.top, f.y),
+    left: Math.max(screen.left, f.x),
+    right: Math.max(screen.right, 100 - f.x - f.w),
+    bottom: Math.max(screen.bottom, 100 - f.y - f.h),
   };
 }
 
@@ -530,6 +538,7 @@ export function SlideRender({
     state.slideId, state.sourceLines.join("\n"), state.translationLines.join("\n"),
     state.sectionLabel, t.fontSize, t.fontFamily, t.fontWeight, t.safeMargin,
     JSON.stringify(t.safeMarginEdges ?? null),
+    JSON.stringify(t.textFrame ?? null),
     t.displayMode, t.showCaption,
   ].join("|");
   useLayoutEffect(() => {

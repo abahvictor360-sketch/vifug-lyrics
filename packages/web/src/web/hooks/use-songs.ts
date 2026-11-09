@@ -122,6 +122,11 @@ export type ThemeDraft = {
   safeMargin?: number | null;
   transition?: string | null;
   transitionMs?: number | null;
+  /** {x,y,w,h} in percent, as JSON. */
+  textFrame?: string | null;
+  fontFamily?: string | null;
+  /** {color,blur,x,y} as JSON. */
+  textShadow?: string | null;
 };
 
 export function useCreateTheme() {

@@ -56,6 +56,7 @@ import { MediaPicker } from "./media-picker";
 import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-media";
 import { MediaImg } from "./media-el";
 import { StreamSourceCard } from "./stream-source-card";
+import { ThemeDesigner } from "./theme-designer";
 import { AddBibleVersion } from "./add-bible-version";
 import { APP_MODES, appModeOf, type AppMode } from "../lib/app-mode";
 import { useQueryClient } from "@tanstack/react-query";
@@ -565,6 +566,7 @@ function ThemeEditor({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [designing, setDesigning] = useState(false);
 
   // Edit whichever theme is on air, so the preview matches the screen.
   const theme = themes.find((t) => t.id === activeId) ?? themes[0];
@@ -689,6 +691,18 @@ function ThemeEditor({
             {error}
           </p>
         ) : null}
+
+        <VButton variant="primary" size="sm" className="mt-3" onClick={() => setDesigning(true)}>
+          <Palette className="h-4 w-4" /> Open the visual designer
+        </VButton>
+        {designing && (
+          <ThemeDesigner
+            theme={theme}
+            patch={patch}
+            previewBackground={previewBackground}
+            onClose={() => setDesigning(false)}
+          />
+        )}
 
         <p className="mt-2 text-[12px] text-[var(--v-text-faint)]">
           Editing <b className="text-[var(--v-text-dim)]">{theme.name}</b> - the theme every song

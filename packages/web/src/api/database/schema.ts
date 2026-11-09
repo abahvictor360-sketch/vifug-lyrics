@@ -168,6 +168,12 @@ export const themes = sqliteTable("themes", {
   safeMargin: integer("safe_margin").default(6),
   transition: text("transition").default("fade"),
   transitionMs: integer("transition_ms").default(300),
+  // The text box on the slide as {x,y,w,h} percentages; null = the whole screen minus the margin.
+  textFrame: text("text_frame"),
+  // CSS font stack for this theme; null = the default lyric font.
+  fontFamily: text("font_family"),
+  // Drop shadow behind the words, JSON {color,blur,x,y}.
+  textShadow: text("text_shadow"),
 });
 
 export const fonts = sqliteTable("fonts", {
