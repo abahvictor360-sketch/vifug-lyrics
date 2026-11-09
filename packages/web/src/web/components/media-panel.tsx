@@ -585,7 +585,7 @@ export function MediaPanel({
                 <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
                   Video shape &amp; size
                 </p>
-                <div className="grid grid-cols-4 gap-1">
+                <div className="grid grid-cols-3 gap-1">
                   {SHAPE_PRESETS.map((sp) => (
                     <button
                       key={sp.id}

@@ -4,9 +4,9 @@ export const SHAPE_PRESETS: { id: NonNullable<CaptureShape["aspect"]>; label: st
   { id: "source", label: "As captured" },
   { id: "16:9", label: "16:9" },
   { id: "4:3", label: "4:3" },
-  { id: "1:1", label: "Square" },
-  { id: "9:16", label: "Portrait" },
-  { id: "21:9", label: "Wide" },
+  { id: "1:1", label: "1:1 Square" },
+  { id: "9:16", label: "9:16 Portrait" },
+  { id: "21:9", label: "21:9 Wide" },
   { id: "custom", label: "Custom" },
 ];
 
