@@ -26,6 +26,7 @@ import { parseStructure, guessTitle } from "./lib/structure";
 import { parseProPresenter } from "./lib/propresenter";
 import { publicDomainSongs } from "./seed-data/public-domain";
 import { htmlToLyrics, extractSongMeta, decodeEntities } from "./lib/html-to-lyrics";
+import { vetLyrics, parseSongSearch } from "./lib/lyrics-vet";
 import { getLiveState, setLiveState, subscribeLive } from "./lib/live-store";
 import {
   getStage, setStage, subscribeStage,
@@ -648,9 +649,37 @@ const app = new Hono()
     }
     const meta = extractSongMeta(html, parsed.toString());
     const title = meta.title || guessTitle(text) || "";
+    // A last look, the way a person would read what they copied before
+    // keeping it: chord lines, timestamps and a doubled page are removed, and
+    // anything that does not look like a song is flagged instead of trusted.
+    const vet = vetLyrics(text, { title });
     // Credits come back alongside the words so the song is filed under its
     // writer rather than needing it typed in from the page afterwards.
-    return c.json({ text, title, authors: meta.artists }, 200);
+    return c.json(
+      { text: vet.text, title, authors: meta.artists, vet: { verdict: vet.verdict, changes: vet.changes, warnings: vet.warnings } },
+      200,
+    );
+  })
+
+  // Search for a song by name and get back candidate lyrics from an open
+  // lyrics database (LRCLIB). Nothing is saved: the operator picks a result,
+  // it fills the same import box as a pasted song, and they review it.
+  .post("/import/search", async (c) => {
+    const body = await c.req.json<{ q?: string }>();
+    const q = (body.q ?? "").trim().slice(0, 120);
+    if (q.length < 2) return c.json({ error: "type a song name to search" }, 400);
+    let json: unknown;
+    try {
+      const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(q)}`, {
+        headers: { "user-agent": "Vifug (https://vifug.com)" },
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!res.ok) return c.json({ error: `the song database returned an error (${res.status})` }, 502);
+      json = await res.json();
+    } catch {
+      return c.json({ error: "couldn't reach the song database - check the network and try again" }, 502);
+    }
+    return c.json({ results: parseSongSearch(json), source: "LRCLIB (lrclib.net)" }, 200);
   })
 
   // ---------- PRESENTATIONS ----------
