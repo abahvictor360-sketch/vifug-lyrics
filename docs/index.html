@@ -359,6 +359,30 @@
   .cform-msg { margin-top: 16px; padding: 13px 16px; border-radius: 12px; font-size: 14px; display: none; }
   .cform-msg.ok { display: block; background: rgba(163,230,53,.10); border: 1px solid rgba(163,230,53,.35); color: #d4f58a; }
   .cform-msg.bad { display: block; background: rgba(244,183,64,.10); border: 1px solid rgba(244,183,64,.35); color: #f6cf85; }
+
+  /* ---------- support ---------- */
+  .sup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 40px; }
+  @media (max-width: 900px) { .sup-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .sup-grid { grid-template-columns: 1fr; } }
+  .sup { position: relative; display: block; cursor: pointer; }
+  .sup input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .sup-body { display: block; height: 100%; border: 1px solid var(--line); border-radius: 16px; padding: 22px;
+    background: linear-gradient(180deg, var(--surface), var(--sanctuary)); transition: border-color .15s, background .15s, transform .15s var(--ease-out); }
+  .sup-body .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 14px;
+    background: rgba(163,230,53,.10); color: var(--live); border: 1px solid rgba(163,230,53,.22); }
+  .sup-body .ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .sup-body h3 { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .sup-body p { color: var(--dim); font-size: 13.5px; }
+  .sup-tick { position: absolute; top: 14px; right: 14px; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line);
+    display: grid; place-items: center; color: transparent; transition: all .15s; }
+  .sup-tick svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  @media (hover: hover) and (pointer: fine) { .sup:hover .sup-body { border-color: #33405e; } }
+  .sup input:checked ~ .sup-body { border-color: var(--live); background: linear-gradient(180deg, rgba(163,230,53,.08), var(--sanctuary)); }
+  .sup input:checked ~ .sup-tick { background: var(--live); border-color: var(--live); color: #0a0f1a; }
+  .sup input:focus-visible ~ .sup-body { box-shadow: 0 0 0 3px var(--halo); }
+  .sup-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 26px; }
+  .sup-form { margin-top: 34px; }
+  .sup-picked { text-align: center; color: var(--dim); font-size: 14px; margin-top: 22px; min-height: 22px; }
   button.btn { cursor: pointer; font-family: inherit; }
   button.btn[disabled] { opacity: .6; cursor: progress; }
 
@@ -493,6 +517,7 @@
         <a href="#faq">FAQ</a>
         <a href="download.html">Download</a>
         <a href="guide.html">Guide</a>
+        <a href="#support">Support</a>
         <a href="#contact">Contact</a>
       </div>
       <div class="nav-end">
@@ -508,6 +533,7 @@
       <a href="#streaming">Streaming &amp; NDI</a>
       <a href="#faq">FAQ</a>
       <a href="guide.html">Guide</a>
+      <a href="#support">Support</a>
       <a href="#contact">Contact</a>
     </div>
   </div>
@@ -590,6 +616,12 @@
       <div class="feat" data-aos="fade-up"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="12" height="9" rx="1.5"/><rect x="10" y="11" width="12" height="9" rx="1.5"/></svg></div><h3>Screens that differ</h3><p>Add as many outputs as you need and send each one something of its own - a countdown on the monitor facing the platform, a flyer in the overflow room, the words on the wall. Each is a monitor on this machine or just a link you open on any device.</p></div>
       <div class="feat" data-aos="fade-up" data-aos-delay="70"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg></div><h3>Service timer</h3><p>A countdown or count-up over the output - to the start of the service, or how long the speaker has left. Choose which screens see it, and every device reads the same second.</p></div>
       <div class="feat" data-aos="fade-up" data-aos-delay="140"><div class="ic"><svg viewBox="0 0 24 24"><path d="m21 15-5-5L5 21"/><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/></svg></div><h3>Media library</h3><p>Images, video and audio kept in a plain folder in your Documents, so you can add or back them up without opening the app.</p></div>
+      <div class="feat" data-aos="fade-up"><div class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M12 18h.01"/></svg></div><h3>Phone camera &amp; screen cast</h3><p>Scan a QR code and send a phone's camera - or another computer's screen - to Vifug over Wi-Fi. Use it like any camera: over lyrics, beside scripture, or full screen.</p></div>
+      <div class="feat" data-aos="fade-up" data-aos-delay="70"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="12" width="10" height="5" rx="1" stroke-dasharray="2 2"/></svg></div><h3>Visual theme designer</h3><p>Drag and resize the box your words sit in on a large slide, choose font, colours, outline, shadow and a picture or video behind it, and save it as a theme.</p></div>
+      <div class="feat" data-aos="fade-up" data-aos-delay="140"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 17h13"/><path d="M3 13h9"/><rect x="2" y="3" width="20" height="18" rx="2"/></svg></div><h3>Lower thirds &amp; broadcast layouts</h3><p>Name bars for your speaker in five styles, a framed side-by-side layout with branded bars, and video cut to a shape: 16:9, 4:3, square, 9:16 portrait or a circle.</p></div>
+      <div class="feat" data-aos="fade-up"><div class="ic"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><path d="M12 8v4M10 10h4"/></svg></div><h3>Your own Bible versions</h3><p>Import a translation from a text, CSV, JSON, OSIS, USFX or Zefania file. It sits beside the built-in versions, with search and reference lookup, and stays on your computer.</p></div>
+      <div class="feat" data-aos="fade-up" data-aos-delay="70"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h3>Smart lyric import &amp; song search</h3><p>Paste a link and Vifug finds the song on the page, then tidies it: chords, timestamps and doubled copies out, with a note of what changed. Or search a song by name.</p></div>
+      <div class="feat" data-aos="fade-up" data-aos-delay="140"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3V8Z"/><path d="M8 21h8"/></svg></div><h3>Church, media or presentations</h3><p>Tell Vifug what it is for. Media and presentation teams get a calmer app without hymns and Bible, and a few public-domain songs to start with.</p></div>
     </div>
   </div>
 </section>
@@ -679,6 +711,56 @@
       <details><summary>The stage display or phone remote will not load on my phone</summary><div class="a">Windows blocks incoming connections to new programs by default, silently - the page just times out. Open <b>Settings → Streaming &amp; output</b> in the app and press <b>Allow through the firewall</b>. Full walkthrough in the <a href="guide.html#firewall">guide chapter on letting phones connect</a>.</div></details>
       <details><summary>Can I import my ProPresenter library?</summary><div class="a">Yes - .pro6 files import directly (plus best-effort .pro), and plain .txt / .docx lyrics are auto-detected into verses and choruses.</div></details>
     </div>
+  </div>
+</section>
+
+<!-- ===================== SUPPORT ===================== -->
+<section class="band" id="support">
+  <div class="wrap">
+    <div class="band-head center">
+      <span class="eyebrow" data-aos="fade-up">Support Vifug</span>
+      <h2 data-aos="fade-up" data-aos-delay="60">Help keep Vifug going</h2>
+      <p data-aos="fade-up" data-aos-delay="120">
+        Vifug is built and looked after by one person, for churches and media teams of every size. If it has
+        saved your team time, there are several ways to help. Pick any that suit you, tell us a little about
+        yourself, and we will get back to you.
+      </p>
+    </div>
+
+    <form class="sup-form" id="support-form" novalidate>
+      <div class="sup-grid" role="group" aria-label="Ways to support Vifug">
+      <label class="sup" data-aos="fade-up"><input type="checkbox" name="how" value="A one-off gift" /><span class="sup-body"><span class="ic"><svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7Z"/><path d="M12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7Z"/></svg></span><h3>Give once</h3><p>A gift of any size keeps development going and the app free for every church.</p></span><span class="sup-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></label>
+      <label class="sup" data-aos="fade-up"><input type="checkbox" name="how" value="Monthly support" /><span class="sup-body"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><h3>Give monthly</h3><p>Regular support lets us plan ahead. Tell us you are in and we will set it up with you.</p></span><span class="sup-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></label>
+      <label class="sup" data-aos="fade-up"><input type="checkbox" name="how" value="Sponsor as a church or business" /><span class="sup-body"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg></span><h3>Sponsor as a church or business</h3><p>Put your name behind a feature, or fund one that your church has asked for.</p></span><span class="sup-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></label>
+      <label class="sup" data-aos="fade-up"><input type="checkbox" name="how" value="My time or skills" /><span class="sup-body"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6Z"/></svg></span><h3>Give your time or skills</h3><p>Translate Vifug, test new builds, add songs or Bible versions in your language, or help other churches get set up.</p></span><span class="sup-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></label>
+      <label class="sup" data-aos="fade-up"><input type="checkbox" name="how" value="Telling other churches" /><span class="sup-body"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></span><h3>Spread the word</h3><p>A message from one media team to another carries further than any advert.</p></span><span class="sup-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></label>
+      <label class="sup" data-aos="fade-up"><input type="checkbox" name="how" value="Something else" /><span class="sup-body"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span><h3>Something else</h3><p>Equipment to test on, a venue to try Vifug in, a partnership - tell us what you have in mind.</p></span><span class="sup-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></label>
+      </div>
+      <p class="sup-picked" id="sup-picked" aria-live="polite">Choose one or more above.</p>
+
+      <div class="cform" style="margin-top:8px">
+        <div class="cform-row">
+          <label class="field"><span>Your name</span><input name="name" type="text" autocomplete="name" maxlength="100" placeholder="Grace Okoro" required /></label>
+          <label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@church.org" required /></label>
+        </div>
+        <label class="field"><span>Church or organisation (optional)</span><input name="org" type="text" maxlength="150" placeholder="Grace Chapel Media Team" /></label>
+        <label class="field"><span>Anything we should know? (optional)</span><textarea name="note" maxlength="4000" placeholder="An amount you have in mind, the language you could translate, when suits you for a chat..."></textarea></label>
+
+        <div class="hp" aria-hidden="true"><label>Leave this field empty<input name="website" type="text" tabindex="-1" autocomplete="off" /></label></div>
+
+        <div class="cform-actions">
+          <button class="btn btn-live btn-lg" type="submit" id="sup-submit">Tell us how you would like to help</button>
+          <span class="cform-note">We reply to the address you give us. Nothing is stored on the site.</span>
+        </div>
+        <div class="cform-msg" id="sup-msg" role="status" aria-live="polite"></div>
+      </div>
+    </form>
+
+    <div class="sup-actions">
+      <a class="btn btn-lg" href="https://buymeacoffee.com/vifug" target="_blank" rel="noreferrer">Prefer to give right now? Buy us a coffee</a>
+      <button class="btn btn-lg" type="button" id="sup-share">Share Vifug with a church</button>
+    </div>
+    <p class="sup-picked" id="sup-share-msg" aria-live="polite"></p>
   </div>
 </section>
 
@@ -780,7 +862,7 @@
       <a href="download.html">Download</a>
       <a href="guide.html">Guide</a>
       <a href="contact.html">Contact</a>
-      <a href="https://buymeacoffee.com/vifug" target="_blank" rel="noreferrer">Support us</a>
+      <a href="#support">Support us</a>
     </nav>
   </div>
 </footer>
@@ -846,6 +928,90 @@
         button.textContent = original;
       }
     });
+  })();
+
+
+  /* ---------- support form ----------
+     Same endpoint and rules as the contact form above: the choices become a
+     readable message, so no new server code is needed. */
+  (function () {
+    var form = document.getElementById("support-form");
+    if (!form) return;
+    var button = document.getElementById("sup-submit");
+    var msg = document.getElementById("sup-msg");
+    var picked = document.getElementById("sup-picked");
+    var ENDPOINT = "https://www.vifug.com/api/contact";
+
+    function chosen() {
+      return Array.prototype.map.call(form.querySelectorAll('input[name="how"]:checked'), function (i) { return i.value; });
+    }
+    function say(text, ok) { msg.textContent = text; msg.className = "cform-msg " + (ok ? "ok" : "bad"); }
+    form.addEventListener("change", function () {
+      var c = chosen();
+      picked.textContent = c.length ? "You chose: " + c.join(", ") + "." : "Choose one or more above.";
+    });
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var f = new FormData(form);
+      var how = chosen();
+      var name = String(f.get("name") || "").trim();
+      var email = String(f.get("email") || "").trim();
+      if (!how.length) { say("Please tick at least one way you would like to help.", false); return; }
+      if (!name || !email) { say("Please add your name and email so we can reply.", false); return; }
+
+      var lines = ["I would like to support Vifug by:"].concat(how.map(function (h) { return "  - " + h; }));
+      var org = String(f.get("org") || "").trim();
+      var note = String(f.get("note") || "").trim();
+      if (org) lines.push("", "Church or organisation: " + org);
+      if (note) lines.push("", note);
+
+      button.disabled = true;
+      var original = button.textContent;
+      button.textContent = "Sending…";
+      msg.className = "cform-msg";
+      try {
+        var res = await fetch(ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name,
+            email: email,
+            subject: "Support Vifug: " + how.join(", ").slice(0, 120),
+            message: lines.join("\n"),
+            website: String(f.get("website") || ""),
+          }),
+        });
+        var out = await res.json().catch(function () { return {}; });
+        if (res.ok) {
+          form.reset();
+          picked.textContent = "Choose one or more above.";
+          say("Thank you - that means a lot. We will reply to the address you gave us.", true);
+        } else {
+          say(out.error || "That did not send. Please try again, or email contact@vifug.com.", false);
+        }
+      } catch (err) {
+        say("No connection. Please check your internet, or email contact@vifug.com.", false);
+      } finally {
+        button.disabled = false;
+        button.textContent = original;
+      }
+    });
+
+    var share = document.getElementById("sup-share");
+    var shareMsg = document.getElementById("sup-share-msg");
+    if (share) {
+      share.addEventListener("click", async function () {
+        var data = { title: "Vifug", text: "Free worship and event presentation software - lyrics, an offline Bible, projector and streaming output.", url: "https://vifug.com" };
+        try {
+          if (navigator.share) { await navigator.share(data); return; }
+          await navigator.clipboard.writeText(data.url);
+          shareMsg.textContent = "Link copied - paste it to a church or media team you know.";
+        } catch (err) {
+          shareMsg.textContent = "Share this link: https://vifug.com";
+        }
+      });
+    }
   })();
 
   // Label only: which version the download page will hand you. The hero button

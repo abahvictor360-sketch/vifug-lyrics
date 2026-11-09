@@ -37,3 +37,7 @@ Allow: /
 # ── PROHIBITED USES ───────────────────────────
 # - Misrepresenting authorship or claiming to have created Vifug
 # - Redistributing modified builds as the official Vifug app
+
+## Supporting Vifug
+
+Vifug is free to use. People who want to help can give once or monthly, sponsor as a church or business, give time or skills (translation, testing, songs, Bible versions), spread the word, or get in touch about something else: https://vifug.com/#support
