@@ -24,6 +24,7 @@ import { db } from "./database";
 import * as schema from "./database/schema";
 import { parseStructure, guessTitle } from "./lib/structure";
 import { parseProPresenter } from "./lib/propresenter";
+import { publicDomainSongs } from "./seed-data/public-domain";
 import { htmlToLyrics, extractSongMeta, decodeEntities } from "./lib/html-to-lyrics";
 import { getLiveState, setLiveState, subscribeLive } from "./lib/live-store";
 import {
@@ -1512,6 +1513,33 @@ const app = new Hono()
     await db.delete(schema.playlistItems);
     await db.delete(schema.songs);
     return c.json({ ok: true }, 200);
+  })
+
+  /**
+   * A small library of public-domain songs for a Vifug that is not being used
+   * for worship (see web/lib/app-mode.ts). Idempotent: a title already in the
+   * library is left alone, so choosing the mode twice, or after adding one of
+   * these by hand, never doubles anything.
+   */
+  .post("/songs/starter-pack", async (c) => {
+    const existing = await db.select({ title: schema.songs.title }).from(schema.songs);
+    const have = new Set(existing.map((s) => s.title.trim().toLowerCase()));
+    let added = 0;
+    for (const s of publicDomainSongs) {
+      if (have.has(s.title.trim().toLowerCase())) continue;
+      const sections = parseStructure(s.raw, s.title);
+      if (!sections.length) continue;
+      await createSongWithSections({
+        title: s.title,
+        authors: s.authors,
+        copyright: "Public domain",
+        tags: ["public-domain", "starter"],
+        sections,
+        source: "starter",
+      });
+      added++;
+    }
+    return c.json({ added, total: publicDomainSongs.length }, 200);
   })
 
   // ---------- SETTINGS (single row) ----------

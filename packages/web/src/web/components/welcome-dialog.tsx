@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { Music4, Library, FilePlus2, BookOpen, Loader2 } from "lucide-react";
+import { Music4, Library, FilePlus2, BookOpen, Loader2, Church, Clapperboard, MonitorPlay } from "lucide-react";
 import { useDialog } from "../hooks/use-dialog";
+import { APP_MODES, type AppMode } from "../lib/app-mode";
+
+const MODE_ICON: Record<AppMode, typeof Church> = {
+  church: Church,
+  media: Clapperboard,
+  presentation: MonitorPlay,
+};
 
 const GUIDE_URL = "https://vifug.com/guide.html";
 
@@ -57,9 +64,13 @@ export function WelcomeDialog({
    * keepLibrary=false clears the bundled songs before the dialog closes.
    * linesPerSlide is whatever was picked above, saved with the same click.
    */
-  onChoose: (keepLibrary: boolean, linesPerSlide: number) => Promise<void> | void;
+  onChoose: (keepLibrary: boolean, linesPerSlide: number, mode: AppMode) => Promise<void> | void;
 }) {
   const [busy, setBusy] = useState<"keep" | "empty" | null>(null);
+  // Church is what Vifug has always been, so it is the answer for anyone who
+  // does not stop to think about the question.
+  const [mode, setMode] = useState<AppMode>("church");
+  const church = mode === "church";
   // Two is what the app has always defaulted to, so leaving it alone changes
   // nothing for anyone who does not care.
   const [lines, setLines] = useState(2);
@@ -67,7 +78,9 @@ export function WelcomeDialog({
   const choose = async (keep: boolean) => {
     setBusy(keep ? "keep" : "empty");
     try {
-      await onChoose(keep, lines);
+      // Outside church the bundled hymns are only hidden, never removed, so the
+      // library is always kept: "start empty" is a church-only, permanent choice.
+      await onChoose(church ? keep : true, lines, mode);
     } finally {
       setBusy(null);
     }
@@ -83,8 +96,38 @@ export function WelcomeDialog({
         </div>
         <h1 id="welcome-title" className="font-display text-xl font-bold">Welcome to Vifug</h1>
         <p className="mx-auto mt-1.5 max-w-sm text-sm text-[var(--v-text-dim)]">
-          Two quick questions. Both can be changed later in Settings.
+          A few quick questions. All of them can be changed later in Settings.
         </p>
+
+        <div className="mt-5 text-left">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
+            What will you use Vifug for?
+          </p>
+          <div role="radiogroup" aria-label="What Vifug is for" className="grid gap-2.5 sm:grid-cols-3">
+            {APP_MODES.map((m) => {
+              const Icon = MODE_ICON[m.id];
+              const active = mode === m.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setMode(m.id)}
+                  className={`rounded-lg border-2 p-2.5 text-left transition-colors ${
+                    active
+                      ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)]"
+                      : "border-[var(--v-border)] hover:border-[var(--v-text-faint)]"
+                  }`}
+                >
+                  <Icon className={`mb-1.5 h-5 w-5 ${active ? "text-[var(--v-accent)]" : "text-[var(--v-text-dim)]"}`} />
+                  <span className={`block text-sm font-semibold ${active ? "text-[var(--v-accent)]" : ""}`}>{m.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-[var(--v-text-dim)]">{m.summary}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="mt-5 text-left">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
@@ -136,6 +179,26 @@ export function WelcomeDialog({
           </div>
         </div>
 
+        {!church && (
+          <div className="mt-5 text-left">
+            <p className="text-[12px] text-[var(--v-text-dim)]">
+              {mode === "media"
+                ? "You will start with a few public-domain songs to try it out, and you can add your own or search for more. The Bible and the worship library stay out of the way - switch to Church in Settings any time to bring them back."
+                : "Just slides, pictures and video. The song library and the Bible stay out of the way - switch to another mode in Settings any time."}
+            </p>
+            <button
+              onClick={() => choose(true)}
+              disabled={busy !== null}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--v-accent)] px-4 py-2.5 text-sm font-semibold text-black transition-[filter] hover:brightness-110 disabled:opacity-50"
+            >
+              {busy === "keep" && <Loader2 className="h-4 w-4 animate-spin" />}
+              Get started
+            </button>
+          </div>
+        )}
+
+        {church && (
+          <>
         <p className="mb-2 mt-5 text-left text-[11px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
           And your song library
         </p>
@@ -168,6 +231,8 @@ export function WelcomeDialog({
             </span>
           </button>
         </div>
+          </>
+        )}
 
         <a
           href={GUIDE_URL}

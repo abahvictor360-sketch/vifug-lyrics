@@ -1,4 +1,5 @@
 import type { LogoSettings } from "../components/logo-overlay";
+import type { AppMode } from "../lib/app-mode";
 import type { ServiceTimer } from "../lib/timer";
 import type { Screen } from "../lib/screens";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -174,6 +175,13 @@ export type AppSettings = {
     bgColor?: string | null;
     textColor?: string | null;
   } | null;
+  /**
+   * What this Vifug is for: church (the default, and what every existing
+   * install is), media & entertainment, or presentations only. It decides what
+   * is offered - the Bible, the hymn library, the run-of-service tab - and
+   * deletes nothing, so switching back restores everything. See lib/app-mode.ts.
+   */
+  appMode?: AppMode;
   /**
    * A logo pinned to the top-left or top-right of the live output (projector
    * and stream), typically over a camera or capture-card feed. See

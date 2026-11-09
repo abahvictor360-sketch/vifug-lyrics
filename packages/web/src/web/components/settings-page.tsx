@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   X,
   Music4,
+  Church,
   BookOpen,
   Settings2,
   Image as ImageIcon,
@@ -54,6 +55,8 @@ import { hexToRgba } from "./announcement-ticker";
 import { MediaPicker } from "./media-picker";
 import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-media";
 import { MediaImg } from "./media-el";
+import { APP_MODES, appModeOf, type AppMode } from "../lib/app-mode";
+import { useQueryClient } from "@tanstack/react-query";
 import { LogoOverlay, DEFAULT_LOGO, type LogoSettings, type LogoPosition } from "./logo-overlay";
 import type { AppSettings, ThemeOverride } from "../hooks/use-settings";
 import { LANGS } from "../hooks/use-translations";
@@ -245,7 +248,7 @@ export function SettingsPage({
               sections simply could not be reached. Sideways on a phone, for
               the same reason. */}
           <div className="v-scroll flex min-h-0 min-w-0 flex-1 flex-row gap-0.5 overflow-x-auto p-2 sm:flex-col sm:overflow-x-visible sm:overflow-y-auto sm:px-2 sm:py-0">
-            {SECTIONS.map((s) => {
+            {SECTIONS.filter((s) => s.id !== "bible" || appModeOf(settings).bible).map((s) => {
               const Icon = s.icon;
               const active = section === s.id;
               return (
@@ -1796,6 +1799,8 @@ function GeneralSection({
 
   return (
     <div>
+      <AppModeGroup settings={settings} patchSettings={patchSettings} />
+
       <Group title="Projector output" icon={Monitor}>
         {desktop ? (
           <ProjectionControl
@@ -2317,6 +2322,8 @@ function AiSection({
           </p>
         </div>
 
+        {appModeOf(settings).bible && (
+          <>
         <label className="mt-3 flex items-center justify-between">
           <span className="min-w-0">
             <span className="block text-sm">Follow spoken scripture references</span>
@@ -2401,6 +2408,8 @@ function AiSection({
           already on screen, without the book being named again. It acts while the sentence is
           still being spoken rather than waiting for the preacher to pause.
         </p>
+          </>
+        )}
 
         <label className="mt-3 block">
           <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Deepgram API key</span>
@@ -2672,6 +2681,69 @@ function ShortcutsSection({
         <ShortcutsPanel settings={settings} patchSettings={patchSettings} />
       </Group>
     </div>
+  );
+}
+
+/* ---------------- What Vifug is for ---------------- */
+
+function AppModeGroup({
+  settings,
+  patchSettings,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+}) {
+  const qc = useQueryClient();
+  const current = appModeOf(settings);
+  const [busy, setBusy] = useState(false);
+
+  const choose = async (mode: AppMode) => {
+    if (mode === current.id || busy) return;
+    setBusy(true);
+    try {
+      // A media install starts with a few public-domain songs rather than an
+      // empty shelf. Idempotent on the server, so choosing it twice adds nothing.
+      if (mode === "media") {
+        await fetch("/api/songs/starter-pack", { method: "POST" }).catch(() => {});
+        qc.invalidateQueries({ queryKey: ["songs"] });
+      }
+      patchSettings({ appMode: mode });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Group title="What Vifug is for" icon={Church}>
+      <p className="mb-3 text-[12px] text-[var(--v-text-faint)]">
+        This decides what is offered, and nothing is deleted. Outside church the Bible, the
+        hymn and worship library and the Scripture options are hidden, and switching back to
+        Church brings every one of them back.
+      </p>
+      <div role="radiogroup" aria-label="What Vifug is for" className="grid gap-2 sm:grid-cols-3">
+        {APP_MODES.map((m) => {
+          const active = current.id === m.id;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={busy}
+              onClick={() => void choose(m.id)}
+              className={`rounded-lg border-2 p-2.5 text-left transition-colors disabled:opacity-60 ${
+                active
+                  ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)]"
+                  : "border-[var(--v-border)] hover:border-[var(--v-text-faint)]"
+              }`}
+            >
+              <span className={`block text-sm font-semibold ${active ? "text-[var(--v-accent)]" : ""}`}>{m.label}</span>
+              <span className="mt-0.5 block text-[11px] leading-snug text-[var(--v-text-dim)]">{m.summary}</span>
+            </button>
+          );
+        })}
+      </div>
+    </Group>
   );
 }
 

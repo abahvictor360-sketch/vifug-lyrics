@@ -24,6 +24,7 @@ import { useSettings, useUpdateSettings, type AppSettings, type ThemeOverride } 
 import { SettingsPage, type SectionId as SettingsSectionId } from "../components/settings-page";
 import { MediaLibrary } from "../components/media-library";
 import { WelcomeDialog } from "../components/welcome-dialog";
+import { appModeOf } from "../lib/app-mode";
 import { MediaPanel } from "../components/media-panel";
 import { MicPicker } from "../components/mic-picker";
 import { matchAction, resolveShortcuts, formatCombo } from "../lib/shortcuts";
@@ -544,6 +545,13 @@ export default function OperatorPage() {
   // Operator mode: drive the live output from song lyrics OR the Bible.
   // "plans" is a service-plan builder that cues songs/scripture into lyrics/bible.
   const [mode, setMode] = useState<OperatorMode>("lyrics");
+  // If the tab being shown is not part of this kind of Vifug (the mode was just
+  // changed, or this is a presentations-only install opening on Lyrics), move
+  // to the first one that is.
+  const allowedTabs = appModeOf(settingsQ.data).tabs;
+  useEffect(() => {
+    if (!allowedTabs.includes(mode)) setMode(allowedTabs[0] ?? "lyrics");
+  }, [allowedTabs, mode]);
   // Bible cue: set when a plan item cues a scripture into the Bible panel.
   const [bibleCue, setBibleCue] = useState<{ versionId?: string; ref: string; nonce: number; live?: boolean } | null>(null);
   // Presentation/media cues: the phone remote picking a deck or photo works
@@ -822,7 +830,9 @@ export default function OperatorPage() {
    * asked for, which is a louder mistake than a slide advancing early.
    */
   const bibleManifest = useBibleManifest();
-  const followScripture = settings?.autoFollowScripture ?? false;
+  const appMode = appModeOf(settings);
+  // No Bible outside church, so there is nothing for spoken Scripture to land on.
+  const followScripture = appMode.bible && (settings?.autoFollowScripture ?? false);
   const canonNames = useMemo(
     () => (followScripture ? (bibleManifest.data?.canon ?? []).map((b) => b.name.toLowerCase()) : undefined),
     [followScripture, bibleManifest.data],
@@ -1177,6 +1187,8 @@ export default function OperatorPage() {
         update={update}
         mode={mode}
         onModeChange={setMode}
+        tabs={appMode.tabs}
+        plansLabel={appMode.plansLabel}
       />
 
       {/*
@@ -1716,7 +1728,7 @@ export default function OperatorPage() {
       )}
       {settings?.firstRun && (
         <WelcomeDialog
-          onChoose={async (keepLibrary, linesPerSlide) => {
+          onChoose={async (keepLibrary, linesPerSlide, chosenMode) => {
             // See welcomeShownAtRef above - reject anything faster than a
             // human could actually read and click.
             const shownAt = welcomeShownAtRef.current;
@@ -1728,7 +1740,16 @@ export default function OperatorPage() {
             }
             // Saved with the same click that dismisses the dialog, so there
             // is no window where firstRun is off but the choice was lost.
-            patchSettings({ firstRun: false, linesPerSlide });
+            // Outside church nobody asked for hymns, so a media install gets a
+            // small public-domain starter library instead. Awaited, so the
+            // songs are there when the dialog closes rather than a moment
+            // after, and best-effort: an empty shelf is better than a stuck
+            // welcome screen.
+            if (chosenMode === "media") {
+              await fetch("/api/songs/starter-pack", { method: "POST" }).catch(() => {});
+              qc.invalidateQueries({ queryKey: ["songs"] });
+            }
+            patchSettings({ firstRun: false, linesPerSlide, appMode: chosenMode });
           }}
         />
       )}
@@ -1787,6 +1808,8 @@ function TopBar({
   mode,
   onModeChange,
   update,
+  tabs,
+  plansLabel,
 }: {
   desktop: ReturnType<typeof useDesktop>;
   liveStatus: string;
@@ -1795,6 +1818,10 @@ function TopBar({
   mode: OperatorMode;
   onModeChange: (m: OperatorMode) => void;
   update: ReturnType<typeof useUpdateCheck>;
+  /** Which tabs this kind of Vifug offers (see lib/app-mode.ts). */
+  tabs: OperatorMode[];
+  /** What the run-of-service tab is called here. */
+  plansLabel: string;
 }) {
   // z-40: v-glass's backdrop-filter makes the header a stacking context, so
   // the Help dropdown's own z-index can't escape it - the header itself must
@@ -1811,7 +1838,7 @@ function TopBar({
       {/* flex-1 so the tabs take the room the controls don't need, and scroll
           sideways within it rather than pushing anything off the screen. */}
       <nav className="v-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-        {MODE_TABS.map((t) => {
+        {MODE_TABS.filter((t) => tabs.includes(t.id)).map((t) => {
           const Icon = t.icon;
           const active = mode === t.id;
           return (
@@ -1824,7 +1851,7 @@ function TopBar({
                   : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
               }`}
             >
-              <Icon className="h-4 w-4" /> {t.label}
+              <Icon className="h-4 w-4" /> {t.id === "plans" ? plansLabel : t.label}
             </button>
           );
         })}

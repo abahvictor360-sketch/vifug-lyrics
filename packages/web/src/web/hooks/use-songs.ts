@@ -1,5 +1,8 @@
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
+import { useSettings } from "./use-settings";
+import { appModeOf, songVisibleIn } from "../lib/app-mode";
 
 export type SongListItem = {
   id: string;
@@ -14,7 +17,14 @@ export type SongListItem = {
 };
 
 export function useSongList(q: string) {
+  // Outside church the bundled hymn and gospel library is hidden - not
+  // deleted, so switching back brings it straight back. Filtered on the way
+  // out of the cache rather than in the query, so the mode changing does not
+  // refetch the whole library.
+  const mode = appModeOf(useSettings().data).id;
+  const select = useCallback((songs: SongListItem[]) => songs.filter((s) => songVisibleIn(mode, s)), [mode]);
   return useQuery({
+    select,
     queryKey: ["songs", q],
     queryFn: async () => {
       const res = await api.songs.$get({ query: { q } });
