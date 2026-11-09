@@ -545,10 +545,13 @@ function ThemeEditor({
   themes,
   activeId,
   onActivate,
+  previewBackground,
 }: {
   themes: ThemeRow[];
   activeId: string | null;
   onActivate: (id: string) => void;
+  /** The picture or colour behind the words on the live screen, so the preview matches it. */
+  previewBackground?: LiveTheme["background"];
 }) {
   const create = useCreateTheme();
   const update = useUpdateTheme();
@@ -567,9 +570,13 @@ function ThemeEditor({
     update.mutate({ id: theme.id, patch: p });
   };
 
+  // The words' look comes from the theme row being edited; the picture behind
+  // them is the one actually on the screen. Previewing without it showed a flat
+  // colour while the live screen showed a photograph, which made a background
+  // change look like it had not happened.
   const preview: LiveTheme = {
     ...themeToLive(theme as unknown as Record<string, unknown>),
-    background: null,
+    background: previewBackground ?? null,
   };
 
   return (
@@ -1333,14 +1340,30 @@ function LyricsSection({
       <ThemeEditor
         themes={themes}
         activeId={settings?.activeThemeId ?? null}
+        previewBackground={previewTheme.background}
         onActivate={(id) => {
           // A theme that ships with a picture (Violet Haze, Blue Halftone ...)
           // brings it along - choosing the look and then also having to find
           // its picture in the Background list would be two steps for one
           // idea. A theme with no picture leaves the background as it was, as
           // before. Either way the Background list below still changes it.
+          //
+          // The theme is for lyrics, Scripture and presentations alike. The
+          // Bible and presentation backgrounds are "unset = share the lyric
+          // background" until somebody picks one of their own, so clearing them
+          // here (undefined drops the key) puts both back on the shared picture
+          // - including one an earlier choice had pinned to something else.
           const bg = themes.find((t) => t.id === id)?.backgroundId;
-          patchSettings(bg ? { activeThemeId: id, activeBackgroundId: bg } : { activeThemeId: id });
+          patchSettings(
+            bg
+              ? {
+                  activeThemeId: id,
+                  activeBackgroundId: bg,
+                  bibleBackgroundId: undefined,
+                  presentationBackgroundId: undefined,
+                }
+              : { activeThemeId: id },
+          );
         }}
       />
 
