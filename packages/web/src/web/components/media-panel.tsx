@@ -1,4 +1,5 @@
 import { MediaImg, MediaVideo } from "./media-el";
+import { SendToScreen } from "./send-to-screen";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Upload, Loader2, Trash2, Image as ImageIcon, Film, MonitorPlay, Square, X, Frame, Repeat, Volume2, VolumeX } from "lucide-react";
 import { useSessionMedia, useMedia, useUploadMedia, useDeleteMedia, useUpdateMedia, type MediaItem, type MediaKind } from "../hooks/use-media";
@@ -856,8 +857,7 @@ function MediaInspector({
   onClearScreen?: (screenId: string) => void;
 }) {
   const update = useUpdateMedia();
-  /** The screen this item was last sent to from here, to say so on the row. */
-  const [sentTo, setSentTo] = useState<string | null>(null);
+
   const settings = useSettings().data;
   const updateSettings = useUpdateSettings();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -904,42 +904,13 @@ function MediaInspector({
           here is another output, sent to on its own so the congregation's
           screen and, say, the stage or lobby monitor can show different things. */}
       <Field label="Send to a screen">
-        {screens.length === 0 ? (
-          <p className="text-[12px] text-[var(--v-text-faint)]">
-            Go live puts this on the main screen. To send pictures and video to other screens as
-            well, add them under Settings &rsaquo; Streaming &amp; output.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-1.5">
-            {screens.map((sc) => (
-              <li
-                key={sc.id}
-                className="flex items-center gap-1.5 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] py-1 pl-2.5 pr-1"
-              >
-                <span className="min-w-0 flex-1 truncate text-[12px]" title={sc.name}>
-                  {sc.name}
-                  {sentTo === sc.id && <span className="ml-1.5 text-[var(--v-accent)]">&#10003; sent</span>}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => { onSendToScreen(sc.id); setSentTo(sc.id); }}
-                  aria-label={`Send ${item.name ?? (isVideo ? "video" : "image")} to ${sc.name}`}
-                  className="rounded bg-[var(--v-accent-soft)] px-2 py-1 text-[11px] font-semibold text-[var(--v-accent)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v-accent)]"
-                >
-                  Send
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { onClearScreen?.(sc.id); if (sentTo === sc.id) setSentTo(null); }}
-                  aria-label={`Clear ${sc.name}`}
-                  className="rounded px-2 py-1 text-[11px] text-[var(--v-text-faint)] hover:text-[var(--v-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v-accent)]"
-                >
-                  Clear
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        <SendToScreen
+          screens={screens}
+          what={item.name ?? (isVideo ? "video" : "image")}
+          onSend={onSendToScreen}
+          onClear={onClearScreen}
+          emptyHint="Go live puts this on the main screen. To send pictures and video to other screens as well, add them under Settings › Streaming & output."
+        />
       </Field>
 
       <Field label="How it sits on the screen">

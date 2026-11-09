@@ -1302,6 +1302,9 @@ export default function OperatorPage() {
               previewId={stage.previewSlide?.slideId ?? null}
               liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
               cue={presentationCue}
+              screens={settings?.screens ?? []}
+              onSendToScreen={(i, screenId) => stage.sendToScreen(screenId, i)}
+              onClearScreen={(screenId) => stage.setScreenStatus(screenId, "clear")}
             />
           ) : mode === "media" ? (
             <MediaPanel
