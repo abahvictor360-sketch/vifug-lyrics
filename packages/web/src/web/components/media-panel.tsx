@@ -511,6 +511,75 @@ export function MediaPanel({
                 </div>
               )}
 
+              <div className="space-y-2 border-b border-[var(--v-border)] pb-3">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">Layout</p>
+                <div className="flex gap-1.5">
+                  {(["full", "overlay", "pip"] as const).map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => updateCapture({ layout: l })}
+                      className={`flex-1 rounded-md border px-2 py-1.5 text-[12px] ${
+                        (currentCapture.layout ?? "full") === l
+                          ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                          : "border-[var(--v-border)] hover:bg-[var(--v-surface-3)]"
+                      }`}
+                    >
+                      {l === "full" ? "Video only" : l === "overlay" ? "Over video" : "Side by side"}
+                    </button>
+                  ))}
+                </div>
+                {currentCapture.layout === "pip" && (
+                  <>
+                    <div className="flex gap-1.5">
+                      {(["left", "right"] as const).map((side) => (
+                        <button
+                          key={side}
+                          type="button"
+                          onClick={() => updateCapture({ pipVideoSide: side })}
+                          className={`flex-1 rounded-md border px-2 py-1 text-[12px] ${
+                            (currentCapture.pipVideoSide ?? "left") === side
+                              ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                              : "border-[var(--v-border)]"
+                          }`}
+                        >
+                          Video {side}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="flex items-center gap-2 text-[12px] text-[var(--v-text-faint)]">
+                      Video width
+                      <input
+                        type="range"
+                        min={20}
+                        max={80}
+                        value={Math.round((currentCapture.pipVideoWidth ?? 0.5) * 100)}
+                        onChange={(e) => updateCapture({ pipVideoWidth: Number(e.target.value) / 100 })}
+                        className="flex-1"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 text-[12px]">
+                      <input
+                        type="checkbox"
+                        checked={!!currentCapture.pipBroadcast}
+                        onChange={(e) => updateCapture({ pipBroadcast: e.target.checked })}
+                      />
+                      Broadcast look (framed video, branded bars)
+                    </label>
+                    {currentCapture.pipBroadcast && (
+                      <>
+                        <input type="text" placeholder="Top bar text (e.g. Sunday Service)" value={currentCapture.pipTopText ?? ""} onChange={(e) => updateCapture({ pipTopText: e.target.value })} className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]" />
+                        <input type="text" placeholder="Bottom bar text (e.g. www.yourchurch.org)" value={currentCapture.pipBottomText ?? ""} onChange={(e) => updateCapture({ pipBottomText: e.target.value })} className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]" />
+                        <label className="flex items-center justify-between text-[12px] text-[var(--v-text-faint)]">
+                          Bar &amp; frame colour
+                          <input type="color" value={currentCapture.pipAccent ?? "#1d4ed8"} onChange={(e) => updateCapture({ pipAccent: e.target.value })} className="h-6 w-10 cursor-pointer rounded border border-[var(--v-border)] bg-transparent" />
+                        </label>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
                   Preacher nameplate
@@ -526,15 +595,60 @@ export function MediaPanel({
                   className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
                 />
                 {currentCapture.nameplate?.name && (
-                  <input
-                    type="text"
-                    placeholder="Title (optional, e.g. Senior Pastor)"
-                    value={currentCapture.nameplate?.title ?? ""}
-                    onChange={(e) =>
-                      updateCapture({ nameplate: { name: currentCapture.nameplate!.name, title: e.target.value } })
-                    }
-                    className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
-                  />
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Title (optional, e.g. Senior Pastor)"
+                      value={currentCapture.nameplate?.title ?? ""}
+                      onChange={(e) => updateCapture({ nameplate: { ...currentCapture.nameplate!, title: e.target.value } })}
+                      className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
+                    />
+                    <div className="grid grid-cols-5 gap-1">
+                      {(["classic", "broadcast", "social", "pill", "minimal"] as const).map((st) => (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => updateCapture({ nameplate: { ...currentCapture.nameplate!, style: st } })}
+                          className={`rounded-md border px-1 py-1.5 text-[10px] capitalize ${
+                            (currentCapture.nameplate?.style ?? "classic") === st
+                              ? "border-[var(--v-accent)] bg-[var(--v-accent)]/15"
+                              : "border-[var(--v-border)] bg-[var(--v-surface-3)]"
+                          }`}
+                        >
+                          {st}
+                        </button>
+                      ))}
+                    </div>
+                    {currentCapture.nameplate?.style === "social" && (
+                      <input
+                        type="text"
+                        placeholder="@handle (shown on the second bar)"
+                        value={currentCapture.nameplate?.handle ?? ""}
+                        onChange={(e) => updateCapture({ nameplate: { ...currentCapture.nameplate!, handle: e.target.value } })}
+                        className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
+                      />
+                    )}
+                    {currentCapture.nameplate?.style === "pill" && (
+                      <input
+                        type="text"
+                        placeholder="Logo / photo URL (optional)"
+                        value={currentCapture.nameplate?.logo ?? ""}
+                        onChange={(e) => updateCapture({ nameplate: { ...currentCapture.nameplate!, logo: e.target.value || undefined } })}
+                        className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
+                      />
+                    )}
+                    {(currentCapture.nameplate?.style ?? "classic") !== "classic" && (currentCapture.nameplate?.style ?? "") !== "minimal" && (
+                      <label className="flex items-center justify-between text-[12px] text-[var(--v-text-faint)]">
+                        Accent colour
+                        <input
+                          type="color"
+                          value={currentCapture.nameplate?.accent ?? "#1d4ed8"}
+                          onChange={(e) => updateCapture({ nameplate: { ...currentCapture.nameplate!, accent: e.target.value } })}
+                          className="h-6 w-10 cursor-pointer rounded border border-[var(--v-border)] bg-transparent"
+                        />
+                      </label>
+                    )}
+                  </>
                 )}
                 <p className="text-[11px] text-[var(--v-text-faint)]">
                   Shows over the video on every layout. Clear the name to hide it.

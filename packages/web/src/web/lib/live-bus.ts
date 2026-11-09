@@ -76,6 +76,8 @@ export type CaptureLayout = "full" | "overlay" | "pip";
  * card. Only the source id travels on the bus: a MediaStream can't cross
  * windows, so the projector opens its own capture of the same source.
  */
+export type NameplateStyle = "classic" | "broadcast" | "social" | "pill" | "minimal";
+
 export type LiveCapture = {
   sourceId: string;
   name: string;
@@ -86,6 +88,14 @@ export type LiveCapture = {
   pipVideoSide?: "left" | "right";
   /** pip only: fraction of the width given to the video (0.2–0.8). */
   pipVideoWidth?: number;
+  /** pip only: broadcast look - framed video, branded bars, scripture card. */
+  pipBroadcast?: boolean;
+  /** pip broadcast: text on the top bar (e.g. church or service name). */
+  pipTopText?: string;
+  /** pip broadcast: text on the bottom bar (e.g. website, social handle). */
+  pipBottomText?: string;
+  /** pip broadcast: colour of the bars and video frame. */
+  pipAccent?: string;
   /**
    * overlay only: whether the slide fills the whole frame or sits in a
    * sized band at the bottom - the classic broadcast lower third.
@@ -111,7 +121,18 @@ export type LiveCapture = {
   overlayTextVerticalPos?: "top" | "center" | "bottom";
   overlayTextAlign?: "left" | "center" | "right";
   /** Preacher/speaker nameplate shown over the capture, any layout. null/absent = hidden. */
-  nameplate?: { name: string; title?: string } | null;
+  nameplate?: {
+    name: string;
+    title?: string;
+    /** Look of the lower third. Absent = "classic". */
+    style?: NameplateStyle;
+    /** Accent colour for the style (bar / pill). */
+    accent?: string;
+    /** Social handle or second line for the "social" style. */
+    handle?: string;
+    /** Small logo or avatar image for the "pill" style. */
+    logo?: string;
+  } | null;
   /**
    * Where this capture's sound comes from.
    *  - "none"    silent (the default, and the only sane one for a screen or
