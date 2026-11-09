@@ -878,12 +878,12 @@ export default function OperatorPage() {
 
   /** Versions installed AND switched on, so naming a disabled one does nothing. */
   const enabledVersionIds = useMemo(() => {
-    if (!(settings?.autoFollowVersionByVoice ?? false)) return undefined;
+    if (!appMode.bible || !(settings?.autoFollowVersionByVoice ?? false)) return undefined;
     const langs = (settings?.bibleLangs ?? {}) as Record<string, boolean>;
     return (bibleManifest.data?.versions ?? [])
       .filter((v) => v.lang === "en" || langs[v.id] !== false)
       .map((v) => v.id);
-  }, [settings?.autoFollowVersionByVoice, settings?.bibleLangs, bibleManifest.data]);
+  }, [appMode.bible, settings?.autoFollowVersionByVoice, settings?.bibleLangs, bibleManifest.data]);
 
   /*
    * The indexed Bible behind "the preacher is quoting this".
@@ -1668,8 +1668,11 @@ export default function OperatorPage() {
             events={autoFollow.events}
             live={ctrl.status === "live"}
             onToggle={(v) => patchSettings({ autoFollow: v })}
-            scriptureOn={settings?.autoFollowScripture ?? false}
-            quotesOn={settings?.autoFollowQuotes ?? false}
+            // No Bible outside church: the saved switches are left alone (so going
+            // back to Church finds them as they were) but nothing here acts on or
+            // shows them.
+            scriptureOn={followScripture}
+            quotesOn={followScripture && (settings?.autoFollowQuotes ?? false)}
             referenceLive={settings?.autoFollowScriptureLive ?? false}
             quoteLive={settings?.autoFollowQuoteLive ?? false}
             onPolicy={(kind, live) =>
