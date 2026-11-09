@@ -13,9 +13,13 @@
  * channels use, for the reason given in channel-store.ts.
  */
 import { like, lt, eq } from "drizzle-orm";
-import { db } from "../database";
-import * as schema from "../database/schema";
-import { isServerlessRuntime } from "./channel-store";
+import { isServerlessRuntime } from "./runtime";
+
+/** The database is only touched on serverless, so the in-memory path (and its tests) never load it. */
+async function store() {
+  const [{ db }, schema] = await Promise.all([import("../database"), import("../database/schema")]);
+  return { db, schema };
+}
 
 /** A handshake is over in seconds; anything older is a past session. */
 const TTL_MS = 30 * 60 * 1000;
@@ -44,6 +48,7 @@ export async function castPut(room: string, key: string, payload: unknown): Prom
     mem.set(id, { payload, at: Date.now() });
     return true;
   }
+  const { db, schema } = await store();
   const now = new Date().toISOString();
   const updated = await db
     .update(schema.channelState)
@@ -69,6 +74,7 @@ export async function castGet(room: string, key: string): Promise<{ payload: unk
     const e = mem.get(id);
     return e && e.at > Date.now() - TTL_MS ? e : null;
   }
+  const { db, schema } = await store();
   const [row] = await db.select().from(schema.channelState).where(eq(schema.channelState.id, id));
   if (!row) return null;
   const at = Date.parse(row.updatedAt);
@@ -89,6 +95,7 @@ export async function castList(room: string, prefix: string): Promise<{ key: str
     for (const [id, e] of mem) if (id.startsWith(base + prefix)) out.push({ key: id.slice(base.length), at: e.at, payload: e.payload });
     return out;
   }
+  const { db, schema } = await store();
   const rows = await db
     .select()
     .from(schema.channelState)
