@@ -42,6 +42,8 @@ import { useTranslations, useSaveTranslation, LANGS, langLabel } from "../hooks/
 import { contextFromCaption } from "../lib/spoken-ref";
 import { findQuotedVerse, quoteToQuery, quoteConfidence } from "../lib/quoted-verse";
 import { rankVerses } from "../lib/verse-rank";
+import { mergeCandidates } from "../lib/semantic-verse";
+import { useSemanticIndex } from "../hooks/use-semantic-index";
 import { useVerseCorpus } from "../hooks/use-verse-corpus";
 import { useAutoFollow, type FollowEvent } from "../hooks/use-autofollow";
 import { useMediaLevel } from "../hooks/use-media-level";
@@ -907,12 +909,20 @@ export default function OperatorPage() {
 
   // Paraphrase ranking over the same indexed Bible the quotation matcher uses,
   // so it rides on "Follow quoted scripture" rather than needing a switch of its own.
+  const semantic = useSemanticIndex(verseCorpus.corpus, quotesOn && (settings?.autoFollowSemantic ?? false));
+  const semanticQuery = semantic.query;
+  const semanticReady = semantic.status === "ready";
   const rank = useCallback(
     (text: string) => {
       const corpus = verseCorpus.corpusRef.current;
-      return corpus ? rankVerses(text, corpus) : [];
+      if (!corpus) return [];
+      const lexical = rankVerses(text, corpus);
+      // With the meaning model ready, its answer is folded in a moment later;
+      // without it, the word matcher answers at once as before.
+      if (!semanticReady) return lexical;
+      return semanticQuery(text).then((hits) => mergeCandidates(lexical, hits, corpus));
     },
-    [verseCorpus.corpusRef],
+    [verseCorpus.corpusRef, semanticReady, semanticQuery],
   );
 
   const autoFollow = useAutoFollow({

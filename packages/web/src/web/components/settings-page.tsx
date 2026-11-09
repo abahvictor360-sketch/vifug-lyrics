@@ -2390,6 +2390,23 @@ function AiSection({
 
             <label className="mt-3 flex items-center justify-between gap-3">
               <span className="min-w-0">
+                <span className="block text-sm">Understand paraphrases by meaning (AI model)</span>
+                <span className="block text-[12px] text-[var(--v-text-faint)]">
+                  Runs a small language model on this computer so &ldquo;God walks with me even in
+                  the darkest valley&rdquo; finds Psalm 23:4 even though the words differ. Downloads
+                  about 23 MB once, then spends a few minutes indexing the Bible the first time;
+                  after that it works offline. Needs &ldquo;Follow quoted scripture&rdquo; on. A
+                  guess like this always shows its confidence.
+                </span>
+              </span>
+              <Toggle
+                checked={settings?.autoFollowSemantic ?? false}
+                onChange={(v) => patchSettings({ autoFollowSemantic: v })}
+              />
+            </label>
+
+            <label className="mt-3 flex items-center justify-between gap-3">
+              <span className="min-w-0">
                 <span className="block text-sm">Switch translation when it is named</span>
                 <span className="block text-[12px] text-[var(--v-text-faint)]">
                   &ldquo;John three sixteen in the Message&rdquo; changes version as well as

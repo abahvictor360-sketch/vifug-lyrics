@@ -114,7 +114,7 @@ export function useAutoFollow(opts: {
    * rather than done here for the same reason matchQuote is: it needs the Bible
    * text loaded. Absent = paraphrases are not followed.
    */
-  rankVerses?: (text: string) => VerseCandidate[];
+  rankVerses?: (text: string) => VerseCandidate[] | Promise<VerseCandidate[]>;
   /**
    * The preacher asked for a different wording of what is already up -
    * "read that again in the Message" - without naming a reference.
@@ -431,7 +431,23 @@ export function useAutoFollow(opts: {
       ).join(" ");
       if (window.split(" ").length < 5) return;
 
-      const hit = trackerRef.current.feed(rank(window), final, now);
+      const ranked = rank(window);
+      if (Array.isArray(ranked)) handleRanked(ranked, final, now);
+      else {
+        // The meaning model answers a few milliseconds later. Only the newest
+        // question is acted on, so a slow answer never overrides a fresher one.
+        const seq = ++rankSeq.current;
+        void ranked.then((r) => {
+          if (seq === rankSeq.current) handleRanked(r, final, Date.now());
+        });
+      }
+    },
+    [note],
+  );
+  const rankSeq = useRef(0);
+  const handleRanked = useCallback(
+    (candidates: VerseCandidate[], final: boolean, now: number) => {
+      const hit = trackerRef.current.feed(candidates, final, now);
       if (!hit) return;
       const query = `${hit.cue.name} ${hit.cue.chapter}:${hit.cue.verse}`;
       // The same verse just handled as a reference or a quotation is not news.
@@ -447,7 +463,7 @@ export function useAutoFollow(opts: {
           confidence: c.confidence,
         })),
       });
-      onScriptureRef.current(query, undefined, { why: "paraphrased", confidence: hit.cue.confidence, live });
+      onScriptureRef.current?.(query, undefined, { why: "paraphrased", confidence: hit.cue.confidence, live });
     },
     [note],
   );

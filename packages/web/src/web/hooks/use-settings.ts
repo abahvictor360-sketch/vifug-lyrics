@@ -92,6 +92,11 @@ export type AppSettings = {
    */
   autoFollowParaphraseLive?: boolean;
   /**
+   * Also match a paraphrase by MEANING with a small on-device language model
+   * (downloaded once, ~23 MB), on top of matching by words. Off by default.
+   */
+  autoFollowSemantic?: boolean;
+  /**
    * Which Whisper to run locally. The heavy ones are deliberately offered:
    * a laptop driving a projector has nothing else to do, and a church that
    * wants the accuracy should be allowed to wait for the download.

@@ -26,6 +26,8 @@
 import { normaliseVerse, type VerseCorpus } from "./quoted-verse";
 
 export type VerseCandidate = {
+  /** Position in the corpus the candidate came from. */
+  index?: number;
   code: string;
   name: string;
   chapter: number;
@@ -114,6 +116,7 @@ export function rankVerses(
     if (precision < minPrecision) continue;
     const score = Math.pow(precision, 0.65) * Math.pow(Math.min(1, recall * 1.6), 0.35);
     out.push({
+      index: i,
       code: corpus.code[i]!,
       name: corpus.name[i]!,
       chapter: corpus.chapter[i]!,
