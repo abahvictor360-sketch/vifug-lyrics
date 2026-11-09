@@ -1,6 +1,7 @@
 import { SlideRender } from "./slide-render";
 import { CaptureView } from "./capture";
 import type { LiveState, LiveCapture } from "../lib/live-bus";
+import { shapeRatio } from "../lib/capture-shape";
 import { useMediaUrl } from "../hooks/use-media-url";
 import { useAudioOutputMuted } from "../hooks/use-audio-output";
 
@@ -158,7 +159,7 @@ export function CaptureStage({
   if (layout === "full") {
     return (
       <div style={{ position: "absolute", inset: 0 }}>
-        <CaptureView sourceId={capture.sourceId} {...av} />
+        <ShapedVideo capture={capture} av={av} />
         {nameplate}
       </div>
     );
@@ -168,7 +169,7 @@ export function CaptureStage({
     const overlayMode = capture.overlayMode ?? "fullscreen";
     return (
       <div style={{ position: "absolute", inset: 0 }}>
-        <CaptureView sourceId={capture.sourceId} {...av} />
+        <ShapedVideo capture={capture} av={av} />
         {overlayMode === "lower_third" ? (
           <LowerThirdBand capture={capture}>
             {/*
@@ -263,7 +264,7 @@ export function CaptureStage({
               boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
             }}
           >
-            <CaptureView sourceId={capture.sourceId} {...av} />
+            <ShapedVideo capture={capture} av={av} />
           </div>
           <div style={{ width: textPct, position: "relative", borderRadius: "0.6em", overflow: "hidden", containerType: "size" }}>
             <SlideRender state={state} scale playAudio={playAudio} />
@@ -285,7 +286,7 @@ export function CaptureStage({
       }}
     >
       <div style={{ width: videoPct, height: "100%", position: "relative", background: "#000" }}>
-        <CaptureView sourceId={capture.sourceId} {...av} />
+        <ShapedVideo capture={capture} av={av} />
       </div>
       <div style={{ width: textPct, height: "100%", position: "relative" }}>
         <SlideRender state={state} scale={scale} playAudio={playAudio} />
@@ -333,6 +334,47 @@ function LowerThirdBand({
       }}
     >
       {children}
+    </div>
+  );
+}
+
+/**
+ * The captured video cut to the operator's chosen shape: a frame of that
+ * proportion centred in the space available, the picture inside it filled
+ * (cover) or fitted (contain), optionally zoomed, slid and rounded.
+ * With no shape set it is exactly the plain video, as before.
+ */
+function ShapedVideo({
+  capture,
+  av,
+}: {
+  capture: NonNullable<LiveCapture>;
+  av: Omit<React.ComponentProps<typeof CaptureView>, "sourceId" | "fit">;
+}) {
+  const shape = capture.shape;
+  const ratio = shapeRatio(shape);
+  if (!shape || (!ratio && !shape.zoom && !shape.radius && shape.fit !== "cover")) {
+    return <CaptureView sourceId={capture.sourceId} {...av} />;
+  }
+  const zoom = Math.min(3, Math.max(1, shape.zoom ?? 1));
+  const panX = Math.min(50, Math.max(-50, shape.panX ?? 0));
+  const panY = Math.min(50, Math.max(-50, shape.panY ?? 0));
+  const frame: React.CSSProperties = ratio
+    ? { width: `min(100cqw, calc(100cqh * ${ratio}))`, aspectRatio: String(ratio), margin: "auto", position: "absolute", inset: 0 }
+    : { position: "absolute", inset: 0 };
+  return (
+    <div style={{ position: "absolute", inset: 0, containerType: "size", background: "#000" }}>
+      <div
+        style={{
+          ...frame,
+          overflow: "hidden",
+          borderRadius: `${Math.min(50, Math.max(0, shape.radius ?? 0))}%`,
+        }}
+      >
+        <div style={{ position: "absolute", inset: 0, transform: `translate(${panX}%, ${panY}%) scale(${zoom})` }}>
+          <CaptureView sourceId={capture.sourceId} fit={shape.fit ?? "cover"} {...av} />
+        </div>
+      </div>
     </div>
   );
 }

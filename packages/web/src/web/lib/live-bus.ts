@@ -76,6 +76,23 @@ export type CaptureLayout = "full" | "overlay" | "pip";
  * card. Only the source id travels on the bus: a MediaStream can't cross
  * windows, so the projector opens its own capture of the same source.
  */
+/** How the captured video is cut to fit the frame it sits in. */
+export type CaptureShape = {
+  /** Frame shape. "source" keeps the capture's own proportions. */
+  aspect?: "source" | "16:9" | "4:3" | "1:1" | "9:16" | "21:9" | "custom";
+  /** Width / height for aspect "custom". */
+  ratio?: number;
+  /** "cover" fills the shape and crops the edges; "contain" shows everything with bars. */
+  fit?: "cover" | "contain";
+  /** 1 - 3 */
+  zoom?: number;
+  /** -50 - 50, percent of the frame the picture is slid sideways / up-down. */
+  panX?: number;
+  panY?: number;
+  /** 0 - 50, corner rounding as percent of the shorter side (50 = ellipse/circle). */
+  radius?: number;
+};
+
 export type NameplateStyle = "classic" | "broadcast" | "social" | "pill" | "minimal";
 
 export type LiveCapture = {
@@ -86,6 +103,8 @@ export type LiveCapture = {
   layout: CaptureLayout;
   /** pip only: which side the video sits on. */
   pipVideoSide?: "left" | "right";
+  /** Cut / resize the video to a shape, any layout. */
+  shape?: CaptureShape | null;
   /** pip only: fraction of the width given to the video (0.2–0.8). */
   pipVideoWidth?: number;
   /** pip only: broadcast look - framed video, branded bars, scripture card. */

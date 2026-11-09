@@ -1,3 +1,4 @@
+import { SHAPE_PRESETS } from "../lib/capture-shape";
 import { MediaImg, MediaVideo } from "./media-el";
 import { SendToScreen } from "./send-to-screen";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -578,6 +579,93 @@ export function MediaPanel({
                     )}
                   </>
                 )}
+              </div>
+
+              <div className="space-y-2 border-b border-[var(--v-border)] pb-3">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
+                  Video shape &amp; size
+                </p>
+                <div className="grid grid-cols-4 gap-1">
+                  {SHAPE_PRESETS.map((sp) => (
+                    <button
+                      key={sp.id}
+                      type="button"
+                      onClick={() => updateCapture({ shape: { ...currentCapture.shape, aspect: sp.id } })}
+                      className={`rounded-md border px-1 py-1.5 text-[11px] ${
+                        (currentCapture.shape?.aspect ?? "source") === sp.id
+                          ? "border-[var(--v-accent)] bg-[var(--v-accent)]/15"
+                          : "border-[var(--v-border)] bg-[var(--v-surface-3)]"
+                      }`}
+                    >
+                      {sp.label}
+                    </button>
+                  ))}
+                </div>
+                {currentCapture.shape?.aspect === "custom" && (
+                  <label className="flex items-center gap-2 text-[12px] text-[var(--v-text-faint)]">
+                    Width : height
+                    <input
+                      type="number"
+                      step="0.05"
+                      min="0.25"
+                      max="5"
+                      value={currentCapture.shape?.ratio ?? 1.78}
+                      onChange={(e) => updateCapture({ shape: { ...currentCapture.shape, aspect: "custom", ratio: Number(e.target.value) } })}
+                      className="w-20 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-xs"
+                    />
+                  </label>
+                )}
+                <div className="flex gap-1.5">
+                  {(["cover", "contain"] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => updateCapture({ shape: { ...currentCapture.shape, fit: f } })}
+                      className={`flex-1 rounded-md border px-2 py-1 text-[12px] ${
+                        (currentCapture.shape?.fit ?? "cover") === f
+                          ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                          : "border-[var(--v-border)]"
+                      }`}
+                    >
+                      {f === "cover" ? "Fill (crop edges)" : "Fit (show all)"}
+                    </button>
+                  ))}
+                </div>
+                {([
+                  ["zoom", "Zoom", 100, 300, 100, 1],
+                  ["panX", "Slide left / right", -50, 50, 0, 1],
+                  ["panY", "Slide up / down", -50, 50, 0, 1],
+                  ["radius", "Round corners", 0, 50, 0, 1],
+                ] as const).map(([key, label, min, max, def]) => (
+                  <label key={key} className="flex items-center gap-2 text-[12px] text-[var(--v-text-faint)]">
+                    <span className="w-28 shrink-0">{label}</span>
+                    <input
+                      type="range"
+                      min={min}
+                      max={max}
+                      value={key === "zoom" ? Math.round((currentCapture.shape?.zoom ?? 1) * 100) : (currentCapture.shape?.[key] ?? def)}
+                      onChange={(e) =>
+                        updateCapture({
+                          shape: { ...currentCapture.shape, [key]: key === "zoom" ? Number(e.target.value) / 100 : Number(e.target.value) },
+                        })
+                      }
+                      className="flex-1"
+                    />
+                  </label>
+                ))}
+                {currentCapture.shape && (
+                  <button
+                    type="button"
+                    onClick={() => updateCapture({ shape: null })}
+                    className="text-[11px] text-[var(--v-text-faint)] underline"
+                  >
+                    Reset shape
+                  </button>
+                )}
+                <p className="text-[11px] text-[var(--v-text-faint)]">
+                  Cuts the video to a shape: a square or portrait window for a camera beside the words, a circle for a
+                  round speaker bubble. The Preview panel shows the result before you go live.
+                </p>
               </div>
 
               <div className="space-y-2">

@@ -207,8 +207,11 @@ export function CaptureView({
   chromaKey,
   audioSource = "none",
   micDeviceId,
+  fit = "contain",
 }: {
   sourceId: string;
+  /** How the picture fills its box. */
+  fit?: "contain" | "cover";
   muted?: boolean;
   colorFilter?: string | null;
   /** A real uploaded 3D LUT, by id - takes over from `colorFilter` when set. */
@@ -284,7 +287,7 @@ export function CaptureView({
         autoPlay
         playsInline
         muted={muted}
-        className={`h-full w-full bg-black object-contain ${usesCanvas ? "invisible absolute inset-0" : ""}`}
+        className={`h-full w-full bg-black ${fit === "cover" ? "object-cover" : "object-contain"} ${usesCanvas ? "invisible absolute inset-0" : ""}`}
         style={usesCanvas ? undefined : { filter: cssFilter }}
       />
       {usesCanvas && videoEl && (
@@ -311,6 +314,8 @@ export function CapturePicker({
   onClose: () => void;
 }) {
   const [layout, setLayout] = useState<CaptureLayout>("full");
+  // The source being previewed before it is cued.
+  const [chosen, setChosen] = useState<CaptureSource | null>(null);
   const [sources, setSources] = useState<CaptureSource[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const desktop = getDesktopAPI();
@@ -415,6 +420,37 @@ export function CapturePicker({
           ))}
         </div>
 
+        {chosen && (
+          <div className="mb-4 rounded-md border border-[var(--v-border)] bg-[var(--v-surface)] p-3">
+            <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
+              How it will look on air
+            </p>
+            <div className="relative mx-auto aspect-video w-full max-w-xl overflow-hidden rounded bg-black" style={{ containerType: "size" }}>
+              <OnAirMock source={chosen} layout={layout} />
+            </div>
+            <p className="mt-2 text-[11px] text-[var(--v-text-faint)]">
+              A live look at &ldquo;{chosen.name}&rdquo; with sample text in the {LAYOUTS.find((l) => l.id === layout)?.label.toLowerCase()} layout.
+              Nothing goes to the screen until you press GO LIVE.
+            </p>
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setChosen(null)}
+                className="rounded-md border border-[var(--v-border)] px-3 py-1.5 text-xs hover:bg-[var(--v-surface-3)]"
+              >
+                Choose another
+              </button>
+              <button
+                type="button"
+                onClick={() => onPick(chosen, layout)}
+                className="rounded-md bg-[var(--v-accent)] px-3 py-1.5 text-xs font-semibold text-black"
+              >
+                Cue to Preview
+              </button>
+            </div>
+          </div>
+        )}
+
         {error && <p className="py-6 text-center text-xs text-[var(--v-text-faint)]">{error}</p>}
         {!error && !sources && (
           <p className="flex items-center justify-center gap-2 py-10 text-xs text-[var(--v-text-faint)]">
@@ -436,8 +472,8 @@ export function CapturePicker({
                 {items.map((s) => (
                   <button
                     key={s.id}
-                    onClick={() => onPick(s, layout)}
-                    className="group overflow-hidden rounded-md border-2 border-[var(--v-border)] bg-black text-left transition-colors hover:border-[var(--v-accent)]"
+                    onClick={() => setChosen(s)}
+                    className={`group overflow-hidden rounded-md border-2 bg-black text-left transition-colors hover:border-[var(--v-accent)] ${chosen?.id === s.id ? "border-[var(--v-accent)]" : "border-[var(--v-border)]"}`}
                   >
                     {s.thumbnail ? (
                       <img src={s.thumbnail} alt="" className="aspect-video w-full object-contain" />
@@ -458,6 +494,40 @@ export function CapturePicker({
           ) : null,
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * A stand-in for the real projector output, shown before a capture is cued:
+ * the live source composed with sample text the way the chosen layout will
+ * place the real lyrics or scripture.
+ */
+function OnAirMock({ source, layout }: { source: CaptureSource; layout: CaptureLayout }) {
+  const sample = "For God so loved the world, that he gave his only begotten Son";
+  if (layout === "pip") {
+    return (
+      <div className="absolute inset-0 flex">
+        <div className="relative h-full w-1/2 bg-black">
+          <CaptureView sourceId={source.id} />
+        </div>
+        <div className="grid h-full w-1/2 place-items-center bg-[#0a0a0c] p-[4cqw] text-center text-white" style={{ fontSize: "3.4cqw", lineHeight: 1.3 }}>
+          {sample}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="absolute inset-0">
+      <CaptureView sourceId={source.id} />
+      {layout === "overlay" && (
+        <div
+          className="absolute inset-x-0 bottom-0 grid place-items-center bg-black/60 px-[5cqw] text-center text-white"
+          style={{ height: "30%", fontSize: "3.4cqw", lineHeight: 1.25, textShadow: "0 2px 8px #000" }}
+        >
+          {sample}
+        </div>
+      )}
     </div>
   );
 }
