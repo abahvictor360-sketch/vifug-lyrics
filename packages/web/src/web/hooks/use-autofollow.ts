@@ -3,6 +3,8 @@ import { peakLevel, publishMicLevel } from "../lib/audio-taps";
 import { parseSpokenReference, spokenRefToQuery } from "../lib/spoken-ref";
 import { LocalRecogniser, effectiveModel, pcmFromStream } from "../lib/local-stt";
 import { parseSpokenVersion } from "../lib/spoken-version";
+import { ParaphraseTracker } from "../lib/follow-detect";
+import type { VerseCandidate } from "../lib/verse-rank";
 import { api } from "../lib/api";
 
 /** "john 3:16" is how the parser speaks; "John 3:16" is how a person reads. */
@@ -58,7 +60,7 @@ export type FollowEvent = {
   kind: "slide" | "scripture";
   /** The slide's first line, or the reference. */
   what: string;
-  why: "sung" | "reference" | "quoted" | "version";
+  why: "sung" | "reference" | "quoted" | "paraphrased" | "version";
   /** Scripture only: what to cue to present it again, and in which version. */
   query?: string;
   versionId?: string;
@@ -66,10 +68,12 @@ export type FollowEvent = {
   confidence?: number;
   /** Scripture only: it went straight to the live screen (false = Preview). */
   live?: boolean;
+  /** Paraphrase only: the next-best candidates, for the operator to pick from. */
+  alternatives?: { query: string; confidence: number }[];
 };
 
 /** Where a heard passage goes, decided separately for each kind of detection. */
-export type ScriptureGoesLive = { reference: boolean; quoted: boolean };
+export type ScriptureGoesLive = { reference: boolean; quoted: boolean; paraphrased: boolean };
 
 /** Enough to see the last minute of a service, not enough to grow forever. */
 const EVENT_LIMIT = 12;
@@ -98,13 +102,19 @@ export function useAutoFollow(opts: {
   onScripture?: (
     query: string,
     versionId: string | undefined,
-    info: { why: "reference" | "quoted"; confidence: number; live: boolean },
+    info: { why: "reference" | "quoted" | "paraphrased"; confidence: number; live: boolean },
   ) => void;
   /**
    * Which kinds of detection go straight to the live screen and which wait in
    * Preview. Absent = both wait.
    */
   scriptureLive?: ScriptureGoesLive;
+  /**
+   * The most likely verses for a stretch of speech, best first. Supplied
+   * rather than done here for the same reason matchQuote is: it needs the Bible
+   * text loaded. Absent = paraphrases are not followed.
+   */
+  rankVerses?: (text: string) => VerseCandidate[];
   /**
    * The preacher asked for a different wording of what is already up -
    * "read that again in the Message" - without naming a reference.
@@ -141,6 +151,7 @@ export function useAutoFollow(opts: {
     scriptureContext, engine = "deepgram", localModel, language,
     onVersion, versionIds, matchQuote, localModelHost, accentedEnglish = false,
     scriptureLive,
+    rankVerses,
   } = opts;
   const [status, setStatus] = useState<AutoFollowStatus>("off");
   const [heard, setHeard] = useState("");
@@ -182,8 +193,11 @@ export function useAutoFollow(opts: {
   versionIdsRef.current = versionIds;
   const matchQuoteRef = useRef(matchQuote);
   matchQuoteRef.current = matchQuote;
-  const liveForRef = useRef<ScriptureGoesLive>(scriptureLive ?? { reference: false, quoted: false });
-  liveForRef.current = scriptureLive ?? { reference: false, quoted: false };
+  const liveForRef = useRef<ScriptureGoesLive>(scriptureLive ?? { reference: false, quoted: false, paraphrased: false });
+  liveForRef.current = scriptureLive ?? { reference: false, quoted: false, paraphrased: false };
+  const rankRef = useRef(rankVerses);
+  rankRef.current = rankVerses;
+  const trackerRef = useRef(new ParaphraseTracker());
   const contextRef = useRef(scriptureContext ?? null);
   contextRef.current = scriptureContext ?? null;
   const engineRef = useRef(engine);
@@ -221,8 +235,12 @@ export function useAutoFollow(opts: {
     return tokenize([...s.sourceLines, ...s.translationLines].join(" "));
   }, []);
 
-  const evaluate = useCallback(() => {
-    const tokens = transcriptRef.current;
+  const evaluate = useCallback((interimTokens: string[] = []) => {
+    // Interim words are what is being said RIGHT NOW. Counting them lets a slide
+    // advance as its last line is sung rather than a pause after it, which is the
+    // difference between keeping up with a song and trailing it. They are only
+    // ever looked at, never kept: the next final result replaces them.
+    const tokens = interimTokens.length ? [...transcriptRef.current, ...interimTokens] : transcriptRef.current;
     const cur = idxRef.current;
     const { threshold: thr, lookahead: look } = tuningRef.current;
     // Look at the next few slides; advance to the furthest confident match.
@@ -235,7 +253,7 @@ export function useAutoFollow(opts: {
         bestScore = sc;
       }
     }
-    if (best >= 0 && Date.now() - lastAdvanceRef.current > 1200) {
+    if (best >= 0 && Date.now() - lastAdvanceRef.current > 800) {
       lastAdvanceRef.current = Date.now();
       const slide = slidesRef.current[best];
       const first = slide?.sourceLines.find((l) => l.trim()) ?? `Slide ${best + 1}`;
@@ -300,6 +318,7 @@ export function useAutoFollow(opts: {
     mediaRef.current?.getTracks().forEach((t) => t.stop());
     mediaRef.current = null;
     transcriptRef.current = [];
+    trackerRef.current.reset();
     setEvents([]);
     setModelProgress(null);
     setErrorText(null);
@@ -319,8 +338,8 @@ export function useAutoFollow(opts: {
    */
   const lastRefRef = useRef<string | null>(null);
   const listenForScripture = useCallback(
-    (sentence: string, final: boolean) => {
-      if (!bookNamesRef.current?.length || !onScriptureRef.current) return;
+    (sentence: string, final: boolean): boolean => {
+      if (!bookNamesRef.current?.length || !onScriptureRef.current) return false;
 
       // "...in the New Living Translation." Said with a reference most of the
       // time, occasionally on its own about whatever is already up.
@@ -358,13 +377,13 @@ export function useAutoFollow(opts: {
             onVersionRef.current(version);
           }
         }
-        return;
+        return false;
       }
 
       // Keyed on both, so "John three sixteen" and then "the same verse in
       // the Message" is two different things rather than a repeat.
       const key = `${query}|${version ?? ""}`;
-      if (key === lastRefRef.current) return;
+      if (key === lastRefRef.current) return true; // already handled: still a reference, not a paraphrase
       lastRefRef.current = key;
       const why = quoted ? "quoted" : "reference";
       // Decided here, once, so the screen and the log can never disagree about
@@ -377,6 +396,58 @@ export function useAutoFollow(opts: {
         { query, versionId: version ?? undefined, confidence, live },
       );
       onScriptureRef.current(query, version ?? undefined, { why, confidence, live });
+      return true;
+    },
+    [note],
+  );
+
+  /*
+   * A paraphrase: the verse is not cited and not read out, but the sentence is
+   * plainly about it. Ranked on a rolling window of the last few seconds of
+   * speech - the committed words plus whatever is still being spoken - so it
+   * can fire mid-sentence, as soon as the same verse has stayed on top for two
+   * updates. See lib/verse-rank.ts and lib/follow-detect.ts.
+   */
+  const lastRankAt = useRef(0);
+  const interimEvalAt = useRef(0);
+  const listenForParaphrase = useCallback(
+    (interimText: string, final: boolean) => {
+      const rank = rankRef.current;
+      if (!rank || !onScriptureRef.current) return;
+      const now = Date.now();
+      // Interim results arrive several times a second; a ranking takes a
+      // fraction of a millisecond but the answer only changes with new words.
+      if (!final && now - lastRankAt.current < 300) return;
+      lastRankAt.current = now;
+
+      // The sentence being spoken, ranked on its own words. Mixing in the
+      // sentence before it dilutes the match - half the words would be about
+      // something else - so a previous sentence is only borrowed when this one is
+      // too short to rank, which is a preacher pausing mid-thought.
+      const own = tokenize(interimText);
+      const tail = transcriptRef.current;
+      const window = (
+        own.length >= 8 ? own : final ? tail.slice(-12) : [...tail.slice(-(10 - own.length)), ...own]
+      ).join(" ");
+      if (window.split(" ").length < 5) return;
+
+      const hit = trackerRef.current.feed(rank(window), final, now);
+      if (!hit) return;
+      const query = `${hit.cue.name} ${hit.cue.chapter}:${hit.cue.verse}`;
+      // The same verse just handled as a reference or a quotation is not news.
+      if (lastRefRef.current?.startsWith(`${query}|`)) return;
+      const live = liveForRef.current.paraphrased;
+      lastRefRef.current = `${query}|`;
+      note("scripture", titleCase(query), "paraphrased", {
+        query,
+        confidence: hit.cue.confidence,
+        live,
+        alternatives: hit.alternatives.slice(0, 3).map((c) => ({
+          query: `${c.name} ${c.chapter}:${c.verse}`,
+          confidence: c.confidence,
+        })),
+      });
+      onScriptureRef.current(query, undefined, { why: "paraphrased", confidence: hit.cue.confidence, live });
     },
     [note],
   );
@@ -405,9 +476,10 @@ export function useAutoFollow(opts: {
       const now = Date.now();
       if (now - interimRef.current.at < 250) return;
       interimRef.current.at = now;
-      listenForScripture(sentence, false);
+      // A cited reference wins; only an unexplained sentence is tried as a paraphrase.
+      if (!listenForScripture(sentence, false)) listenForParaphrase(sentence, false);
     },
-    [listenForScripture],
+    [listenForScripture, listenForParaphrase],
   );
 
   /** The one place the room mic is opened, whichever engine is listening. */
@@ -474,7 +546,7 @@ export function useAutoFollow(opts: {
           if (!toks.length) return;
           transcriptRef.current = [...transcriptRef.current, ...toks].slice(-40);
           setHeard(transcriptRef.current.slice(-10).join(" "));
-          listenForScripture(ev.text, true);
+          if (!listenForScripture(ev.text, true)) listenForParaphrase(ev.text, true);
           evaluate();
         },
         localHostRef.current,
@@ -488,7 +560,7 @@ export function useAutoFollow(opts: {
       setStatus("error");
       mediaRef.current?.getTracks().forEach((t) => t.stop());
     }
-  }, [openMic, evaluate, listenForScripture]);
+  }, [openMic, evaluate, listenForScripture, listenForParaphrase]);
 
   const start = useCallback(async () => {
     if (engineRef.current === "local") return startLocal();
@@ -521,7 +593,10 @@ export function useAutoFollow(opts: {
         rec.ondataavailable = (ev) => {
           if (ev.data.size > 0 && ws.readyState === WebSocket.OPEN) ws.send(ev.data);
         };
-        rec.start(250);
+        // 100 ms, not 250: every chunk waits in the recorder until it is full
+        // before it is sent, so the chunk length is a floor on how soon any
+        // word can reach the recogniser.
+        rec.start(100);
       };
 
       ws.onmessage = (ev) => {
@@ -529,13 +604,20 @@ export function useAutoFollow(opts: {
           const msg = JSON.parse(ev.data);
           const alt = msg.channel?.alternatives?.[0];
           const text: string = alt?.transcript ?? "";
-          if (text && !msg.is_final) listenForScriptureInterim(text);
+          if (text && !msg.is_final) {
+            listenForScriptureInterim(text);
+            const now = Date.now();
+            if (now - interimEvalAt.current > 300) {
+              interimEvalAt.current = now;
+              evaluate(tokenize(text));
+            }
+          }
           if (text && msg.is_final) {
             const toks = tokenize(text);
             if (toks.length) {
               transcriptRef.current = [...transcriptRef.current, ...toks].slice(-40);
               setHeard(transcriptRef.current.slice(-10).join(" "));
-              listenForScripture(text, true);
+              if (!listenForScripture(text, true)) listenForParaphrase(text, true);
               evaluate();
             }
           }
@@ -553,7 +635,7 @@ export function useAutoFollow(opts: {
       setStatus("error");
       mediaRef.current?.getTracks().forEach((t) => t.stop());
     }
-  }, [evaluate, openMic, startLocal, listenForScripture, listenForScriptureInterim]);
+  }, [evaluate, openMic, startLocal, listenForScripture, listenForScriptureInterim, listenForParaphrase]);
 
   useEffect(() => stop, [stop]);
 

@@ -1703,15 +1703,17 @@
         <li><b>A reference read out</b> - &ldquo;turn with me to John chapter three verse sixteen&rdquo; - cues John 3:16. It acts while the sentence is still being spoken, not after the preacher pauses.</li>
         <li><b>The rest of the reading</b> follows without the book being named again. &ldquo;Verse nine&rdquo;, &ldquo;verses ten to twelve&rdquo;, &ldquo;look over at chapter four&rdquo; all carry on from the passage already up.</li>
         <li><b>A quotation</b>, with <b>Follow quoted scripture</b> on. Say the words of a verse without citing it - &ldquo;for God so loved the world&hellip;&rdquo; - and Vifug finds it. It only answers on a long, near-exact run of words that lands on exactly one verse, so a paraphrase does nothing and a common phrase like &ldquo;and the Lord spake unto Moses&rdquo; settles nothing.</li>
+        <li><b>A paraphrase</b>, also with <b>Follow quoted scripture</b> on. Say what a verse says in your own words - &ldquo;when you pray, go into your room, shut the door and pray to your Father in secret, and he will reward you openly&rdquo; - and Vifug ranks the verses that share your key words and offers the best one with a confidence figure. It works on speech still being spoken, so it can appear before the sentence ends, and it waits until the same verse has stayed on top for a moment so the preview does not flicker. It matches <i>words</i>, not meaning: &ldquo;lack nothing&rdquo; will not find &ldquo;shall not want&rdquo;, and a King James &ldquo;charity&rdquo; will not match a preacher's &ldquo;love&rdquo;. It ranks against whichever Bible version is selected, so a version that uses your preacher's wording finds more.</li>
         <li><b>A translation named out loud</b>, with <b>Switch translation when it is named</b> on. &ldquo;John three sixteen in the Message&rdquo; changes the version as well as the passage, and &ldquo;read that again in the Amplified&rdquo; re-reads what is already up. Only versions you have switched on in <span class="inline-code">Settings &rsaquo; Bible</span> count.</li>
       </ul>
       <p style="margin-top:12px"><b>Where a heard passage goes</b> is yours to choose, and it is chosen separately for each kind of detection. The two controls sit in the <b>AI Auto-Follow</b> panel on the main screen, where you can watch the preacher, not buried in Settings:</p>
       <ul>
         <li><b>Reference read out</b> - <b>Preview</b> or <b>Live</b>. A cited reference is unmistakable, so this is the one that is safe to send straight out.</li>
         <li><b>Verse quoted</b> - <b>Preview</b> or <b>Live</b> (shown when quoted scripture is on). A quotation is a judgement, so it starts on <b>Preview</b>.</li>
+        <li><b>Verse paraphrased</b> - <b>Preview</b> or <b>Live</b>. A ranked guess from the words heard, so it also starts on <b>Preview</b>, and is the one to think hardest about before sending <b>Live</b>.</li>
       </ul>
       <p><b>Preview</b> (the default for both) means the verse lands in the preview pane and you press GO LIVE, so a passage heard wrongly costs a glance. <b>Live</b> means straight to the congregation: for a service with nobody at the desk, at the price of the room seeing any mistake too. A sensible mix is a reference going <b>Live</b> while a quotation waits in <b>Preview</b>.</p>
-      <p>Each detection is listed under the panel with a <b>confidence</b> figure: a cited reference is 100%, and a quotation is as sure as its match, between about 70% and 98% depending on how long a run of the verse's words it heard. Anything that went to <b>Preview</b> has a <b>Present</b> button beside it, which puts it on the live screen in one press. Anything that went out says <b>Live</b>.</p>
+      <p>Each detection is listed under the panel with a <b>confidence</b> figure: a cited reference is 100%, and a quotation is as sure as its match, between about 70% and 98% depending on how long a run of the verse's words it heard, and a paraphrase is as sure as the share of the sentence's rare words it finds in the verse (it only speaks up at 75% or more, and never above 97%). Anything that went to <b>Preview</b> has a <b>Present</b> button beside it, which puts it on the live screen in one press. Anything that went out says <b>Live</b>.</p>
       <div class="callout">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
         <p>
@@ -1720,6 +1722,16 @@
           it on before the service rather than reaching for it mid-sermon.
         </p>
       </div>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:26px 0 10px">How fast it is</h3>
+      <p>
+        Most of the delay between a word being said and a verse appearing is the speech recognition, not Vifug. With the
+        <b>Deepgram</b> engine the words stream in while the preacher is still speaking, and Vifug acts on them as they arrive:
+        a cited reference, a paraphrase and the lines of a song are all picked up mid-sentence. Audio is sent in 100 ms
+        pieces, and matching a sentence against the whole Bible takes a fraction of a millisecond. The on-device
+        <b>Whisper</b> engine is slower by nature: it hears a whole phrase at a time and has no running transcript, so it
+        reacts after the preacher pauses. For a service where the speed matters, use Deepgram.
+      </p>
 
       <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:26px 0 10px">Watching it work</h3>
       <p>

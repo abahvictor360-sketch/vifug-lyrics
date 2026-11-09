@@ -41,6 +41,7 @@ import { useMedia, useAddMediaUrl, useDeleteMedia, useUploadMedia, useUpdateMedi
 import { useTranslations, useSaveTranslation, LANGS, langLabel } from "../hooks/use-translations";
 import { contextFromCaption } from "../lib/spoken-ref";
 import { findQuotedVerse, quoteToQuery, quoteConfidence } from "../lib/quoted-verse";
+import { rankVerses } from "../lib/verse-rank";
 import { useVerseCorpus } from "../hooks/use-verse-corpus";
 import { useAutoFollow, type FollowEvent } from "../hooks/use-autofollow";
 import { useMediaLevel } from "../hooks/use-media-level";
@@ -904,6 +905,16 @@ export default function OperatorPage() {
     [verseCorpus.corpusRef],
   );
 
+  // Paraphrase ranking over the same indexed Bible the quotation matcher uses,
+  // so it rides on "Follow quoted scripture" rather than needing a switch of its own.
+  const rank = useCallback(
+    (text: string) => {
+      const corpus = verseCorpus.corpusRef.current;
+      return corpus ? rankVerses(text, corpus) : [];
+    },
+    [verseCorpus.corpusRef],
+  );
+
   const autoFollow = useAutoFollow({
     slides: stage.slides,
     currentIndex: stage.liveIndex,
@@ -928,7 +939,9 @@ export default function OperatorPage() {
     scriptureLive: {
       reference: settings?.autoFollowScriptureLive ?? false,
       quoted: settings?.autoFollowQuoteLive ?? false,
+      paraphrased: settings?.autoFollowParaphraseLive ?? false,
     },
+    rankVerses: quotesOn ? rank : undefined,
     // A version named on its own re-cues whatever is already up in that
     // wording, rather than moving the passage.
     onVersion: (versionId) => {
@@ -1675,8 +1688,15 @@ export default function OperatorPage() {
             quotesOn={followScripture && (settings?.autoFollowQuotes ?? false)}
             referenceLive={settings?.autoFollowScriptureLive ?? false}
             quoteLive={settings?.autoFollowQuoteLive ?? false}
+            paraphraseLive={settings?.autoFollowParaphraseLive ?? false}
             onPolicy={(kind, live) =>
-              patchSettings(kind === "reference" ? { autoFollowScriptureLive: live } : { autoFollowQuoteLive: live })
+              patchSettings(
+                kind === "reference"
+                  ? { autoFollowScriptureLive: live }
+                  : kind === "quoted"
+                    ? { autoFollowQuoteLive: live }
+                    : { autoFollowParaphraseLive: live },
+              )
             }
             onPresent={(e) => {
               if (e.query) cueScriptureRef.current(e.query, e.versionId, true);
@@ -2557,6 +2577,7 @@ const WHY_LABEL: Record<FollowEvent["why"], string> = {
   sung: "sung",
   reference: "read out",
   quoted: "quoted",
+  paraphrased: "paraphrase",
   version: "version",
 };
 
@@ -2571,6 +2592,7 @@ function AutoFollowPanel({
   quotesOn,
   referenceLive,
   quoteLive,
+  paraphraseLive,
   onPolicy,
   onPresent,
 }: {
@@ -2585,7 +2607,8 @@ function AutoFollowPanel({
   quotesOn: boolean;
   referenceLive: boolean;
   quoteLive: boolean;
-  onPolicy: (kind: "reference" | "quoted", live: boolean) => void;
+  paraphraseLive: boolean;
+  onPolicy: (kind: "reference" | "quoted" | "paraphrased", live: boolean) => void;
   /** Put a detection on the live screen now (it was waiting in Preview). */
   onPresent: (e: FollowEvent) => void;
 }) {
@@ -2650,6 +2673,7 @@ function AutoFollowPanel({
           {([
             ["reference", "Reference read out", referenceLive, true],
             ["quoted", "Verse quoted", quoteLive, quotesOn],
+            ["paraphrased", "Verse paraphrased", paraphraseLive, quotesOn],
           ] as const)
             .filter(([, , , shown]) => shown)
             .map(([kind, label, isLive]) => (

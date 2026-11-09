@@ -86,6 +86,12 @@ export type AppSettings = {
    */
   autoFollowQuoteLive?: boolean;
   /**
+   * And for a verse the preacher PARAPHRASES (not cited, not read out). The
+   * least certain of the three - it is a ranked guess from the words heard - so
+   * it waits in Preview unless this is switched on.
+   */
+  autoFollowParaphraseLive?: boolean;
+  /**
    * Which Whisper to run locally. The heavy ones are deliberately offered:
    * a laptop driving a projector has nothing else to do, and a church that
    * wants the accuracy should be allowed to wait for the download.
