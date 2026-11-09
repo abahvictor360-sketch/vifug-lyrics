@@ -28,6 +28,7 @@ import { publicDomainSongs } from "./seed-data/public-domain";
 import { htmlToLyrics, extractSongMeta, decodeEntities } from "./lib/html-to-lyrics";
 import { vetLyrics, parseSongSearch } from "./lib/lyrics-vet";
 import { castPut, castGet, castList, ROOM_RE, KEY_RE } from "./lib/cast-store";
+import { loadPolicy, savePolicy, sanitisePolicy, publicPolicy, verifyLicence, isAdmin } from "./lib/entitlement";
 import { getLiveState, setLiveState, subscribeLive } from "./lib/live-store";
 import {
   getStage, setStage, subscribeStage,
@@ -681,6 +682,34 @@ const app = new Hono()
       return c.json({ error: "couldn't reach the song database - check the network and try again" }, 502);
     }
     return c.json({ results: parseSongSearch(json), source: "LRCLIB (lrclib.net)" }, 200);
+  })
+
+  // ---------- SUBSCRIPTION / LICENCE SWITCH ----------
+  // What every copy of Vifug asks on start: is a paid plan being required yet?
+  // "off" until the owner flips it. Public (clients need it before anyone has
+  // signed in) and never includes licence-key hashes.
+  .get("/entitlement", async (c) => {
+    c.header("Cache-Control", "no-store");
+    return c.json({ policy: publicPolicy(await loadPolicy()), now: Date.now() }, 200);
+  })
+  // Check a licence key someone typed in. Rate-limit friendly: one cheap hash.
+  .post("/entitlement/verify", async (c) => {
+    const body = await c.req.json<{ key?: string }>().catch(() => ({}) as { key?: string });
+    const key = typeof body.key === "string" ? body.key.slice(0, 200) : "";
+    const { valid } = verifyLicence(key, await loadPolicy());
+    return c.json({ valid }, 200);
+  })
+  // Owner-only: change the policy without shipping an app. Disabled unless
+  // ENTITLEMENT_ADMIN_TOKEN (16+ characters) is set on the server.
+  .put("/entitlement", async (c) => {
+    if (!isAdmin(c.req.header("x-admin-token"), process.env.ENTITLEMENT_ADMIN_TOKEN)) {
+      return c.json({ error: "not allowed" }, 403);
+    }
+    const body = await c.req.json<unknown>().catch(() => null);
+    const next = sanitisePolicy(body, await loadPolicy());
+    if ("error" in next) return c.json({ error: next.error }, 400);
+    await savePolicy(next.policy);
+    return c.json({ policy: publicPolicy(next.policy) }, 200);
   })
 
   // ---------- PHONE CAMERA / SCREEN CAST HANDSHAKE ----------

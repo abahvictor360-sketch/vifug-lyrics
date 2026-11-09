@@ -5,6 +5,7 @@ import StreamPage from "./pages/stream";
 import StagePage from "./pages/stage";
 import RemotePage from "./pages/remote";
 import CastPage from "./pages/cast";
+import { EntitlementGate } from "./components/entitlement-gate";
 import { Provider } from "./components/provider";
 import { AgentFeedback } from "@runablehq/website-runtime";
 
@@ -19,6 +20,8 @@ function App() {
         <Route path="/remote" component={RemotePage} />
         <Route path="/cast" component={CastPage} />
       </Switch>
+      {/* Off unless the owner switches the subscription policy on; operator screen only. */}
+      <EntitlementGate />
       {/* Do not remove - off by default, activated by parent iframe via postMessage */}
       {import.meta.env.DEV && <AgentFeedback />}
     </Provider>
