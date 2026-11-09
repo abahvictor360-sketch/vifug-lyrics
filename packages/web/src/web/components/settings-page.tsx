@@ -55,6 +55,7 @@ import { hexToRgba } from "./announcement-ticker";
 import { MediaPicker } from "./media-picker";
 import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-media";
 import { MediaImg } from "./media-el";
+import { StreamSourceCard } from "./stream-source-card";
 import { APP_MODES, appModeOf, type AppMode } from "../lib/app-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogoOverlay, DEFAULT_LOGO, type LogoSettings, type LogoPosition } from "./logo-overlay";
@@ -2567,6 +2568,10 @@ function StreamingSection({
       </Group>
 
       <ScreensGroup settings={settings} patchSettings={patchSettings} desktop={desktop} />
+
+      <Group title="Stream / OBS source" icon={Radio}>
+        <StreamSourceCard settings={settings} patchSettings={patchSettings} />
+      </Group>
 
       <Group title="Outputs & companion screens" icon={Monitor}>
         {/* Notes the band reads on the stage display. Content rather than

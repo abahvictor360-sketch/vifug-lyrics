@@ -667,7 +667,7 @@
       <ol class="steps">
         <li>
           <h3>Add Vifug as a Browser source in OBS</h3>
-          <p>In OBS: <span class="inline-code">Sources → + → Browser</span>. Paste the stream URL from <span class="inline-code">Settings → Streaming &amp; output → Outputs &amp; companion screens</span>, and set Width and Height to match the canvas you chose above. Leave the background transparent - do not tick "Shutdown source when not visible", or the overlay reconnects every scene change.</p>
+          <p>In OBS: <span class="inline-code">Sources → + → Browser</span>. Paste the stream URL from <span class="inline-code">Settings → Streaming &amp; output → Stream / OBS source</span> (there is a copy button next to it), and set Width and Height to match the canvas you chose above. Leave the background transparent - do not tick "Shutdown source when not visible", or the overlay reconnects every scene change.</p>
           <p>Quicker route: <span class="inline-code">Settings → Streaming &amp; output → Teleport to OBS</span> adds the source for you.</p>
         </li>
         <li>
@@ -698,10 +698,11 @@
 
       <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">The Audio Mixer</h3>
       <p>
-        The <b>Stream / OBS source</b> panel in the sidebar - the one with the copy-URL box - also
-        carries an <b>Audio Mixer</b> with a channel strip for each audio source the app actually
-        has, so a mid-service audio check doesn't mean leaving the operator screen to dig through
-        Settings.
+        The operator screen's sidebar carries an <b>Audio Mixer</b> with a channel strip for each
+        audio source the app actually has, so a mid-service audio check doesn't mean leaving the
+        operator screen to dig through Settings. (The OBS source address and its layout used to sit
+        beside it; they are set up once, so they now live in
+        <span class="inline-code">Settings &rsaquo; Streaming &amp; output &rsaquo; Stream / OBS source</span>.)
       </p>
       <figure style="margin:22px 0">
         <img width="1042" height="712" src="img/app-stream-panel.png" alt="The Audio Mixer with a Microphone channel and a Media channel, each with its own mute button" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
@@ -1073,7 +1074,7 @@
 
       <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">The Audio Mixer, and the mute you want mid-service</h3>
       <p>
-        The <b>Audio Mixer</b> sits under Stream / OBS source on the operator screen and has three
+        The <b>Audio Mixer</b> sits in the sidebar of the operator screen and has three
         strips:
       </p>
       <ul style="margin:10px 0 0 18px;line-height:1.75">
