@@ -56,6 +56,7 @@ import { MediaPicker } from "./media-picker";
 import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-media";
 import { MediaImg } from "./media-el";
 import { StreamSourceCard } from "./stream-source-card";
+import { AddBibleVersion } from "./add-bible-version";
 import { APP_MODES, appModeOf, type AppMode } from "../lib/app-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogoOverlay, DEFAULT_LOGO, type LogoSettings, type LogoPosition } from "./logo-overlay";
@@ -1464,7 +1465,7 @@ function useBibleLangPacks(): { key: string; label: string }[] {
   return useMemo(
     () =>
       (manifest.data?.versions ?? [])
-        .filter((v) => v.lang !== "en")
+        .filter((v) => v.lang !== "en" && !(v as { user?: boolean }).user)
         .map((v) => ({ key: v.id, label: v.language || v.label })),
     [manifest.data],
   );
@@ -1474,7 +1475,7 @@ function useBibleLangPacks(): { key: string; label: string }[] {
 function useEnglishVersionCount(): number {
   const manifest = useBibleManifest();
   return useMemo(
-    () => (manifest.data?.versions ?? []).filter((v) => v.lang === "en").length,
+    () => (manifest.data?.versions ?? []).filter((v) => v.lang === "en" && !(v as { user?: boolean }).user).length,
     [manifest.data],
   );
 }
@@ -1525,6 +1526,7 @@ function BibleSection({
             </label>
           ))}
         </div>
+        <AddBibleVersion />
       </Group>
 
       <Group title="Reference & verse colors" icon={Palette}>
