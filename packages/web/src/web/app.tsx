@@ -4,6 +4,7 @@ import ProjectorPage from "./pages/projector";
 import StreamPage from "./pages/stream";
 import StagePage from "./pages/stage";
 import RemotePage from "./pages/remote";
+import CastPage from "./pages/cast";
 import { Provider } from "./components/provider";
 import { AgentFeedback } from "@runablehq/website-runtime";
 
@@ -16,6 +17,7 @@ function App() {
         <Route path="/stream" component={StreamPage} />
         <Route path="/stage" component={StagePage} />
         <Route path="/remote" component={RemotePage} />
+        <Route path="/cast" component={CastPage} />
       </Switch>
       {/* Do not remove - off by default, activated by parent iframe via postMessage */}
       {import.meta.env.DEV && <AgentFeedback />}

@@ -7,6 +7,8 @@ import { fetchCubeText } from "../hooks/use-luts";
 import type { LiveCapture, CaptureLayout } from "../lib/live-bus";
 import { useRoutedAudio } from "../hooks/use-audio-output";
 import { useDialog } from "../hooks/use-dialog";
+import QRCode from "qrcode";
+import { castPageUrl, newRoomCode, senderPresent, isCastSource, castRoomOf, openCastStream, closeCastStream } from "../lib/cast";
 
 /**
  * Live screen/window mirroring.
@@ -36,6 +38,11 @@ async function openSourceStream(
   audioSource: CaptureAudioSource = "none",
   micDeviceId?: string | null,
 ): Promise<MediaStream> {
+  // A phone camera or screen cast arrives over the network, not from a local
+  // device: this screen connects to the sender itself. The stream is empty
+  // until the phone connects, then fills with its video and sound.
+  if (isCastSource(sourceId)) return openCastStream(castRoomOf(sourceId));
+
   const wantsCaptureAudio = audioSource === "capture";
   let stream: MediaStream;
 
@@ -247,6 +254,7 @@ export function CaptureView({
         // The effect can be torn down mid-request; stop the orphan stream so
         // the OS capture indicator doesn't stay on after switching sources.
         if (cancelled) {
+          closeCastStream(s);
           s.getTracks().forEach((t) => t.stop());
           return;
         }
@@ -259,6 +267,7 @@ export function CaptureView({
 
     return () => {
       cancelled = true;
+      closeCastStream(stream);
       stream?.getTracks().forEach((t) => t.stop());
     };
   }, [sourceId, audioSource, micDeviceId]);
@@ -316,6 +325,7 @@ export function CapturePicker({
   const [layout, setLayout] = useState<CaptureLayout>("full");
   // The source being previewed before it is cued.
   const [chosen, setChosen] = useState<CaptureSource | null>(null);
+  const [phoneOpen, setPhoneOpen] = useState(false);
   const [sources, setSources] = useState<CaptureSource[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const desktop = getDesktopAPI();
@@ -419,6 +429,13 @@ export function CapturePicker({
             </button>
           ))}
         </div>
+
+        <PhoneCameraCard
+          open={phoneOpen}
+          onToggle={() => setPhoneOpen((v) => !v)}
+          selected={chosen?.id ?? null}
+          onChoose={(src) => setChosen(src)}
+        />
 
         {chosen && (
           <div className="mb-4 rounded-md border border-[var(--v-border)] bg-[var(--v-surface)] p-3">
@@ -529,5 +546,111 @@ function OnAirMock({ source, layout }: { source: CaptureSource; layout: CaptureL
         </div>
       )}
     </div>
+  );
+}
+
+const ROOM_KEY = "vifug:cast-room";
+function savedRoom(): string {
+  try {
+    const r = window.localStorage.getItem(ROOM_KEY);
+    if (r && /^[a-z0-9]{6,16}$/.test(r)) return r;
+    const fresh = newRoomCode();
+    window.localStorage.setItem(ROOM_KEY, fresh);
+    return fresh;
+  } catch {
+    return newRoomCode();
+  }
+}
+
+/**
+ * Pair a phone (or another computer) as a capture source: a QR code to scan,
+ * a light that goes green when it is sending, and the source itself to pick.
+ * The same code is kept between sessions so the phone's saved link keeps working.
+ */
+function PhoneCameraCard({
+  open,
+  onToggle,
+  selected,
+  onChoose,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  selected: string | null;
+  onChoose: (s: CaptureSource) => void;
+}) {
+  const [room, setRoom] = useState(savedRoom);
+  const [qr, setQr] = useState("");
+  const [present, setPresent] = useState(false);
+  const url = castPageUrl(room);
+  const source: CaptureSource = { id: `cast:${room}`, name: "Phone / remote camera", kind: "camera", thumbnail: "" };
+
+  useEffect(() => {
+    if (!open) return;
+    let off = false;
+    void QRCode.toDataURL(url, { margin: 1, width: 240, color: { dark: "#0a0a0c", light: "#ffffff" } }).then((d) => !off && setQr(d));
+    const poll = () => void senderPresent(room).then((p) => !off && setPresent(p));
+    poll();
+    const t = setInterval(poll, 2500);
+    return () => {
+      off = true;
+      clearInterval(t);
+    };
+  }, [open, room, url]);
+
+  return (
+    <section className="mb-4 rounded-md border border-[var(--v-border)] bg-[var(--v-surface)] p-3 text-left">
+      <button type="button" onClick={onToggle} className="flex w-full items-center justify-between text-left" aria-expanded={open}>
+        <span className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
+          <Video className="h-3 w-3" /> Phone camera or screen cast over Wi-Fi
+        </span>
+        <span className="text-[12px] text-[var(--v-accent)]">{open ? "Hide" : "Connect a phone"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 flex flex-wrap items-start gap-4">
+          {qr ? <img src={qr} alt="QR code to open the phone sender page" className="h-40 w-40 rounded bg-white" /> : <div className="h-40 w-40 rounded bg-[var(--v-surface-3)]" />}
+          <div className="min-w-0 flex-1 text-[12px] text-[var(--v-text-faint)]">
+            <ol className="list-decimal space-y-1 pl-4">
+              <li>Put the phone on the same Wi-Fi as this computer.</li>
+              <li>Scan the code with the phone&rsquo;s camera and open the link.</li>
+              <li>Tap <b>Send my camera</b> (or <b>Share this screen</b> from a computer).</li>
+              <li>Pick <b>Phone / remote camera</b> below.</li>
+            </ol>
+            <p className="mt-2 flex items-center gap-1.5">
+              <span className={`inline-block h-2 w-2 rounded-full ${present ? "bg-green-500" : "bg-[var(--v-text-faint)]"}`} />
+              {present ? "Phone is sending" : "Waiting for a phone…"}
+            </p>
+            <p className="mt-1 break-all text-[11px]">{url}</p>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => onChoose(source)}
+                className={`rounded-md border px-3 py-1.5 text-xs ${selected === source.id ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]" : "border-[var(--v-border)] hover:bg-[var(--v-surface-3)]"}`}
+              >
+                Use Phone / remote camera
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const fresh = newRoomCode();
+                  try {
+                    window.localStorage.setItem(ROOM_KEY, fresh);
+                  } catch {
+                    /* keep the code for this session only */
+                  }
+                  setRoom(fresh);
+                  setPresent(false);
+                }}
+                className="rounded-md border border-[var(--v-border)] px-3 py-1.5 text-xs hover:bg-[var(--v-surface-3)]"
+              >
+                New code
+              </button>
+            </div>
+            <p className="mt-2 text-[11px]">
+              Pairing uses the internet for a moment; the video itself goes straight over your Wi-Fi. Anyone with this code could send a picture, so make a new one if it was shared.
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

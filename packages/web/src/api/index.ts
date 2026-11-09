@@ -27,6 +27,7 @@ import { parseProPresenter } from "./lib/propresenter";
 import { publicDomainSongs } from "./seed-data/public-domain";
 import { htmlToLyrics, extractSongMeta, decodeEntities } from "./lib/html-to-lyrics";
 import { vetLyrics, parseSongSearch } from "./lib/lyrics-vet";
+import { castPut, castGet, castList, ROOM_RE, KEY_RE } from "./lib/cast-store";
 import { getLiveState, setLiveState, subscribeLive } from "./lib/live-store";
 import {
   getStage, setStage, subscribeStage,
@@ -680,6 +681,29 @@ const app = new Hono()
       return c.json({ error: "couldn't reach the song database - check the network and try again" }, 502);
     }
     return c.json({ results: parseSongSearch(json), source: "LRCLIB (lrclib.net)" }, 200);
+  })
+
+  // ---------- PHONE CAMERA / SCREEN CAST HANDSHAKE ----------
+  // The picture itself goes device to device (WebRTC); these only carry the
+  // small "here is how to reach me" messages between the sender and the screens.
+  // Each key has one writer, so nothing can overwrite anything else.
+  .put("/cast/:room/:key", async (c) => {
+    const { room, key } = c.req.param();
+    if (!ROOM_RE.test(room) || !KEY_RE.test(key)) return c.json({ error: "bad cast key" }, 400);
+    const body = await c.req.json<unknown>().catch(() => null);
+    const ok = await castPut(room, key, body);
+    return ok ? c.json({ ok: true }, 200) : c.json({ error: "too large" }, 413);
+  })
+  .get("/cast/:room/list/:prefix", async (c) => {
+    const { room, prefix } = c.req.param();
+    if (!ROOM_RE.test(room) || !/^(hello|p|v):$|^(hello|p|v)$/.test(prefix)) return c.json({ error: "bad cast key" }, 400);
+    return c.json({ entries: await castList(room, prefix.endsWith(":") ? prefix : `${prefix}:`), now: Date.now() }, 200);
+  })
+  .get("/cast/:room/:key", async (c) => {
+    const { room, key } = c.req.param();
+    if (!ROOM_RE.test(room) || !KEY_RE.test(key)) return c.json({ error: "bad cast key" }, 400);
+    const e = await castGet(room, key);
+    return c.json({ payload: e?.payload ?? null, at: e?.at ?? 0, now: Date.now() }, 200);
   })
 
   // ---------- PRESENTATIONS ----------
