@@ -98,3 +98,17 @@ test("matching is fast enough to run on every sentence", () => {
   // A sentence arrives every few seconds; anything in this range is free.
   expect(each).toBeLessThan(25);
 });
+
+test("quote confidence rises with the length of the match and never reaches 100", async () => {
+  const { quoteConfidence } = await import("./quoted-verse");
+  const six = quoteConfidence(6);
+  const nine = quoteConfidence(9);
+  const twelve = quoteConfidence(12);
+  expect(six).toBeLessThan(nine);
+  expect(nine).toBeLessThan(twelve);
+  expect(six).toBeGreaterThanOrEqual(60);
+  expect(twelve).toBeLessThan(100); // only a cited reference earns 100
+  // Out-of-range input is clamped rather than producing nonsense.
+  expect(quoteConfidence(1)).toBe(six);
+  expect(quoteConfidence(99)).toBe(twelve);
+});

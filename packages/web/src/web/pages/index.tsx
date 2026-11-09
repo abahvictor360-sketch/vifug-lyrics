@@ -39,7 +39,7 @@ import { UpdateDialog } from "../components/update-dialog";
 import { useMedia, useAddMediaUrl, useDeleteMedia, useUploadMedia, useUpdateMedia, type MediaItem } from "../hooks/use-media";
 import { useTranslations, useSaveTranslation, LANGS, langLabel } from "../hooks/use-translations";
 import { contextFromCaption } from "../lib/spoken-ref";
-import { findQuotedVerse, quoteToQuery } from "../lib/quoted-verse";
+import { findQuotedVerse, quoteToQuery, quoteConfidence } from "../lib/quoted-verse";
 import { useVerseCorpus } from "../hooks/use-verse-corpus";
 import { useAutoFollow, type FollowEvent } from "../hooks/use-autofollow";
 import { useMediaLevel } from "../hooks/use-media-level";
@@ -889,7 +889,7 @@ export default function OperatorPage() {
       const corpus = verseCorpus.corpusRef.current;
       if (!corpus) return null;
       const hit = findQuotedVerse(sentence, corpus);
-      return hit ? quoteToQuery(hit) : null;
+      return hit ? { query: quoteToQuery(hit), confidence: quoteConfidence(hit.words) } : null;
     },
     [verseCorpus.corpusRef],
   );
@@ -912,8 +912,13 @@ export default function OperatorPage() {
     // Into Preview by default: the operator presses GO LIVE, so a reference
     // heard wrongly costs a glance rather than the congregation's attention.
     // Settings → AI can hand that over when nobody is at the desk.
-    onScripture: (query, versionId) =>
-      cueScriptureRef.current(query, versionId, settings?.autoFollowScriptureLive ?? false),
+    // Where it goes was decided by the hook, per kind of detection, and is in
+    // the log it keeps - so this just carries it out.
+    onScripture: (query, versionId, info) => cueScriptureRef.current(query, versionId, info.live),
+    scriptureLive: {
+      reference: settings?.autoFollowScriptureLive ?? false,
+      quoted: settings?.autoFollowQuoteLive ?? false,
+    },
     // A version named on its own re-cues whatever is already up in that
     // wording, rather than moving the passage.
     onVersion: (versionId) => {
@@ -1648,6 +1653,16 @@ export default function OperatorPage() {
             events={autoFollow.events}
             live={ctrl.status === "live"}
             onToggle={(v) => patchSettings({ autoFollow: v })}
+            scriptureOn={settings?.autoFollowScripture ?? false}
+            quotesOn={settings?.autoFollowQuotes ?? false}
+            referenceLive={settings?.autoFollowScriptureLive ?? false}
+            quoteLive={settings?.autoFollowQuoteLive ?? false}
+            onPolicy={(kind, live) =>
+              patchSettings(kind === "reference" ? { autoFollowScriptureLive: live } : { autoFollowQuoteLive: live })
+            }
+            onPresent={(e) => {
+              if (e.query) cueScriptureRef.current(e.query, e.versionId, true);
+            }}
           />
 
           {/* Stream / OBS browser source */}
@@ -2519,6 +2534,12 @@ function AutoFollowPanel({
   events,
   live,
   onToggle,
+  scriptureOn,
+  quotesOn,
+  referenceLive,
+  quoteLive,
+  onPolicy,
+  onPresent,
 }: {
   enabled: boolean;
   status: string;
@@ -2526,6 +2547,14 @@ function AutoFollowPanel({
   events: FollowEvent[];
   live: boolean;
   onToggle: (v: boolean) => void;
+  /** Following spoken Scripture is on - otherwise there is nothing to place. */
+  scriptureOn: boolean;
+  quotesOn: boolean;
+  referenceLive: boolean;
+  quoteLive: boolean;
+  onPolicy: (kind: "reference" | "quoted", live: boolean) => void;
+  /** Put a detection on the live screen now (it was waiting in Preview). */
+  onPresent: (e: FollowEvent) => void;
 }) {
   const label =
     status === "listening"
@@ -2578,6 +2607,48 @@ function AutoFollowPanel({
         </p>
       )}
 
+      {/* Where a heard passage goes, decided per kind of detection and put
+          here, where the preacher can be watched, rather than in Settings.
+          A reference read out is unmistakable and a quotation is a judgement,
+          so they are set apart: the first can safely go straight out while
+          the second waits for you, with its confidence beside it. */}
+      {enabled && scriptureOn && (
+        <div className="mt-2 space-y-1.5">
+          {([
+            ["reference", "Reference read out", referenceLive, true],
+            ["quoted", "Verse quoted", quoteLive, quotesOn],
+          ] as const)
+            .filter(([, , , shown]) => shown)
+            .map(([kind, label, isLive]) => (
+              <div key={kind} className="flex items-center gap-2 text-[11px]">
+                <span className="min-w-0 flex-1 truncate text-[var(--v-text-dim)]">{label}</span>
+                <div role="group" aria-label={`${label}: where it goes`} className="flex shrink-0 overflow-hidden rounded-md border border-[var(--v-border)]">
+                  {([
+                    [false, "Preview"],
+                    [true, "Live"],
+                  ] as const).map(([v, text]) => (
+                    <button
+                      key={text}
+                      type="button"
+                      onClick={() => onPolicy(kind, v)}
+                      aria-pressed={isLive === v}
+                      className={`px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v-accent)] ${
+                        isLive === v
+                          ? v
+                            ? "bg-[var(--v-live)] font-semibold text-white"
+                            : "bg-[var(--v-accent-soft)] font-semibold text-[var(--v-accent)]"
+                          : "text-[var(--v-text-faint)] hover:bg-[var(--v-surface-2)]"
+                      }`}
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+
       {/* What it has actually done, newest first.
           Handing the service to a machine is only comfortable if you can
           watch it work: without this, a slide moving on its own looks exactly
@@ -2592,6 +2663,27 @@ function AutoFollowPanel({
                 <Music4 className="h-3 w-3 shrink-0 text-[var(--v-accent)]" />
               )}
               <span className="min-w-0 flex-1 truncate text-[var(--v-text-dim)]">{e.what}</span>
+              {e.kind === "scripture" && e.confidence !== undefined && (
+                <span
+                  title="How sure the match is"
+                  className={`shrink-0 tabular-nums ${e.confidence >= 90 ? "text-[var(--v-ok)]" : "text-amber-500"}`}
+                >
+                  {e.confidence}%
+                </span>
+              )}
+              {e.kind === "scripture" && e.live === true && (
+                <span className="shrink-0 rounded bg-[var(--v-live)] px-1 text-[10px] font-bold uppercase text-white">Live</span>
+              )}
+              {e.kind === "scripture" && e.live === false && e.query && (
+                <button
+                  type="button"
+                  onClick={() => onPresent(e)}
+                  aria-label={`Present ${e.what} now`}
+                  className="shrink-0 rounded bg-[var(--v-accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--v-accent)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v-accent)]"
+                >
+                  Present
+                </button>
+              )}
               <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">
                 {WHY_LABEL[e.why]}
               </span>

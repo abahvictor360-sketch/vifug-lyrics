@@ -78,6 +78,13 @@ export type AppSettings = {
    */
   autoFollowScriptureLive?: boolean;
   /**
+   * The same choice for a verse the preacher only QUOTES. Separate from
+   * autoFollowScriptureLive because the two are not equally trustworthy: a
+   * reference read out is unmistakable, a quotation is a judgement. Off by
+   * default, so a guess waits in Preview with its confidence shown.
+   */
+  autoFollowQuoteLive?: boolean;
+  /**
    * Which Whisper to run locally. The heavy ones are deliberately offered:
    * a laptop driving a projector has nothing else to do, and a church that
    * wants the accuracy should be allowed to wait for the download.

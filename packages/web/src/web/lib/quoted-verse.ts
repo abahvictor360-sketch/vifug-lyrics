@@ -180,6 +180,21 @@ export function findQuotedVerse(sentence: string, corpus: VerseCorpus): QuoteHit
   return null;
 }
 
+/**
+ * How sure a quotation match is, as a percentage an operator can read.
+ *
+ * The match is the longest run of the sentence's words found in exactly one
+ * verse, so the run's length is the whole story: the shortest accepted run is
+ * a reasonable guess, the longest a near-certainty. Never 100 - only a cited
+ * reference earns that - because a quotation can still be a verse that merely
+ * shares a sentence with another version's wording.
+ */
+export function quoteConfidence(words: number): number {
+  const span = Math.max(1, MAX_RUN - MIN_RUN);
+  const t = Math.min(1, Math.max(0, (words - MIN_RUN) / span));
+  return Math.round(68 + t * 30);
+}
+
 /** The form hooks/use-bible.ts's parseReference already understands. */
 export function quoteToQuery(hit: QuoteHit): string {
   return `${hit.name} ${hit.chapter}:${hit.verse}`;

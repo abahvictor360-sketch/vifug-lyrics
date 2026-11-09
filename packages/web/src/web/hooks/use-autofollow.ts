@@ -59,7 +59,17 @@ export type FollowEvent = {
   /** The slide's first line, or the reference. */
   what: string;
   why: "sung" | "reference" | "quoted" | "version";
+  /** Scripture only: what to cue to present it again, and in which version. */
+  query?: string;
+  versionId?: string;
+  /** 0-100. A cited reference is 100; a quotation is as sure as its match. */
+  confidence?: number;
+  /** Scripture only: it went straight to the live screen (false = Preview). */
+  live?: boolean;
 };
+
+/** Where a heard passage goes, decided separately for each kind of detection. */
+export type ScriptureGoesLive = { reference: boolean; quoted: boolean };
 
 /** Enough to see the last minute of a service, not enough to grow forever. */
 const EVENT_LIMIT = 12;
@@ -85,7 +95,16 @@ export function useAutoFollow(opts: {
    * A passage the preacher just called for, as "john 3:16", with the version
    * they named if they named one.
    */
-  onScripture?: (query: string, versionId?: string) => void;
+  onScripture?: (
+    query: string,
+    versionId: string | undefined,
+    info: { why: "reference" | "quoted"; confidence: number; live: boolean },
+  ) => void;
+  /**
+   * Which kinds of detection go straight to the live screen and which wait in
+   * Preview. Absent = both wait.
+   */
+  scriptureLive?: ScriptureGoesLive;
   /**
    * The preacher asked for a different wording of what is already up -
    * "read that again in the Message" - without naming a reference.
@@ -98,7 +117,7 @@ export function useAutoFollow(opts: {
    * Supplied rather than done here because it needs the Bible text loaded,
    * which is the app's business and not this hook's.
    */
-  matchQuote?: (sentence: string) => string | null;
+  matchQuote?: (sentence: string) => { query: string; confidence: number } | null;
   /**
    * The passage already on screen. A preacher names the book once and then
    * walks it - "verse eighteen", "and nineteen", "turn over to chapter four"
@@ -121,17 +140,21 @@ export function useAutoFollow(opts: {
     inputDeviceId, noiseSuppression = true, bookNames, onScripture,
     scriptureContext, engine = "deepgram", localModel, language,
     onVersion, versionIds, matchQuote, localModelHost, accentedEnglish = false,
+    scriptureLive,
   } = opts;
   const [status, setStatus] = useState<AutoFollowStatus>("off");
   const [heard, setHeard] = useState("");
   const [events, setEvents] = useState<FollowEvent[]>([]);
   const eventSeq = useRef(0);
-  const note = useCallback((kind: FollowEvent["kind"], what: string, why: FollowEvent["why"]) => {
-    setEvents((prev) => [
-      { id: eventSeq.current++, at: Date.now(), kind, what, why },
-      ...prev,
-    ].slice(0, EVENT_LIMIT));
-  }, []);
+  const note = useCallback(
+    (kind: FollowEvent["kind"], what: string, why: FollowEvent["why"], extra?: Partial<FollowEvent>) => {
+      setEvents((prev) => [
+        { id: eventSeq.current++, at: Date.now(), kind, what, why, ...extra },
+        ...prev,
+      ].slice(0, EVENT_LIMIT));
+    },
+    [],
+  );
 
   /** Model download progress, 0-1, while a local model is being fetched. */
   const [modelProgress, setModelProgress] = useState<number | null>(null);
@@ -159,6 +182,8 @@ export function useAutoFollow(opts: {
   versionIdsRef.current = versionIds;
   const matchQuoteRef = useRef(matchQuote);
   matchQuoteRef.current = matchQuote;
+  const liveForRef = useRef<ScriptureGoesLive>(scriptureLive ?? { reference: false, quoted: false });
+  liveForRef.current = scriptureLive ?? { reference: false, quoted: false };
   const contextRef = useRef(scriptureContext ?? null);
   contextRef.current = scriptureContext ?? null;
   const engineRef = useRef(engine);
@@ -315,9 +340,12 @@ export function useAutoFollow(opts: {
        * verse happens to share the fragment.
        */
       let quoted = false;
+      let confidence = 100; // a cited reference is unmistakable
       if (!query && final && matchQuoteRef.current) {
-        query = matchQuoteRef.current(sentence);
-        quoted = query !== null;
+        const hit = matchQuoteRef.current(sentence);
+        query = hit?.query ?? null;
+        confidence = hit?.confidence ?? 0;
+        quoted = hit !== null;
       }
 
       if (!query) {
@@ -338,12 +366,17 @@ export function useAutoFollow(opts: {
       const key = `${query}|${version ?? ""}`;
       if (key === lastRefRef.current) return;
       lastRefRef.current = key;
+      const why = quoted ? "quoted" : "reference";
+      // Decided here, once, so the screen and the log can never disagree about
+      // whether this one went out: the log says what the cue was told.
+      const live = liveForRef.current[why];
       note(
         "scripture",
         version ? `${titleCase(query)} (${version.toUpperCase()})` : titleCase(query),
-        quoted ? "quoted" : "reference",
+        why,
+        { query, versionId: version ?? undefined, confidence, live },
       );
-      onScriptureRef.current(query, version ?? undefined);
+      onScriptureRef.current(query, version ?? undefined, { why, confidence, live });
     },
     [note],
   );
