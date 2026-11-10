@@ -342,11 +342,44 @@ export function ThemeDesigner({
             <section>
               <p className={label}>Font</p>
               <FontPicker value={row.fontFamily ?? null} onChange={(v) => change({ fontFamily: v })} />
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-[11px] text-[var(--v-text-faint)]">
+                  <span>Font size {row.fontSize ? `${row.fontSize}px` : "(auto-fit)"}</span>
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={!row.fontSize}
+                      onChange={(e) => change({ fontSize: e.target.checked ? null : 64 })}
+                    />
+                    Auto-fit
+                  </label>
+                </div>
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    type="range"
+                    min={24}
+                    max={240}
+                    step={2}
+                    value={row.fontSize ?? 64}
+                    onChange={(e) => change({ fontSize: Number(e.target.value) })}
+                    className="min-w-0 flex-1"
+                    aria-label="Font size"
+                  />
+                  <input
+                    type="number"
+                    min={12}
+                    max={240}
+                    placeholder="auto"
+                    value={row.fontSize ?? ""}
+                    onChange={(e) => change({ fontSize: e.target.value === "" ? null : Number(e.target.value) })}
+                    className={`${field} w-16`}
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+                  Auto-fit sizes the words to fill the box. A fixed size stays put and shows on the canvas straight away.
+                </p>
+              </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <label className="text-[11px] text-[var(--v-text-faint)]">
-                  Size {row.fontSize ? `${row.fontSize}px` : "(auto-fit)"}
-                  <input type="number" min={12} max={240} placeholder="auto" value={row.fontSize ?? ""} onChange={(e) => change({ fontSize: e.target.value === "" ? null : Number(e.target.value) })} className={field} />
-                </label>
                 <label className="text-[11px] text-[var(--v-text-faint)]">
                   Weight
                   <select value={row.fontWeight ?? 600} onChange={(e) => change({ fontWeight: Number(e.target.value) })} className={field}>

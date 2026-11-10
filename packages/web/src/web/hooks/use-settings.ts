@@ -155,6 +155,13 @@ export type AppSettings = {
    */
   bibleTheme?: ThemeOverride | null;
   /**
+   * Which saved theme Scripture uses. undefined/null = the same theme as
+   * lyrics (activeThemeId); an id gives the Bible a theme of its own.
+   */
+  bibleThemeId?: string | null;
+  /** Same for presentations and media slides. */
+  presentationThemeId?: string | null;
+  /**
    * Scripture-only background. undefined = same background as lyrics,
    * null = explicitly plain (theme color only), string = a media id.
    */

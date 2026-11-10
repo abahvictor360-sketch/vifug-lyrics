@@ -496,6 +496,20 @@ export default function OperatorPage() {
     }
   }, [full.data]);
 
+  // A Bible or presentation theme of its own: that saved theme's look and its
+  // own background picture. No id (or an id that no longer exists) follows the
+  // lyric theme, so nothing changes for anyone who never picks one.
+  const ownThemeBase = useCallback(
+    (id: string | null | undefined, fallback: LiveTheme): LiveTheme => {
+      const t = id ? themes.data?.find((x) => x.id === id) : undefined;
+      if (!t) return fallback;
+      const bgId = (t as { backgroundId?: string | null }).backgroundId;
+      const own = bgId ? mediaToBackground(media.data?.find((x) => x.id === bgId)) : null;
+      return { ...themeToLive(t as Record<string, unknown>), background: own ?? fallback.background };
+    },
+    [themes.data, media.data],
+  );
+
   // Resolve the active background media into a LiveBackground for the theme.
   const activeBackground = useMemo<LiveBackground>(() => {
     const id = settings?.activeBackgroundId;
@@ -609,13 +623,14 @@ export default function OperatorPage() {
 
   // Bible theme = active lyric theme with per-display Bible overrides merged in.
   // Bible slides always show the scripture reference caption on the output.
+  const bibleBase = useMemo(() => ownThemeBase(settings?.bibleThemeId, activeTheme), [ownThemeBase, settings?.bibleThemeId, activeTheme]);
   const bibleTheme = useMemo<LiveTheme>(
     () => ({
-      ...tightenMargin(mergeOverride(activeTheme, settings?.bibleTheme), settings?.bibleTheme),
+      ...tightenMargin(mergeOverride(bibleBase, settings?.bibleTheme), settings?.bibleTheme),
       ...(settings?.bibleBackgroundId !== undefined ? { background: bibleBackground } : {}),
       showCaption: true,
     }),
-    [activeTheme, settings?.bibleTheme, settings?.bibleBackgroundId, bibleBackground],
+    [bibleBase, settings?.bibleTheme, settings?.bibleBackgroundId, bibleBackground],
   );
 
   // Presentation background: same three states as the Bible's (see above).
@@ -643,16 +658,17 @@ export default function OperatorPage() {
    * below gives it the room to use, so letting it fill is what matches what
    * the operator sees in the preview.
    */
+  const presentationBase = useMemo(() => ownThemeBase(settings?.presentationThemeId, activeTheme), [ownThemeBase, settings?.presentationThemeId, activeTheme]);
   const presentationTheme = useMemo<LiveTheme>(
     () => ({
-      ...tightenMargin(mergeOverride(activeTheme, settings?.presentationTheme), settings?.presentationTheme),
+      ...tightenMargin(mergeOverride(presentationBase, settings?.presentationTheme), settings?.presentationTheme),
       // Decks get a background of their own, the same three states as the
       // Bible's: unset inherits the lyric background, null is deliberately
       // plain, an id is that picture or video. A slide carrying its own
       // background still wins over it (see lib/stage.ts).
       ...(settings?.presentationBackgroundId !== undefined ? { background: presentationBackground } : {}),
     }),
-    [activeTheme, settings?.presentationTheme, settings?.presentationBackgroundId, presentationBackground],
+    [presentationBase, settings?.presentationTheme, settings?.presentationBackgroundId, presentationBackground],
   );
 
   const stageSlides =
