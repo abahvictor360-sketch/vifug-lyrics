@@ -19,6 +19,23 @@ export type LiveBackground = {
   colorFilter?: string | null;
 } | null;
 
+/** A box on the slide, in percent of its width and height. */
+export type TextFrame = { x: number; y: number; w: number; h: number };
+
+export function parseTextFrame(raw: unknown): TextFrame | null {
+  try {
+    const o = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!o || typeof o !== "object") return null;
+    const { x, y, w, h } = o as Record<string, unknown>;
+    if ([x, y, w, h].some((n) => typeof n !== "number" || !Number.isFinite(n))) return null;
+    const W = Math.min(100, Math.max(10, w as number));
+    const H = Math.min(100, Math.max(8, h as number));
+    return { x: Math.min(100 - W, Math.max(0, x as number)), y: Math.min(100 - H, Math.max(0, y as number)), w: W, h: H };
+  } catch {
+    return null;
+  }
+}
+
 export type LiveTheme = {
   bgColor: string;
   textColor: string;
@@ -39,6 +56,12 @@ export type LiveTheme = {
    * Absent = all four edges use safeMargin.
    */
   safeMarginEdges?: { top: number; right: number; bottom: number; left: number } | null;
+  /**
+   * Where the words sit, as a box in percent of the screen. Absent = the whole
+   * screen inside the margin. The screen's own margin still applies on top, so
+   * a cropped projector never loses words even if a theme places them at an edge.
+   */
+  textFrame?: TextFrame | null;
   overlayScrim: number; // 0-100
   displayMode: "fullscreen" | "lower_third" | "lower_third_bg";
   verticalPos: "top" | "center" | "bottom";
@@ -76,6 +99,25 @@ export type CaptureLayout = "full" | "overlay" | "pip";
  * card. Only the source id travels on the bus: a MediaStream can't cross
  * windows, so the projector opens its own capture of the same source.
  */
+/** How the captured video is cut to fit the frame it sits in. */
+export type CaptureShape = {
+  /** Frame shape. "source" keeps the capture's own proportions. */
+  aspect?: "source" | "16:9" | "4:3" | "1:1" | "9:16" | "21:9" | "custom";
+  /** Width / height for aspect "custom". */
+  ratio?: number;
+  /** "cover" fills the shape and crops the edges; "contain" shows everything with bars. */
+  fit?: "cover" | "contain";
+  /** 1 - 3 */
+  zoom?: number;
+  /** -50 - 50, percent of the frame the picture is slid sideways / up-down. */
+  panX?: number;
+  panY?: number;
+  /** 0 - 50, corner rounding as percent of the shorter side (50 = ellipse/circle). */
+  radius?: number;
+};
+
+export type NameplateStyle = "classic" | "broadcast" | "social" | "pill" | "minimal";
+
 export type LiveCapture = {
   sourceId: string;
   name: string;
@@ -84,8 +126,18 @@ export type LiveCapture = {
   layout: CaptureLayout;
   /** pip only: which side the video sits on. */
   pipVideoSide?: "left" | "right";
+  /** Cut / resize the video to a shape, any layout. */
+  shape?: CaptureShape | null;
   /** pip only: fraction of the width given to the video (0.2–0.8). */
   pipVideoWidth?: number;
+  /** pip only: broadcast look - framed video, branded bars, scripture card. */
+  pipBroadcast?: boolean;
+  /** pip broadcast: text on the top bar (e.g. church or service name). */
+  pipTopText?: string;
+  /** pip broadcast: text on the bottom bar (e.g. website, social handle). */
+  pipBottomText?: string;
+  /** pip broadcast: colour of the bars and video frame. */
+  pipAccent?: string;
   /**
    * overlay only: whether the slide fills the whole frame or sits in a
    * sized band at the bottom - the classic broadcast lower third.
@@ -111,7 +163,18 @@ export type LiveCapture = {
   overlayTextVerticalPos?: "top" | "center" | "bottom";
   overlayTextAlign?: "left" | "center" | "right";
   /** Preacher/speaker nameplate shown over the capture, any layout. null/absent = hidden. */
-  nameplate?: { name: string; title?: string } | null;
+  nameplate?: {
+    name: string;
+    title?: string;
+    /** Look of the lower third. Absent = "classic". */
+    style?: NameplateStyle;
+    /** Accent colour for the style (bar / pill). */
+    accent?: string;
+    /** Social handle or second line for the "social" style. */
+    handle?: string;
+    /** Small logo or avatar image for the "pill" style. */
+    logo?: string;
+  } | null;
   /**
    * Where this capture's sound comes from.
    *  - "none"    silent (the default, and the only sane one for a screen or
@@ -223,6 +286,7 @@ export function themeToLive(t: Record<string, unknown> | undefined): LiveTheme {
     fontWeight: (t.fontWeight as number) ?? 600,
     fontSize: (t.fontSize as number) ?? null,
     fontFamily: (t.fontFamily as string) ?? null,
+    textFrame: parseTextFrame(t.textFrame),
     safeMargin: (t.safeMargin as number) ?? 8,
     overlayScrim: (t.overlayScrim as number) ?? 0,
     displayMode: (t.displayMode as LiveTheme["displayMode"]) ?? "fullscreen",

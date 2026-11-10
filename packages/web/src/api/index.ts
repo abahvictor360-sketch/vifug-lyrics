@@ -24,7 +24,12 @@ import { db } from "./database";
 import * as schema from "./database/schema";
 import { parseStructure, guessTitle } from "./lib/structure";
 import { parseProPresenter } from "./lib/propresenter";
+import { publicDomainSongs } from "./seed-data/public-domain";
 import { htmlToLyrics, extractSongMeta, decodeEntities } from "./lib/html-to-lyrics";
+import { vetLyrics, parseSongSearch } from "./lib/lyrics-vet";
+import { castPut, castGet, castList, ROOM_RE, KEY_RE } from "./lib/cast-store";
+import { insertThemeIfMissing, ensureMediaRow, findRedundantThemes } from "./lib/theme-seed";
+import { loadPolicy, savePolicy, sanitisePolicy, publicPolicy, verifyLicence, isAdmin } from "./lib/entitlement";
 import { getLiveState, setLiveState, subscribeLive } from "./lib/live-store";
 import {
   getStage, setStage, subscribeStage,
@@ -237,6 +242,32 @@ const BUILTIN_THEMES: Omit<typeof schema.themes.$inferInsert, "id">[] = [
     transitionMs: 300,
   },
 ];
+
+/**
+ * Themes that ship with a picture of their own.
+ *
+ * The files live in the web app's public/backgrounds folder, so they are served
+ * from the app itself - nothing to upload, nothing to download, and they work
+ * with no internet. Each one is also added to the media library (once) so it
+ * can be picked as a plain background anywhere a background is chosen, and the
+ * theme points at that library row. Picking one of these themes in Settings
+ * also puts its picture behind the words.
+ */
+const BUILTIN_IMAGE_THEMES: { name: string; file: string; bgColor: string; scrim: number }[] = [
+  // bgColor is the picture's own average tone: what shows for the instant
+  // before it loads, and if the file is ever missing.
+  { name: "Violet Haze", file: "violet-haze.jpg", bgColor: "#2c003d", scrim: 0 },
+  { name: "Plum Studio", file: "plum-studio.jpg", bgColor: "#380222", scrim: 0 },
+  { name: "Rose Nebula", file: "rose-nebula.jpg", bgColor: "#240d39", scrim: 15 },
+  { name: "Blue Halftone", file: "blue-halftone.jpg", bgColor: "#011886", scrim: 15 },
+];
+
+/** The media-library row for a bundled picture, created the first time it is needed. */
+async function ensureBundledBackground(file: string): Promise<string> {
+  // One statement that adds the row only if it is not there, so overlapping
+  // requests cannot each add their own (see lib/theme-seed.ts).
+  return ensureMediaRow(`/backgrounds/${file}`, uuid());
+}
 
 /**
  * Built-in themes the operator has deleted on purpose.
@@ -618,9 +649,88 @@ const app = new Hono()
     }
     const meta = extractSongMeta(html, parsed.toString());
     const title = meta.title || guessTitle(text) || "";
+    // A last look, the way a person would read what they copied before
+    // keeping it: chord lines, timestamps and a doubled page are removed, and
+    // anything that does not look like a song is flagged instead of trusted.
+    const vet = vetLyrics(text, { title });
     // Credits come back alongside the words so the song is filed under its
     // writer rather than needing it typed in from the page afterwards.
-    return c.json({ text, title, authors: meta.artists }, 200);
+    return c.json(
+      { text: vet.text, title, authors: meta.artists, vet: { verdict: vet.verdict, changes: vet.changes, warnings: vet.warnings } },
+      200,
+    );
+  })
+
+  // Search for a song by name and get back candidate lyrics from an open
+  // lyrics database (LRCLIB). Nothing is saved: the operator picks a result,
+  // it fills the same import box as a pasted song, and they review it.
+  .post("/import/search", async (c) => {
+    const body = await c.req.json<{ q?: string }>();
+    const q = (body.q ?? "").trim().slice(0, 120);
+    if (q.length < 2) return c.json({ error: "type a song name to search" }, 400);
+    let json: unknown;
+    try {
+      const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(q)}`, {
+        headers: { "user-agent": "Vifug (https://vifug.com)" },
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!res.ok) return c.json({ error: `the song database returned an error (${res.status})` }, 502);
+      json = await res.json();
+    } catch {
+      return c.json({ error: "couldn't reach the song database - check the network and try again" }, 502);
+    }
+    return c.json({ results: parseSongSearch(json), source: "LRCLIB (lrclib.net)" }, 200);
+  })
+
+  // ---------- SUBSCRIPTION / LICENCE SWITCH ----------
+  // What every copy of Vifug asks on start: is a paid plan being required yet?
+  // "off" until the owner flips it. Public (clients need it before anyone has
+  // signed in) and never includes licence-key hashes.
+  .get("/entitlement", async (c) => {
+    c.header("Cache-Control", "no-store");
+    return c.json({ policy: publicPolicy(await loadPolicy()), now: Date.now() }, 200);
+  })
+  // Check a licence key someone typed in. Rate-limit friendly: one cheap hash.
+  .post("/entitlement/verify", async (c) => {
+    const body = await c.req.json<{ key?: string }>().catch(() => ({}) as { key?: string });
+    const key = typeof body.key === "string" ? body.key.slice(0, 200) : "";
+    const { valid } = verifyLicence(key, await loadPolicy());
+    return c.json({ valid }, 200);
+  })
+  // Owner-only: change the policy without shipping an app. Disabled unless
+  // ENTITLEMENT_ADMIN_TOKEN (16+ characters) is set on the server.
+  .put("/entitlement", async (c) => {
+    if (!isAdmin(c.req.header("x-admin-token"), process.env.ENTITLEMENT_ADMIN_TOKEN)) {
+      return c.json({ error: "not allowed" }, 403);
+    }
+    const body = await c.req.json<unknown>().catch(() => null);
+    const next = sanitisePolicy(body, await loadPolicy());
+    if ("error" in next) return c.json({ error: next.error }, 400);
+    await savePolicy(next.policy);
+    return c.json({ policy: publicPolicy(next.policy) }, 200);
+  })
+
+  // ---------- PHONE CAMERA / SCREEN CAST HANDSHAKE ----------
+  // The picture itself goes device to device (WebRTC); these only carry the
+  // small "here is how to reach me" messages between the sender and the screens.
+  // Each key has one writer, so nothing can overwrite anything else.
+  .put("/cast/:room/:key", async (c) => {
+    const { room, key } = c.req.param();
+    if (!ROOM_RE.test(room) || !KEY_RE.test(key)) return c.json({ error: "bad cast key" }, 400);
+    const body = await c.req.json<unknown>().catch(() => null);
+    const ok = await castPut(room, key, body);
+    return ok ? c.json({ ok: true }, 200) : c.json({ error: "too large" }, 413);
+  })
+  .get("/cast/:room/list/:prefix", async (c) => {
+    const { room, prefix } = c.req.param();
+    if (!ROOM_RE.test(room) || !/^(hello|p|v):$|^(hello|p|v)$/.test(prefix)) return c.json({ error: "bad cast key" }, 400);
+    return c.json({ entries: await castList(room, prefix.endsWith(":") ? prefix : `${prefix}:`), now: Date.now() }, 200);
+  })
+  .get("/cast/:room/:key", async (c) => {
+    const { room, key } = c.req.param();
+    if (!ROOM_RE.test(room) || !KEY_RE.test(key)) return c.json({ error: "bad cast key" }, 400);
+    const e = await castGet(room, key);
+    return c.json({ payload: e?.payload ?? null, at: e?.at ?? 0, now: Date.now() }, 200);
   })
 
   // ---------- PRESENTATIONS ----------
@@ -773,9 +883,58 @@ const app = new Hono()
     const missing = BUILTIN_THEMES.filter(
       (b) => !rows.some((r) => r.name === b.name) && !deleted.includes(b.name),
     );
-    if (missing.length) {
-      for (const t of missing) await db.insert(schema.themes).values({ ...t, id: uuid() });
+    const missingPictured = BUILTIN_IMAGE_THEMES.filter(
+      (b) => !rows.some((r) => r.name === b.name) && !deleted.includes(b.name),
+    );
+    if (missing.length || missingPictured.length) {
+      for (const t of missing) await insertThemeIfMissing({ ...t, id: uuid() });
+      for (const t of missingPictured) {
+        await insertThemeIfMissing({
+          id: uuid(),
+          name: t.name,
+          fontSize: null,
+          fontWeight: 600,
+          textColor: "#FFFFFF",
+          textAlign: "center",
+          textOutline: JSON.stringify({ color: "rgba(0,0,0,0.6)", width: 2 }),
+          backgroundId: await ensureBundledBackground(t.file),
+          bgColor: t.bgColor,
+          overlayScrim: t.scrim,
+          displayMode: "fullscreen",
+          maxLines: 2,
+          verticalPos: "center",
+          safeMargin: 8,
+          transition: "fade",
+          transitionMs: 300,
+        });
+      }
       rows = await db.select().from(schema.themes);
+    }
+
+    // Copies of a built-in that an earlier race left behind: removed only when
+    // unused and identical to the one kept (see findRedundantThemes).
+    const builtinNames = [...BUILTIN_THEMES.map((b) => b.name), ...BUILTIN_IMAGE_THEMES.map((b) => b.name)];
+    if (builtinNames.some((n) => rows.filter((r) => r.name === n).length > 1)) {
+      const referenced = new Set<string>();
+      const [cfg] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
+      try {
+        const active = (JSON.parse(cfg?.config ?? "{}") as { activeThemeId?: string | null }).activeThemeId;
+        if (active) referenced.add(active);
+      } catch {
+        /* unreadable settings: nothing extra is protected, the song check below still is */
+      }
+      for (const s of await db.select({ themeId: schema.songs.themeId }).from(schema.songs)) if (s.themeId) referenced.add(s.themeId);
+      const mediaRows = await db.select({ id: schema.media.id, uri: schema.media.uri }).from(schema.media);
+      const redundant = findRedundantThemes(
+        rows as unknown as Parameters<typeof findRedundantThemes>[0],
+        builtinNames,
+        new Map(mediaRows.map((m) => [m.id, m.uri])),
+        referenced,
+      );
+      if (redundant.length) {
+        for (const id of redundant) await db.delete(schema.themes).where(eq(schema.themes.id, id));
+        rows = rows.filter((r) => !redundant.includes(r.id));
+      }
     }
     return c.json({ themes: rows }, 200);
   })
@@ -1462,6 +1621,33 @@ const app = new Hono()
     return c.json({ ok: true }, 200);
   })
 
+  /**
+   * A small library of public-domain songs for a Vifug that is not being used
+   * for worship (see web/lib/app-mode.ts). Idempotent: a title already in the
+   * library is left alone, so choosing the mode twice, or after adding one of
+   * these by hand, never doubles anything.
+   */
+  .post("/songs/starter-pack", async (c) => {
+    const existing = await db.select({ title: schema.songs.title }).from(schema.songs);
+    const have = new Set(existing.map((s) => s.title.trim().toLowerCase()));
+    let added = 0;
+    for (const s of publicDomainSongs) {
+      if (have.has(s.title.trim().toLowerCase())) continue;
+      const sections = parseStructure(s.raw, s.title);
+      if (!sections.length) continue;
+      await createSongWithSections({
+        title: s.title,
+        authors: s.authors,
+        copyright: "Public domain",
+        tags: ["public-domain", "starter"],
+        sections,
+        source: "starter",
+      });
+      added++;
+    }
+    return c.json({ added, total: publicDomainSongs.length }, 200);
+  })
+
   // ---------- SETTINGS (single row) ----------
   .get("/settings", async (c) => {
     let [row] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
@@ -1627,6 +1813,9 @@ function recordingsDir(): string {
 async function resolveMediaUrl(uri: string): Promise<string> {
   if (!uri) return "";
   if (uri.startsWith("#") || uri.startsWith("http://") || uri.startsWith("https://")) return uri;
+  // A file that ships inside the app itself (public/backgrounds/...): already a
+  // URL on this origin, and not an object-storage key to be signed.
+  if (uri.startsWith("/") && !uri.startsWith("//")) return uri;
   // Locally stored file → same-origin API route (works in every window).
   if (uri.startsWith("local:")) return `/api/media/file/${encodeURIComponent(uri.slice(6))}`;
   // An S3 key with no bucket configured cannot be signed; returning the raw

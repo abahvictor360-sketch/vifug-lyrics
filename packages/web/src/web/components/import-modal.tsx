@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Upload, FileText, Link2, Loader2 } from "lucide-react";
+import { X, Upload, FileText, Link2, Loader2, Search } from "lucide-react";
 import { api } from "../lib/api";
 import { VButton, SectionChip } from "./bits";
 import { useDialog } from "../hooks/use-dialog";
@@ -17,6 +17,10 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
   const fileRef = useRef<HTMLInputElement>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [link, setLink] = useState("");
+  /** What the last import vetting did or doubted, shown above the text box. */
+  const [vet, setVet] = useState<{ verdict: string; changes: string[]; warnings: string[] } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
   /** Progress and outcome of a many-file import (a whole ProPresenter library). */
   const [bulk, setBulk] = useState<{
     total: number;
@@ -36,11 +40,19 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: link.trim() }),
       });
-      const data = (await res.json()) as { text?: string; title?: string; authors?: string[]; error?: string };
-      if (!res.ok) throw new Error(data.error || "couldn't import that link");
-      return data as { text: string; title: string; authors?: string[] };
+      const data = (await res.json()) as {
+        text?: string;
+        title?: string;
+        authors?: string[];
+        error?: string;
+        hint?: string;
+        vet?: { verdict: string; changes: string[]; warnings: string[] };
+      };
+      if (!res.ok) throw new Error([data.error, data.hint].filter(Boolean).join(" ") || "couldn't import that link");
+      return data as { text: string; title: string; authors?: string[]; vet?: { verdict: string; changes: string[]; warnings: string[] } };
     },
     onSuccess: (d) => {
+      setVet(d.vet ?? null);
       setText(d.text);
       if (!title) setTitle(d.title);
       // Only fill what the operator has not already typed.
@@ -50,6 +62,37 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
       setLink("");
     },
   });
+
+  type Hit = {
+    id: string;
+    title: string;
+    artist: string;
+    album: string;
+    text: string;
+    verdict: string;
+    changes: string[];
+    warnings: string[];
+  };
+  const doSearch = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/import/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: query.trim() }),
+      });
+      const data = (await res.json()) as { results?: Hit[]; error?: string };
+      if (!res.ok) throw new Error(data.error || "search failed");
+      return data.results ?? [];
+    },
+  });
+  const applyHit = (h: Hit) => {
+    setText(h.text);
+    setTitle(h.title);
+    if (!authors && h.artist) setAuthors(h.artist);
+    setVet({ verdict: h.verdict, changes: h.changes, warnings: h.warnings });
+    setPreview(null);
+    setSearchOpen(false);
+  };
 
   const doPreview = useMutation({
     mutationFn: async () => {
@@ -268,6 +311,9 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
               <VButton variant="subtle" size="sm" onClick={() => setLinkOpen((v) => !v)}>
                 <Link2 className="h-4 w-4" /> From a link
               </VButton>
+              <VButton variant="subtle" size="sm" onClick={() => setSearchOpen((v) => !v)}>
+                <Search className="h-4 w-4" /> Search online
+              </VButton>
               <input
                 ref={fileRef}
                 type="file"
@@ -333,6 +379,68 @@ export function ImportModal({ onClose }: { onClose: (savedId?: string) => void }
                 {doFetchLink.isError && (
                   <p className="text-xs text-red-400">{(doFetchLink.error as Error).message}</p>
                 )}
+              </div>
+            )}
+            {searchOpen && (
+              <div className="mb-2 flex flex-col gap-1.5 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] p-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && query.trim().length > 1 && doSearch.mutate()}
+                    placeholder="Song name, and artist if you know it…"
+                    className="flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-bg)] px-3 py-1.5 text-sm outline-none focus:border-[var(--v-accent)]"
+                  />
+                  <VButton variant="subtle" size="sm" onClick={() => doSearch.mutate()} disabled={query.trim().length < 2 || doSearch.isPending}>
+                    {doSearch.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+                  </VButton>
+                </div>
+                {doSearch.isError && <p className="text-xs text-red-400">{(doSearch.error as Error).message}</p>}
+                {doSearch.data && doSearch.data.length === 0 && (
+                  <p className="text-xs text-[var(--v-text-faint)]">No songs with words found. Try the title alone, or paste the words.</p>
+                )}
+                {doSearch.data && doSearch.data.length > 0 && (
+                  <ul className="v-scroll max-h-56 space-y-1 overflow-y-auto">
+                    {doSearch.data.map((h) => (
+                      <li key={h.id} className="flex items-start gap-2 rounded border border-[var(--v-border)] bg-[var(--v-bg)] p-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{h.title}</p>
+                          <p className="truncate text-[11px] text-[var(--v-text-faint)]">
+                            {[h.artist, h.album].filter(Boolean).join(" · ")}
+                          </p>
+                          <p className="mt-0.5 line-clamp-2 whitespace-pre-line text-[11px] text-[var(--v-text-faint)]">
+                            {h.text.split("\n").filter(Boolean).slice(0, 2).join("\n")}
+                          </p>
+                          {h.verdict !== "good" && (
+                            <p className="mt-0.5 text-[11px] text-amber-400">{h.warnings[0] ?? "Check this one."}</p>
+                          )}
+                        </div>
+                        <VButton variant="subtle" size="sm" onClick={() => applyHit(h)}>
+                          Use
+                        </VButton>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-[11px] text-[var(--v-text-faint)]">
+                  Results come from the open LRCLIB database. Most current songs are copyrighted: make sure your church
+                  or event holds the licence to display them (for example CCLI) before using one.
+                </p>
+              </div>
+            )}
+            {vet && (vet.changes.length > 0 || vet.warnings.length > 0) && (
+              <div
+                role="status"
+                className={`mb-2 rounded-md border p-2 text-xs ${
+                  vet.verdict === "good" ? "border-[var(--v-border)] bg-[var(--v-surface-2)]" : "border-amber-500/50 bg-amber-500/10"
+                }`}
+              >
+                {vet.warnings.map((w, i) => (
+                  <p key={`w${i}`} className="text-amber-400">{w}</p>
+                ))}
+                {vet.changes.map((c, i) => (
+                  <p key={`c${i}`} className="text-[var(--v-text-faint)]">{c}</p>
+                ))}
               </div>
             )}
             <textarea

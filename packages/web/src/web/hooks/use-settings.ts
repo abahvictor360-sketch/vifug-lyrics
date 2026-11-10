@@ -1,3 +1,5 @@
+import type { LogoSettings } from "../components/logo-overlay";
+import type { AppMode } from "../lib/app-mode";
 import type { ServiceTimer } from "../lib/timer";
 import type { Screen } from "../lib/screens";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -76,6 +78,24 @@ export type AppSettings = {
    * screen kept up with the preacher unattended.
    */
   autoFollowScriptureLive?: boolean;
+  /**
+   * The same choice for a verse the preacher only QUOTES. Separate from
+   * autoFollowScriptureLive because the two are not equally trustworthy: a
+   * reference read out is unmistakable, a quotation is a judgement. Off by
+   * default, so a guess waits in Preview with its confidence shown.
+   */
+  autoFollowQuoteLive?: boolean;
+  /**
+   * And for a verse the preacher PARAPHRASES (not cited, not read out). The
+   * least certain of the three - it is a ranked guess from the words heard - so
+   * it waits in Preview unless this is switched on.
+   */
+  autoFollowParaphraseLive?: boolean;
+  /**
+   * Also match a paraphrase by MEANING with a small on-device language model
+   * (downloaded once, ~23 MB), on top of matching by words. Off by default.
+   */
+  autoFollowSemantic?: boolean;
   /**
    * Which Whisper to run locally. The heavy ones are deliberately offered:
    * a laptop driving a projector has nothing else to do, and a church that
@@ -166,6 +186,19 @@ export type AppSettings = {
     bgColor?: string | null;
     textColor?: string | null;
   } | null;
+  /**
+   * What this Vifug is for: church (the default, and what every existing
+   * install is), media & entertainment, or presentations only. It decides what
+   * is offered - the Bible, the hymn library, the run-of-service tab - and
+   * deletes nothing, so switching back restores everything. See lib/app-mode.ts.
+   */
+  appMode?: AppMode;
+  /**
+   * A logo pinned to the top-left or top-right of the live output (projector
+   * and stream), typically over a camera or capture-card feed. See
+   * components/logo-overlay.tsx.
+   */
+  logo?: LogoSettings | null;
   /**
    * Service timer - a countdown or count-up drawn over whichever screens are
    * ticked. Stored here rather than pushed live because it is an anchor, not a

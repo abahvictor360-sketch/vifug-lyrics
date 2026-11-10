@@ -1,4 +1,6 @@
+import { SHAPE_PRESETS } from "../lib/capture-shape";
 import { MediaImg, MediaVideo } from "./media-el";
+import { SendToScreen } from "./send-to-screen";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Upload, Loader2, Trash2, Image as ImageIcon, Film, MonitorPlay, Square, X, Frame, Repeat, Volume2, VolumeX } from "lucide-react";
 import { useSessionMedia, useMedia, useUploadMedia, useDeleteMedia, useUpdateMedia, type MediaItem, type MediaKind } from "../hooks/use-media";
@@ -119,6 +121,9 @@ export function MediaPanel({
   pendingCapture,
   onCueCapture,
   cue,
+  screens = [],
+  onSendToScreen,
+  onClearScreen,
 }: {
   onSlidesChange: (slides: StageSlide[]) => void;
   onPreview: (index: number) => void;
@@ -131,6 +136,12 @@ export function MediaPanel({
   onCueCapture: (capture: LiveCapture) => void;
   /** Externally chosen media item (e.g. the phone remote's upload) - switches tab and previews it. */
   cue?: { mediaId: string; nonce: number } | null;
+  /** Output screens beyond the main one, for "Send to a screen". */
+  screens?: { id: string; name: string }[];
+  /** Put item `index` on one named screen, leaving every other screen alone. */
+  onSendToScreen?: (index: number, screenId: string) => void;
+  /** Clear one named screen, leaving every other screen alone. */
+  onClearScreen?: (screenId: string) => void;
 }) {
   const media = useMedia();
   const upload = useUploadMedia();
@@ -501,6 +512,162 @@ export function MediaPanel({
                 </div>
               )}
 
+              <div className="space-y-2 border-b border-[var(--v-border)] pb-3">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">Layout</p>
+                <div className="flex gap-1.5">
+                  {(["full", "overlay", "pip"] as const).map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => updateCapture({ layout: l })}
+                      className={`flex-1 rounded-md border px-2 py-1.5 text-[12px] ${
+                        (currentCapture.layout ?? "full") === l
+                          ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                          : "border-[var(--v-border)] hover:bg-[var(--v-surface-3)]"
+                      }`}
+                    >
+                      {l === "full" ? "Video only" : l === "overlay" ? "Over video" : "Side by side"}
+                    </button>
+                  ))}
+                </div>
+                {currentCapture.layout === "pip" && (
+                  <>
+                    <div className="flex gap-1.5">
+                      {(["left", "right"] as const).map((side) => (
+                        <button
+                          key={side}
+                          type="button"
+                          onClick={() => updateCapture({ pipVideoSide: side })}
+                          className={`flex-1 rounded-md border px-2 py-1 text-[12px] ${
+                            (currentCapture.pipVideoSide ?? "left") === side
+                              ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                              : "border-[var(--v-border)]"
+                          }`}
+                        >
+                          Video {side}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="flex items-center gap-2 text-[12px] text-[var(--v-text-faint)]">
+                      Video width
+                      <input
+                        type="range"
+                        min={20}
+                        max={80}
+                        value={Math.round((currentCapture.pipVideoWidth ?? 0.5) * 100)}
+                        onChange={(e) => updateCapture({ pipVideoWidth: Number(e.target.value) / 100 })}
+                        className="flex-1"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 text-[12px]">
+                      <input
+                        type="checkbox"
+                        checked={!!currentCapture.pipBroadcast}
+                        onChange={(e) => updateCapture({ pipBroadcast: e.target.checked })}
+                      />
+                      Broadcast look (framed video, branded bars)
+                    </label>
+                    {currentCapture.pipBroadcast && (
+                      <>
+                        <input type="text" placeholder="Top bar text (e.g. Sunday Service)" value={currentCapture.pipTopText ?? ""} onChange={(e) => updateCapture({ pipTopText: e.target.value })} className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]" />
+                        <input type="text" placeholder="Bottom bar text (e.g. www.yourchurch.org)" value={currentCapture.pipBottomText ?? ""} onChange={(e) => updateCapture({ pipBottomText: e.target.value })} className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]" />
+                        <label className="flex items-center justify-between text-[12px] text-[var(--v-text-faint)]">
+                          Bar &amp; frame colour
+                          <input type="color" value={currentCapture.pipAccent ?? "#1d4ed8"} onChange={(e) => updateCapture({ pipAccent: e.target.value })} className="h-6 w-10 cursor-pointer rounded border border-[var(--v-border)] bg-transparent" />
+                        </label>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-2 border-b border-[var(--v-border)] pb-3">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
+                  Video shape &amp; size
+                </p>
+                <div className="grid grid-cols-3 gap-1">
+                  {SHAPE_PRESETS.map((sp) => (
+                    <button
+                      key={sp.id}
+                      type="button"
+                      onClick={() => updateCapture({ shape: { ...currentCapture.shape, aspect: sp.id } })}
+                      className={`rounded-md border px-1 py-1.5 text-[11px] ${
+                        (currentCapture.shape?.aspect ?? "source") === sp.id
+                          ? "border-[var(--v-accent)] bg-[var(--v-accent)]/15"
+                          : "border-[var(--v-border)] bg-[var(--v-surface-3)]"
+                      }`}
+                    >
+                      {sp.label}
+                    </button>
+                  ))}
+                </div>
+                {currentCapture.shape?.aspect === "custom" && (
+                  <label className="flex items-center gap-2 text-[12px] text-[var(--v-text-faint)]">
+                    Width : height
+                    <input
+                      type="number"
+                      step="0.05"
+                      min="0.25"
+                      max="5"
+                      value={currentCapture.shape?.ratio ?? 1.78}
+                      onChange={(e) => updateCapture({ shape: { ...currentCapture.shape, aspect: "custom", ratio: Number(e.target.value) } })}
+                      className="w-20 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-xs"
+                    />
+                  </label>
+                )}
+                <div className="flex gap-1.5">
+                  {(["cover", "contain"] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => updateCapture({ shape: { ...currentCapture.shape, fit: f } })}
+                      className={`flex-1 rounded-md border px-2 py-1 text-[12px] ${
+                        (currentCapture.shape?.fit ?? "cover") === f
+                          ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                          : "border-[var(--v-border)]"
+                      }`}
+                    >
+                      {f === "cover" ? "Fill (crop edges)" : "Fit (show all)"}
+                    </button>
+                  ))}
+                </div>
+                {([
+                  ["zoom", "Zoom", 100, 300, 100, 1],
+                  ["panX", "Slide left / right", -50, 50, 0, 1],
+                  ["panY", "Slide up / down", -50, 50, 0, 1],
+                  ["radius", "Round corners", 0, 50, 0, 1],
+                ] as const).map(([key, label, min, max, def]) => (
+                  <label key={key} className="flex items-center gap-2 text-[12px] text-[var(--v-text-faint)]">
+                    <span className="w-28 shrink-0">{label}</span>
+                    <input
+                      type="range"
+                      min={min}
+                      max={max}
+                      value={key === "zoom" ? Math.round((currentCapture.shape?.zoom ?? 1) * 100) : (currentCapture.shape?.[key] ?? def)}
+                      onChange={(e) =>
+                        updateCapture({
+                          shape: { ...currentCapture.shape, [key]: key === "zoom" ? Number(e.target.value) / 100 : Number(e.target.value) },
+                        })
+                      }
+                      className="flex-1"
+                    />
+                  </label>
+                ))}
+                {currentCapture.shape && (
+                  <button
+                    type="button"
+                    onClick={() => updateCapture({ shape: null })}
+                    className="text-[11px] text-[var(--v-text-faint)] underline"
+                  >
+                    Reset shape
+                  </button>
+                )}
+                <p className="text-[11px] text-[var(--v-text-faint)]">
+                  Cuts the video to a shape: a square or portrait window for a camera beside the words, a circle for a
+                  round speaker bubble. The Preview panel shows the result before you go live.
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
                   Preacher nameplate
@@ -516,15 +683,60 @@ export function MediaPanel({
                   className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
                 />
                 {currentCapture.nameplate?.name && (
-                  <input
-                    type="text"
-                    placeholder="Title (optional, e.g. Senior Pastor)"
-                    value={currentCapture.nameplate?.title ?? ""}
-                    onChange={(e) =>
-                      updateCapture({ nameplate: { name: currentCapture.nameplate!.name, title: e.target.value } })
-                    }
-                    className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
-                  />
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Title (optional, e.g. Senior Pastor)"
+                      value={currentCapture.nameplate?.title ?? ""}
+                      onChange={(e) => updateCapture({ nameplate: { ...currentCapture.nameplate!, title: e.target.value } })}
+                      className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
+                    />
+                    <div className="grid grid-cols-5 gap-1">
+                      {(["classic", "broadcast", "social", "pill", "minimal"] as const).map((st) => (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => updateCapture({ nameplate: { ...currentCapture.nameplate!, style: st } })}
+                          className={`rounded-md border px-1 py-1.5 text-[10px] capitalize ${
+                            (currentCapture.nameplate?.style ?? "classic") === st
+                              ? "border-[var(--v-accent)] bg-[var(--v-accent)]/15"
+                              : "border-[var(--v-border)] bg-[var(--v-surface-3)]"
+                          }`}
+                        >
+                          {st}
+                        </button>
+                      ))}
+                    </div>
+                    {currentCapture.nameplate?.style === "social" && (
+                      <input
+                        type="text"
+                        placeholder="@handle (shown on the second bar)"
+                        value={currentCapture.nameplate?.handle ?? ""}
+                        onChange={(e) => updateCapture({ nameplate: { ...currentCapture.nameplate!, handle: e.target.value } })}
+                        className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
+                      />
+                    )}
+                    {currentCapture.nameplate?.style === "pill" && (
+                      <input
+                        type="text"
+                        placeholder="Logo / photo URL (optional)"
+                        value={currentCapture.nameplate?.logo ?? ""}
+                        onChange={(e) => updateCapture({ nameplate: { ...currentCapture.nameplate!, logo: e.target.value || undefined } })}
+                        className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]"
+                      />
+                    )}
+                    {(currentCapture.nameplate?.style ?? "classic") !== "classic" && (currentCapture.nameplate?.style ?? "") !== "minimal" && (
+                      <label className="flex items-center justify-between text-[12px] text-[var(--v-text-faint)]">
+                        Accent colour
+                        <input
+                          type="color"
+                          value={currentCapture.nameplate?.accent ?? "#1d4ed8"}
+                          onChange={(e) => updateCapture({ nameplate: { ...currentCapture.nameplate!, accent: e.target.value } })}
+                          className="h-6 w-10 cursor-pointer rounded border border-[var(--v-border)] bg-transparent"
+                        />
+                      </label>
+                    )}
+                  </>
                 )}
                 <p className="text-[11px] text-[var(--v-text-faint)]">
                   Shows over the video on every layout. Clear the name to hide it.
@@ -786,6 +998,9 @@ export function MediaPanel({
               isPreview={previewId === selected.id}
               onPreview={() => { const i = items.findIndex((m) => m.id === selected.id); if (i >= 0) onPreview(i); }}
               onSendLive={() => { const i = items.findIndex((m) => m.id === selected.id); if (i >= 0) onSendLive(i); }}
+              screens={screens}
+              onSendToScreen={(screenId) => { const i = items.findIndex((m) => m.id === selected.id); if (i >= 0) onSendToScreen?.(i, screenId); }}
+              onClearScreen={onClearScreen}
               onDelete={() => { del.mutate(selected.id); setSelectedId(null); }}
             />
           ) : (
@@ -829,6 +1044,9 @@ function MediaInspector({
   isLive,
   isPreview,
   onDelete,
+  screens,
+  onSendToScreen,
+  onClearScreen,
 }: {
   item: MediaItem;
   onPreview: () => void;
@@ -836,8 +1054,12 @@ function MediaInspector({
   isLive: boolean;
   isPreview: boolean;
   onDelete: () => void;
+  screens: { id: string; name: string }[];
+  onSendToScreen: (screenId: string) => void;
+  onClearScreen?: (screenId: string) => void;
 }) {
   const update = useUpdateMedia();
+
   const settings = useSettings().data;
   const updateSettings = useUpdateSettings();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -879,6 +1101,19 @@ function MediaInspector({
           Go live
         </VButton>
       </div>
+
+      {/* Straight to one screen. Go live above is the main screen; each row
+          here is another output, sent to on its own so the congregation's
+          screen and, say, the stage or lobby monitor can show different things. */}
+      <Field label="Send to a screen">
+        <SendToScreen
+          screens={screens}
+          what={item.name ?? (isVideo ? "video" : "image")}
+          onSend={onSendToScreen}
+          onClear={onClearScreen}
+          emptyHint="Go live puts this on the main screen. To send pictures and video to other screens as well, add them under Settings › Streaming & output."
+        />
+      </Field>
 
       <Field label="How it sits on the screen">
         <div className="flex gap-1.5">

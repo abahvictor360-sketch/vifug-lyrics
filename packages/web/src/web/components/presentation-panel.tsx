@@ -1,3 +1,4 @@
+import { SendToScreen } from "./send-to-screen";
 import { MediaImg, MediaVideo } from "./media-el";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Upload, Pencil, Trash2, MonitorPlay, Loader2, FileType2, X } from "lucide-react";
@@ -29,12 +30,21 @@ export function PresentationsPanel({
   previewId,
   liveId,
   cue,
+  screens = [],
+  onSendToScreen,
+  onClearScreen,
 }: {
   onSlidesChange: (slides: StageSlide[]) => void;
   onPreview: (index: number) => void;
   onSendLive: (index: number) => void;
   previewId: string | null;
   liveId: string | null;
+  /** Output screens beyond the main one, for "Send to a screen". */
+  screens?: { id: string; name: string }[];
+  /** Put slide `index` on one named screen, leaving every other screen alone. */
+  onSendToScreen?: (index: number, screenId: string) => void;
+  /** Clear one named screen, leaving every other screen alone. */
+  onClearScreen?: (screenId: string) => void;
   /** Externally chosen deck (e.g. a plan item or the phone remote) - selects it, doesn't cue a slide. */
   cue?: { presentationId: string; nonce: number } | null;
 }) {
@@ -464,6 +474,29 @@ export function PresentationsPanel({
                 }
                 busy={saveDeck.isPending}
               />
+              {/* Straight to one screen: the slide that is cued in Preview goes to
+                  the screen you name and nowhere else, so the stage or lobby
+                  monitor can show a different slide from the main screen. */}
+              {screens.length > 0 && activeSlides.length > 0 && (() => {
+                const cued = activeSlides.findIndex((sl) => sl.slideId === previewId);
+                return (
+                  <div className="mb-4 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-3">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
+                      Send to a screen
+                      <span className="ml-2 font-normal normal-case tracking-normal">
+                        {cued >= 0 ? `slide ${cued + 1}, the one cued in Preview` : "click a slide first"}
+                      </span>
+                    </p>
+                    <SendToScreen
+                      screens={screens}
+                      what={cued >= 0 ? `slide ${cued + 1}` : "the cued slide"}
+                      disabled={cued < 0}
+                      onSend={(screenId) => cued >= 0 && onSendToScreen?.(cued, screenId)}
+                      onClear={onClearScreen}
+                    />
+                  </div>
+                );
+              })()}
               {activeSlides.length === 0 ? (
                 <p className="text-sm text-[var(--v-text-faint)]">This presentation has no slides yet. Click Edit to add some.</p>
               ) : (

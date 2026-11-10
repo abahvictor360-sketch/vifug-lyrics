@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { getUserBook, isUserVersion, listUserVersions } from "../lib/user-bibles";
 
 /**
  * Offline Bible data layer.
@@ -48,14 +49,24 @@ export type BookData = { c: Record<string, string[]> };
 
 const bookCache = new Map<string, Promise<BookData>>();
 
+/** Forget a version's cached books, e.g. after it was deleted. */
+export function forgetVersionCache(versionId: string) {
+  for (const k of [...bookCache.keys()]) if (k.startsWith(`${versionId}/`)) bookCache.delete(k);
+}
+
 export function loadBook(versionId: string, code: string): Promise<BookData> {
   const key = `${versionId}/${code}`;
   let p = bookCache.get(key);
   if (!p) {
-    p = fetch(`/bible/${versionId}/${code}.json`).then((r) => {
-      if (!r.ok) throw new Error(`bible book ${key} ${r.status}`);
-      return r.json() as Promise<BookData>;
-    });
+    p = isUserVersion(versionId)
+      ? getUserBook(versionId, code).then((b) => {
+          if (!b) throw new Error(`bible book ${key} not found`);
+          return b;
+        })
+      : fetch(`/bible/${versionId}/${code}.json`).then((r) => {
+          if (!r.ok) throw new Error(`bible book ${key} ${r.status}`);
+          return r.json() as Promise<BookData>;
+        });
     bookCache.set(key, p);
   }
   return p;
@@ -68,7 +79,10 @@ export function useBibleManifest() {
     queryFn: async () => {
       const r = await fetch("/bible/manifest.json");
       if (!r.ok) throw new Error("bible manifest missing");
-      return (await r.json()) as BibleManifest;
+      const manifest = (await r.json()) as BibleManifest;
+      // Versions the user added on this device sit beside the built-in ones.
+      const mine = await listUserVersions();
+      return mine.length ? { ...manifest, versions: [...manifest.versions, ...mine] } : manifest;
     },
   });
 }

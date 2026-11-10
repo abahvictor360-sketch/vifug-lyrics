@@ -99,6 +99,9 @@ const COLUMN_MIGRATIONS: { table: string; column: string; ddl: string }[] = [
   { table: "presentation_slides", column: "format", ddl: "ALTER TABLE presentation_slides ADD COLUMN format TEXT" },
   { table: "presentation_slides", column: "text_align", ddl: "ALTER TABLE presentation_slides ADD COLUMN text_align TEXT" },
   { table: "media", column: "role", ddl: "ALTER TABLE media ADD COLUMN role TEXT" },
+  { table: "themes", column: "text_frame", ddl: "ALTER TABLE themes ADD COLUMN text_frame TEXT" },
+  { table: "themes", column: "font_family", ddl: "ALTER TABLE themes ADD COLUMN font_family TEXT" },
+  { table: "themes", column: "text_shadow", ddl: "ALTER TABLE themes ADD COLUMN text_shadow TEXT" },
   { table: "media", column: "color_filter", ddl: "ALTER TABLE media ADD COLUMN color_filter TEXT" },
   { table: "presentations", column: "background_id", ddl: "ALTER TABLE presentations ADD COLUMN background_id TEXT" },
 ];

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { SlideRender } from "../components/slide-render";
 import { AnnouncementTicker } from "../components/announcement-ticker";
+import { LogoOverlay } from "../components/logo-overlay";
 import { TimerOverlay } from "../components/timer-overlay";
 import { useSettings } from "../hooks/use-settings";
 import { usePublishAudioOutput } from "../hooks/use-audio-output";
@@ -96,6 +97,7 @@ export default function StreamPage() {
         {/* A browser source is an output of its own - OBS captures whatever
             it plays, so a video cued with sound has to actually make it. */}
         <SlideRender state={state} transparent playAudio />
+        <LogoOverlay logo={settings?.logo} hasVideo={!!state.capture} />
         <TimerOverlay timer={settings?.timer} screen="stream" />
         {announcement?.enabled && (
           <AnnouncementTicker

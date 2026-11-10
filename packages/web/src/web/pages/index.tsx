@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, Upload, Music4, Pencil, Trash2, Monitor, MonitorX,
   ChevronLeft, ChevronRight, Square, Ban, Settings2, Repeat, X, Clapperboard,
-  Image as ImageIcon, Radio, Languages, Ear, Copy, Check, Film, Palette, Link2, Loader2, Rocket,
+  Image as ImageIcon, Radio, Languages, Ear, Check, Film, Palette, Link2, Loader2, Rocket,
   BookOpen, SendHorizontal, Eye, Maximize,
   ListChecks, ArrowUp, ArrowDown, CalendarDays, PlayCircle, GripVertical, History,
   Mic, MicOff, HelpCircle, Mail, Download, MonitorPlay, Volume2, VolumeX, SlidersHorizontal, Circle,
@@ -24,6 +24,7 @@ import { useSettings, useUpdateSettings, type AppSettings, type ThemeOverride } 
 import { SettingsPage, type SectionId as SettingsSectionId } from "../components/settings-page";
 import { MediaLibrary } from "../components/media-library";
 import { WelcomeDialog } from "../components/welcome-dialog";
+import { appModeOf } from "../lib/app-mode";
 import { MediaPanel } from "../components/media-panel";
 import { MicPicker } from "../components/mic-picker";
 import { matchAction, resolveShortcuts, formatCombo } from "../lib/shortcuts";
@@ -39,7 +40,10 @@ import { UpdateDialog } from "../components/update-dialog";
 import { useMedia, useAddMediaUrl, useDeleteMedia, useUploadMedia, useUpdateMedia, type MediaItem } from "../hooks/use-media";
 import { useTranslations, useSaveTranslation, LANGS, langLabel } from "../hooks/use-translations";
 import { contextFromCaption } from "../lib/spoken-ref";
-import { findQuotedVerse, quoteToQuery } from "../lib/quoted-verse";
+import { findQuotedVerse, quoteToQuery, quoteConfidence } from "../lib/quoted-verse";
+import { rankVerses } from "../lib/verse-rank";
+import { mergeCandidates } from "../lib/semantic-verse";
+import { useSemanticIndex } from "../hooks/use-semantic-index";
 import { useVerseCorpus } from "../hooks/use-verse-corpus";
 import { useAutoFollow, type FollowEvent } from "../hooks/use-autofollow";
 import { useMediaLevel } from "../hooks/use-media-level";
@@ -544,6 +548,13 @@ export default function OperatorPage() {
   // Operator mode: drive the live output from song lyrics OR the Bible.
   // "plans" is a service-plan builder that cues songs/scripture into lyrics/bible.
   const [mode, setMode] = useState<OperatorMode>("lyrics");
+  // If the tab being shown is not part of this kind of Vifug (the mode was just
+  // changed, or this is a presentations-only install opening on Lyrics), move
+  // to the first one that is.
+  const allowedTabs = appModeOf(settingsQ.data).tabs;
+  useEffect(() => {
+    if (!allowedTabs.includes(mode)) setMode(allowedTabs[0] ?? "lyrics");
+  }, [allowedTabs, mode]);
   // Bible cue: set when a plan item cues a scripture into the Bible panel.
   const [bibleCue, setBibleCue] = useState<{ versionId?: string; ref: string; nonce: number; live?: boolean } | null>(null);
   // Presentation/media cues: the phone remote picking a deck or photo works
@@ -822,7 +833,9 @@ export default function OperatorPage() {
    * asked for, which is a louder mistake than a slide advancing early.
    */
   const bibleManifest = useBibleManifest();
-  const followScripture = settings?.autoFollowScripture ?? false;
+  const appMode = appModeOf(settings);
+  // No Bible outside church, so there is nothing for spoken Scripture to land on.
+  const followScripture = appMode.bible && (settings?.autoFollowScripture ?? false);
   const canonNames = useMemo(
     () => (followScripture ? (bibleManifest.data?.canon ?? []).map((b) => b.name.toLowerCase()) : undefined),
     [followScripture, bibleManifest.data],
@@ -868,12 +881,12 @@ export default function OperatorPage() {
 
   /** Versions installed AND switched on, so naming a disabled one does nothing. */
   const enabledVersionIds = useMemo(() => {
-    if (!(settings?.autoFollowVersionByVoice ?? false)) return undefined;
+    if (!appMode.bible || !(settings?.autoFollowVersionByVoice ?? false)) return undefined;
     const langs = (settings?.bibleLangs ?? {}) as Record<string, boolean>;
     return (bibleManifest.data?.versions ?? [])
       .filter((v) => v.lang === "en" || langs[v.id] !== false)
       .map((v) => v.id);
-  }, [settings?.autoFollowVersionByVoice, settings?.bibleLangs, bibleManifest.data]);
+  }, [appMode.bible, settings?.autoFollowVersionByVoice, settings?.bibleLangs, bibleManifest.data]);
 
   /*
    * The indexed Bible behind "the preacher is quoting this".
@@ -889,9 +902,27 @@ export default function OperatorPage() {
       const corpus = verseCorpus.corpusRef.current;
       if (!corpus) return null;
       const hit = findQuotedVerse(sentence, corpus);
-      return hit ? quoteToQuery(hit) : null;
+      return hit ? { query: quoteToQuery(hit), confidence: quoteConfidence(hit.words) } : null;
     },
     [verseCorpus.corpusRef],
+  );
+
+  // Paraphrase ranking over the same indexed Bible the quotation matcher uses,
+  // so it rides on "Follow quoted scripture" rather than needing a switch of its own.
+  const semantic = useSemanticIndex(verseCorpus.corpus, quotesOn && (settings?.autoFollowSemantic ?? false));
+  const semanticQuery = semantic.query;
+  const semanticReady = semantic.status === "ready";
+  const rank = useCallback(
+    (text: string) => {
+      const corpus = verseCorpus.corpusRef.current;
+      if (!corpus) return [];
+      const lexical = rankVerses(text, corpus);
+      // With the meaning model ready, its answer is folded in a moment later;
+      // without it, the word matcher answers at once as before.
+      if (!semanticReady) return lexical;
+      return semanticQuery(text).then((hits) => mergeCandidates(lexical, hits, corpus));
+    },
+    [verseCorpus.corpusRef, semanticReady, semanticQuery],
   );
 
   const autoFollow = useAutoFollow({
@@ -912,8 +943,15 @@ export default function OperatorPage() {
     // Into Preview by default: the operator presses GO LIVE, so a reference
     // heard wrongly costs a glance rather than the congregation's attention.
     // Settings → AI can hand that over when nobody is at the desk.
-    onScripture: (query, versionId) =>
-      cueScriptureRef.current(query, versionId, settings?.autoFollowScriptureLive ?? false),
+    // Where it goes was decided by the hook, per kind of detection, and is in
+    // the log it keeps - so this just carries it out.
+    onScripture: (query, versionId, info) => cueScriptureRef.current(query, versionId, info.live),
+    scriptureLive: {
+      reference: settings?.autoFollowScriptureLive ?? false,
+      quoted: settings?.autoFollowQuoteLive ?? false,
+      paraphrased: settings?.autoFollowParaphraseLive ?? false,
+    },
+    rankVerses: quotesOn ? rank : undefined,
     // A version named on its own re-cues whatever is already up in that
     // wording, rather than moving the passage.
     onVersion: (versionId) => {
@@ -1172,6 +1210,8 @@ export default function OperatorPage() {
         update={update}
         mode={mode}
         onModeChange={setMode}
+        tabs={appMode.tabs}
+        plansLabel={appMode.plansLabel}
       />
 
       {/*
@@ -1285,6 +1325,9 @@ export default function OperatorPage() {
               previewId={stage.previewSlide?.slideId ?? null}
               liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
               cue={presentationCue}
+              screens={settings?.screens ?? []}
+              onSendToScreen={(i, screenId) => stage.sendToScreen(screenId, i)}
+              onClearScreen={(screenId) => stage.setScreenStatus(screenId, "clear")}
             />
           ) : mode === "media" ? (
             <MediaPanel
@@ -1296,6 +1339,9 @@ export default function OperatorPage() {
               pendingCapture={pendingCapture}
               onCueCapture={setPendingCapture}
               cue={mediaCue}
+              screens={settings?.screens ?? []}
+              onSendToScreen={(i, screenId) => stage.sendToScreen(screenId, i)}
+              onClearScreen={(screenId) => stage.setScreenStatus(screenId, "clear")}
             />
           ) : (
             <>
@@ -1645,6 +1691,26 @@ export default function OperatorPage() {
             events={autoFollow.events}
             live={ctrl.status === "live"}
             onToggle={(v) => patchSettings({ autoFollow: v })}
+            // No Bible outside church: the saved switches are left alone (so going
+            // back to Church finds them as they were) but nothing here acts on or
+            // shows them.
+            scriptureOn={followScripture}
+            quotesOn={followScripture && (settings?.autoFollowQuotes ?? false)}
+            referenceLive={settings?.autoFollowScriptureLive ?? false}
+            quoteLive={settings?.autoFollowQuoteLive ?? false}
+            paraphraseLive={settings?.autoFollowParaphraseLive ?? false}
+            onPolicy={(kind, live) =>
+              patchSettings(
+                kind === "reference"
+                  ? { autoFollowScriptureLive: live }
+                  : kind === "quoted"
+                    ? { autoFollowQuoteLive: live }
+                    : { autoFollowParaphraseLive: live },
+              )
+            }
+            onPresent={(e) => {
+              if (e.query) cueScriptureRef.current(e.query, e.versionId, true);
+            }}
           />
 
           {/* Stream / OBS browser source */}
@@ -1698,7 +1764,7 @@ export default function OperatorPage() {
       )}
       {settings?.firstRun && (
         <WelcomeDialog
-          onChoose={async (keepLibrary, linesPerSlide) => {
+          onChoose={async (keepLibrary, linesPerSlide, chosenMode) => {
             // See welcomeShownAtRef above - reject anything faster than a
             // human could actually read and click.
             const shownAt = welcomeShownAtRef.current;
@@ -1710,7 +1776,16 @@ export default function OperatorPage() {
             }
             // Saved with the same click that dismisses the dialog, so there
             // is no window where firstRun is off but the choice was lost.
-            patchSettings({ firstRun: false, linesPerSlide });
+            // Outside church nobody asked for hymns, so a media install gets a
+            // small public-domain starter library instead. Awaited, so the
+            // songs are there when the dialog closes rather than a moment
+            // after, and best-effort: an empty shelf is better than a stuck
+            // welcome screen.
+            if (chosenMode === "media") {
+              await fetch("/api/songs/starter-pack", { method: "POST" }).catch(() => {});
+              qc.invalidateQueries({ queryKey: ["songs"] });
+            }
+            patchSettings({ firstRun: false, linesPerSlide, appMode: chosenMode });
           }}
         />
       )}
@@ -1769,6 +1844,8 @@ function TopBar({
   mode,
   onModeChange,
   update,
+  tabs,
+  plansLabel,
 }: {
   desktop: ReturnType<typeof useDesktop>;
   liveStatus: string;
@@ -1777,6 +1854,10 @@ function TopBar({
   mode: OperatorMode;
   onModeChange: (m: OperatorMode) => void;
   update: ReturnType<typeof useUpdateCheck>;
+  /** Which tabs this kind of Vifug offers (see lib/app-mode.ts). */
+  tabs: OperatorMode[];
+  /** What the run-of-service tab is called here. */
+  plansLabel: string;
 }) {
   // z-40: v-glass's backdrop-filter makes the header a stacking context, so
   // the Help dropdown's own z-index can't escape it - the header itself must
@@ -1793,7 +1874,7 @@ function TopBar({
       {/* flex-1 so the tabs take the room the controls don't need, and scroll
           sideways within it rather than pushing anything off the screen. */}
       <nav className="v-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-        {MODE_TABS.map((t) => {
+        {MODE_TABS.filter((t) => tabs.includes(t.id)).map((t) => {
           const Icon = t.icon;
           const active = mode === t.id;
           return (
@@ -1806,7 +1887,7 @@ function TopBar({
                   : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
               }`}
             >
-              <Icon className="h-4 w-4" /> {t.label}
+              <Icon className="h-4 w-4" /> {t.id === "plans" ? plansLabel : t.label}
             </button>
           );
         })}
@@ -2506,6 +2587,7 @@ const WHY_LABEL: Record<FollowEvent["why"], string> = {
   sung: "sung",
   reference: "read out",
   quoted: "quoted",
+  paraphrased: "paraphrase",
   version: "version",
 };
 
@@ -2516,6 +2598,13 @@ function AutoFollowPanel({
   events,
   live,
   onToggle,
+  scriptureOn,
+  quotesOn,
+  referenceLive,
+  quoteLive,
+  paraphraseLive,
+  onPolicy,
+  onPresent,
 }: {
   enabled: boolean;
   status: string;
@@ -2523,6 +2612,15 @@ function AutoFollowPanel({
   events: FollowEvent[];
   live: boolean;
   onToggle: (v: boolean) => void;
+  /** Following spoken Scripture is on - otherwise there is nothing to place. */
+  scriptureOn: boolean;
+  quotesOn: boolean;
+  referenceLive: boolean;
+  quoteLive: boolean;
+  paraphraseLive: boolean;
+  onPolicy: (kind: "reference" | "quoted" | "paraphrased", live: boolean) => void;
+  /** Put a detection on the live screen now (it was waiting in Preview). */
+  onPresent: (e: FollowEvent) => void;
 }) {
   const label =
     status === "listening"
@@ -2575,6 +2673,49 @@ function AutoFollowPanel({
         </p>
       )}
 
+      {/* Where a heard passage goes, decided per kind of detection and put
+          here, where the preacher can be watched, rather than in Settings.
+          A reference read out is unmistakable and a quotation is a judgement,
+          so they are set apart: the first can safely go straight out while
+          the second waits for you, with its confidence beside it. */}
+      {enabled && scriptureOn && (
+        <div className="mt-2 space-y-1.5">
+          {([
+            ["reference", "Reference read out", referenceLive, true],
+            ["quoted", "Verse quoted", quoteLive, quotesOn],
+            ["paraphrased", "Verse paraphrased", paraphraseLive, quotesOn],
+          ] as const)
+            .filter(([, , , shown]) => shown)
+            .map(([kind, label, isLive]) => (
+              <div key={kind} className="flex items-center gap-2 text-[11px]">
+                <span className="min-w-0 flex-1 truncate text-[var(--v-text-dim)]">{label}</span>
+                <div role="group" aria-label={`${label}: where it goes`} className="flex shrink-0 overflow-hidden rounded-md border border-[var(--v-border)]">
+                  {([
+                    [false, "Preview"],
+                    [true, "Live"],
+                  ] as const).map(([v, text]) => (
+                    <button
+                      key={text}
+                      type="button"
+                      onClick={() => onPolicy(kind, v)}
+                      aria-pressed={isLive === v}
+                      className={`px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v-accent)] ${
+                        isLive === v
+                          ? v
+                            ? "bg-[var(--v-live)] font-semibold text-white"
+                            : "bg-[var(--v-accent-soft)] font-semibold text-[var(--v-accent)]"
+                          : "text-[var(--v-text-faint)] hover:bg-[var(--v-surface-2)]"
+                      }`}
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+
       {/* What it has actually done, newest first.
           Handing the service to a machine is only comfortable if you can
           watch it work: without this, a slide moving on its own looks exactly
@@ -2589,6 +2730,27 @@ function AutoFollowPanel({
                 <Music4 className="h-3 w-3 shrink-0 text-[var(--v-accent)]" />
               )}
               <span className="min-w-0 flex-1 truncate text-[var(--v-text-dim)]">{e.what}</span>
+              {e.kind === "scripture" && e.confidence !== undefined && (
+                <span
+                  title="How sure the match is"
+                  className={`shrink-0 tabular-nums ${e.confidence >= 90 ? "text-[var(--v-ok)]" : "text-amber-500"}`}
+                >
+                  {e.confidence}%
+                </span>
+              )}
+              {e.kind === "scripture" && e.live === true && (
+                <span className="shrink-0 rounded bg-[var(--v-live)] px-1 text-[10px] font-bold uppercase text-white">Live</span>
+              )}
+              {e.kind === "scripture" && e.live === false && e.query && (
+                <button
+                  type="button"
+                  onClick={() => onPresent(e)}
+                  aria-label={`Present ${e.what} now`}
+                  className="shrink-0 rounded bg-[var(--v-accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--v-accent)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v-accent)]"
+                >
+                  Present
+                </button>
+              )}
               <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--v-text-faint)]">
                 {WHY_LABEL[e.why]}
               </span>
@@ -2835,7 +2997,7 @@ function TimerPanel({
   );
 }
 
-/* ---------------- Phase 2: Stream / OBS ---------------- */
+/* ---------------- Audio mixer (the OBS source address moved to Settings) ---------------- */
 
 function StreamPanel({
   settings,
@@ -2844,8 +3006,6 @@ function StreamPanel({
   settings: AppSettings | undefined;
   patchSettings: (patch: Partial<AppSettings>) => void;
 }) {
-  const [copied, setCopied] = useState(false);
-  const streamUrl = typeof window !== "undefined" ? `${window.location.origin}/#/stream` : "/#/stream";
   const mediaVolume = settings?.stream?.mediaVolume ?? 100;
 
   const setStream = (patch: Partial<NonNullable<AppSettings["stream"]>>) =>
@@ -2884,78 +3044,16 @@ function StreamPanel({
 
   return (
     <div className="border-b border-[var(--v-border)] p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">
-          <Radio className="h-3.5 w-3.5" /> Stream / OBS source
-        </span>
-      </div>
-      <div className="flex gap-1.5">
-        <input
-          readOnly
-          value={streamUrl}
-          onFocus={(e) => e.currentTarget.select()}
-          className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-2 py-1.5 text-[12px] outline-none"
-        />
-        <button
-          onClick={() => {
-            navigator.clipboard?.writeText(streamUrl).then(() => {
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1400);
-            });
-          }}
-          aria-label={copied ? "Stream address copied" : "Copy the stream address"}
-          className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] px-2 hover:bg-[var(--v-surface-3)] focus-visible:ring-2 focus-visible:ring-[var(--v-accent)] focus-visible:outline-none"
-        >
-          {copied ? <Check className="h-4 w-4 text-[var(--v-ok)]" /> : <Copy className="h-4 w-4" />}
-        </button>
-      </div>
-      <p className="mt-1.5 text-[11px] text-[var(--v-text-faint)]">
-        Add as an OBS <b>Browser</b> source (transparent). For NDI, route this browser source out via OBS + the NDI plugin.
-      </p>
-      <a
-        href="/#/stream"
-        target="_blank"
-        rel="noreferrer"
-        className="mt-1.5 -ml-1 inline-flex h-7 items-center rounded px-1 text-[12px] font-medium text-[var(--v-accent)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--v-accent)] focus-visible:outline-none"
-      >
-        Open stream output ↗
-      </a>
-
-      {/* How the overlay sits inside the browser source. "Fill" is right for
-          almost everyone - OBS makes browser sources 800x600 by default, and
-          letterboxing a 16:9 overlay inside that is what makes the lyrics
-          look far too small. */}
-      <div className="mt-2 flex gap-1.5">
-        {([
-          { id: "fill", label: "Fill source" },
-          { id: "canvas", label: "Fixed canvas" },
-        ] as const).map((o) => (
-          <button
-            key={o.id}
-            onClick={() => setStream({ fitMode: o.id })}
-            title={
-              o.id === "fill"
-                ? "The overlay fills whatever size the browser source is"
-                : `Lay out at ${settings?.stream?.canvas ?? "1920x1080"} and letterbox to fit`
-            }
-            className={`flex-1 rounded-md border px-2 py-1 text-[12px] transition-colors ${
-              (settings?.stream?.fitMode ?? "fill") === o.id
-                ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                : "border-[var(--v-border)] hover:bg-[var(--v-surface-3)]"
-            }`}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-
+      {/* Stream / OBS source: its address and layout moved to Settings > Streaming
+          & output (see components/stream-source-card.tsx). Only the Audio Mixer,
+          which is used during a service, stays here. */}
       {/* Audio Mixer: one channel strip per audio source the app actually
           has - the microphone Auto-Follow listens on, and whatever background
           video is currently playing. Muting a channel here is the same
           "mute", not two different ideas: the mic strip pauses Auto-Follow
           listening while muted, and the media strip remembers its volume so
           unmuting restores exactly where it was. */}
-      <div className="mt-3 border-t border-[var(--v-border)] pt-3">
+      <div>
         <span className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-[var(--v-text-faint)]">
           <SlidersHorizontal className="h-3.5 w-3.5" /> Audio Mixer
         </span>
