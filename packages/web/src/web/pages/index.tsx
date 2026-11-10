@@ -4,7 +4,7 @@ import {
   Search, Plus, Upload, Music4, Pencil, Trash2, Monitor, MonitorX,
   ChevronLeft, ChevronRight, Square, Ban, Settings2, Repeat, X, Clapperboard,
   Image as ImageIcon, Radio, Languages, Ear, Check, Film, Palette, Link2, Loader2, Rocket,
-  BookOpen, SendHorizontal, Eye, Maximize,
+  BookOpen, SendHorizontal, Eye, Maximize, PictureInPicture2,
   ListChecks, ArrowUp, ArrowDown, CalendarDays, PlayCircle, GripVertical, History,
   Mic, MicOff, HelpCircle, Mail, Download, MonitorPlay, Volume2, VolumeX, SlidersHorizontal, Circle,
   Timer as TimerIcon,
@@ -15,7 +15,9 @@ import { VButton, SectionChip, Spinner, VuMeter, dbLabel } from "../components/b
 import { PresentationsPanel } from "../components/presentation-panel";
 import { SlideRender } from "../components/slide-render";
 import { usePublishAudioOutput } from "../hooks/use-audio-output";
+import { createPortal } from "react-dom";
 import { LiveOutput } from "../components/live-output";
+import { usePictureInPicture } from "../hooks/use-pip";
 import { SongEditor } from "../components/song-editor";
 import { ImportModal } from "../components/import-modal";
 import { BiblePanel } from "../components/bible-panel";
@@ -436,6 +438,7 @@ export default function OperatorPage() {
    * tablet, or a laptop plugged into the projector with no second display.
    */
   const [fullScreenOutput, setFullScreenOutput] = useState(false);
+  const pip = usePictureInPicture();
   const updateMedia = useUpdateMedia();
 
   const songs = useSongList(search);
@@ -1553,6 +1556,13 @@ export default function OperatorPage() {
                   projector.openProjector(id);
                   setScreenMenu(null);
                 }}
+                pipSupported={pip.supported}
+                pipActive={pip.active}
+                onTogglePip={() => {
+                  // Straight from the click: the API needs a user gesture.
+                  void pip.toggle();
+                  setScreenMenu(null);
+                }}
                 onFullScreenHere={() => {
                   // Requested straight from the click, because the Fullscreen
                   // API only grants it during a user gesture - opening the
@@ -1811,6 +1821,12 @@ export default function OperatorPage() {
           onClose={() => setTranslateOpen(false)}
         />
       )}
+
+      {pip.pipWindow &&
+        createPortal(
+          <LiveOutput playAudio={false} hideFullscreen onExit={pip.close} exitLabel="Close" />,
+          pip.pipWindow.document.body,
+        )}
 
       {fullScreenOutput && (
         <LiveOutput
@@ -2113,6 +2129,9 @@ function ScreenContextMenu({
   obsConfigured,
   onSendToDisplay,
   onFullScreenHere,
+  pipSupported,
+  pipActive,
+  onTogglePip,
   onCloseProjection,
   onSendToObs,
   onCopyStreamUrl,
@@ -2136,6 +2155,10 @@ function ScreenContextMenu({
   obsConfigured: boolean;
   onSendToDisplay: (displayId: number) => void;
   onFullScreenHere: () => void;
+  /** Browser can float the output in a small always-on-top window. */
+  pipSupported: boolean;
+  pipActive: boolean;
+  onTogglePip: () => void;
   onCloseProjection: () => void;
   onSendToObs: () => void;
   onCopyStreamUrl: () => void;
@@ -2229,6 +2252,13 @@ function ScreenContextMenu({
           <Maximize className="h-4 w-4 shrink-0" />,
           "Full screen on this device",
           onFullScreenHere,
+        )}
+      {pipSupported &&
+        item(
+          <PictureInPicture2 className="h-4 w-4 shrink-0" />,
+          pipActive ? "Close picture-in-picture" : "Picture-in-picture",
+          onTogglePip,
+          { active: pipActive, hint: pipActive ? "floating" : "stays on top" },
         )}
       {/* Chrome and Edge can open the output on a monitor of its own, but only
           once the operator has allowed it - and the browser will only ask in

@@ -26,7 +26,10 @@ export function LiveOutput({
   onExit,
   exitLabel = "Exit",
   screenId = MAIN_SCREEN,
+  hideFullscreen = false,
 }: {
+  /** Floating (picture-in-picture) windows cannot go full screen. */
+  hideFullscreen?: boolean;
   /** Which output screen this surface is showing. */
   screenId?: string;
   /** Only one surface should be audible; the caller decides which. */
@@ -191,7 +194,7 @@ export function LiveOutput({
             : "opacity 200ms ease, visibility 0s linear 200ms",
         }}
       >
-        {fullscreen.supported ? (
+        {hideFullscreen ? null : fullscreen.supported ? (
           <button
             type="button"
             onClick={() => void fullscreen.toggle()}

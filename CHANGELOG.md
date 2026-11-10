@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- NEW: **picture-in-picture for the live output.** In the screen menu, "Picture-in-picture" floats a small always-on-top window showing exactly what is on air, so you can watch the output while you work in another app or tab. Close it from its own title bar or the Close button. Available in Chrome and Edge 116+; the item is hidden in browsers that cannot do it.
+
 ## [1.28.0] — 2026-11-08
 
 - CHANGE: **the website now says everything the app does, and no longer overstates.** Six new cards cover bringing a library across from ProPresenter and EasyWorship, the keyboard shortcuts, recording the service, on-device speech recognition, live history and update checks. The Bible card lists the 31 English versions and the five other languages the app carries (Yoruba, Hausa, Igbo, Twi and Swahili, not three), the slides card mentions the live preview and word sizing, and the AI follow FAQ describes both engines. "Works without internet" now says what is true: everything for running a service is offline, and the few optional extras that use the internet are named. The guide had the same overstatement and a stale "1,100+ songs" (the library ships with 325); both are corrected.
