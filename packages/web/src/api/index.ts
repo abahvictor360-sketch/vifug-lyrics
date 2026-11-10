@@ -28,6 +28,7 @@ import { publicDomainSongs } from "./seed-data/public-domain";
 import { htmlToLyrics, extractSongMeta, decodeEntities } from "./lib/html-to-lyrics";
 import { vetLyrics, parseSongSearch } from "./lib/lyrics-vet";
 import { castPut, castGet, castList, ROOM_RE, KEY_RE } from "./lib/cast-store";
+import { insertThemeIfMissing, ensureMediaRow, findRedundantThemes } from "./lib/theme-seed";
 import { loadPolicy, savePolicy, sanitisePolicy, publicPolicy, verifyLicence, isAdmin } from "./lib/entitlement";
 import { getLiveState, setLiveState, subscribeLive } from "./lib/live-store";
 import {
@@ -263,12 +264,9 @@ const BUILTIN_IMAGE_THEMES: { name: string; file: string; bgColor: string; scrim
 
 /** The media-library row for a bundled picture, created the first time it is needed. */
 async function ensureBundledBackground(file: string): Promise<string> {
-  const uri = `/backgrounds/${file}`;
-  const [existing] = await db.select().from(schema.media).where(eq(schema.media.uri, uri));
-  if (existing) return existing.id;
-  const id = uuid();
-  await db.insert(schema.media).values({ id, type: "image", uri, loop: 1, fit: "cover", muted: 1 });
-  return id;
+  // One statement that adds the row only if it is not there, so overlapping
+  // requests cannot each add their own (see lib/theme-seed.ts).
+  return ensureMediaRow(`/backgrounds/${file}`, uuid());
 }
 
 /**
@@ -889,9 +887,9 @@ const app = new Hono()
       (b) => !rows.some((r) => r.name === b.name) && !deleted.includes(b.name),
     );
     if (missing.length || missingPictured.length) {
-      for (const t of missing) await db.insert(schema.themes).values({ ...t, id: uuid() });
+      for (const t of missing) await insertThemeIfMissing({ ...t, id: uuid() });
       for (const t of missingPictured) {
-        await db.insert(schema.themes).values({
+        await insertThemeIfMissing({
           id: uuid(),
           name: t.name,
           fontSize: null,
@@ -911,6 +909,32 @@ const app = new Hono()
         });
       }
       rows = await db.select().from(schema.themes);
+    }
+
+    // Copies of a built-in that an earlier race left behind: removed only when
+    // unused and identical to the one kept (see findRedundantThemes).
+    const builtinNames = [...BUILTIN_THEMES.map((b) => b.name), ...BUILTIN_IMAGE_THEMES.map((b) => b.name)];
+    if (builtinNames.some((n) => rows.filter((r) => r.name === n).length > 1)) {
+      const referenced = new Set<string>();
+      const [cfg] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
+      try {
+        const active = (JSON.parse(cfg?.config ?? "{}") as { activeThemeId?: string | null }).activeThemeId;
+        if (active) referenced.add(active);
+      } catch {
+        /* unreadable settings: nothing extra is protected, the song check below still is */
+      }
+      for (const s of await db.select({ themeId: schema.songs.themeId }).from(schema.songs)) if (s.themeId) referenced.add(s.themeId);
+      const mediaRows = await db.select({ id: schema.media.id, uri: schema.media.uri }).from(schema.media);
+      const redundant = findRedundantThemes(
+        rows as unknown as Parameters<typeof findRedundantThemes>[0],
+        builtinNames,
+        new Map(mediaRows.map((m) => [m.id, m.uri])),
+        referenced,
+      );
+      if (redundant.length) {
+        for (const id of redundant) await db.delete(schema.themes).where(eq(schema.themes.id, id));
+        rows = rows.filter((r) => !redundant.includes(r.id));
+      }
     }
     return c.json({ themes: rows }, 200);
   })
