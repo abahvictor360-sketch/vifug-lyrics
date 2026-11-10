@@ -7,6 +7,7 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
+- NEW: **a "Clean card" side-by-side style.** In the capture layout panel, Side by side now has Split, Clean card and Broadcast. Clean card is a dark card with the verse on one side (left-aligned), the Scripture reference pinned bottom-left, the camera inset beside it with rounded corners, and an optional footer line along the bottom, matching the Pewbeam look. The logo still sits top-right.
 - NEW: **a theme for each screen type.** Settings → Lyrics → Theme for each screen lets lyrics, Bible and presentations each use their own theme, or all share one: Bible and presentations follow the lyric theme until you pick one for them, and "Use the lyric theme for everything" puts them back. A theme's own background picture comes along with it.
 - NEW: **font size in the theme designer** is now a slider with an Auto-fit switch, beside the number box, and the canvas updates as you drag.
 - NEW: **picture-in-picture for the live output.** In the screen menu, "Picture-in-picture" floats a small always-on-top window showing exactly what is on air, so you can watch the output while you work in another app or tab. Close it from its own title bar or the Close button. Available in Chrome and Edge 116+; the item is hidden in browsers that cannot do it.

@@ -220,7 +220,7 @@ export function CaptureStage({
 
   // pip - split the frame. Video keeps its aspect (object-contain) so a
   // portrait camera feed isn't stretched to fill a landscape half.
-  const videoWidth = Math.min(0.8, Math.max(0.2, capture.pipVideoWidth ?? 0.5));
+  const videoWidth = Math.min(0.8, Math.max(0.2, capture.pipVideoWidth ?? (capture.pipClean && !capture.pipBroadcast ? 0.4 : 0.5)));
   const videoFirst = (capture.pipVideoSide ?? "left") === "left";
   const videoPct = `${videoWidth * 100}%`;
   const textPct = `${(1 - videoWidth) * 100}%`;
@@ -271,6 +271,81 @@ export function CaptureStage({
           </div>
         </div>
         {capture.pipBottomText ? bar(capture.pipBottomText, false) : <div style={{ height: "3%", background: accent, flex: "none" }} />}
+        {nameplate}
+      </div>
+    );
+  }
+
+  if (capture.pipClean && !capture.pipBroadcast) {
+    const unit = scale ? "cqw" : "vw";
+    const reference =
+      state.songTitle && state.sectionLabel && !state.sectionLabel.includes(state.songTitle)
+        ? `${state.sectionLabel} (${state.songTitle})`
+        : state.sectionLabel;
+    return (
+      <div style={{ ...root, display: "flex", flexDirection: "column", background: "#0b0b0d" }}>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: videoFirst ? "row" : "row-reverse",
+            gap: "3%",
+            padding: "4% 4% 2%",
+          }}
+        >
+          <div style={{ width: textPct, position: "relative", containerType: "size" }}>
+            <SlideRender
+              state={{ ...state, theme: { ...state.theme, textAlign: "left", textFrame: null, displayMode: "fullscreen", verticalPos: "center", showCaption: false } }}
+              transparent
+              scale
+              playAudio={playAudio}
+            />
+            {reference && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  bottom: "4%",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: `clamp(0.8rem, 4.2cqw, 3rem)`,
+                  fontFamily: 'var(--font-lyric), system-ui, sans-serif',
+                }}
+              >
+                {reference}
+              </div>
+            )}
+          </div>
+          <div
+            style={{
+              width: videoPct,
+              position: "relative",
+              alignSelf: "center",
+              height: "100%",
+              background: "#000",
+              borderRadius: "0.5em",
+              overflow: "hidden",
+            }}
+          >
+            <ShapedVideo capture={capture} av={av} />
+          </div>
+        </div>
+        <div
+          style={{
+            height: "7%",
+            flex: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "rgba(255,255,255,0.85)",
+            fontStyle: "italic",
+            fontSize: `clamp(0.6rem, 1.4${unit}, 1.4rem)`,
+            letterSpacing: "0.03em",
+          }}
+        >
+          {capture.pipBottomText}
+        </div>
         {nameplate}
       </div>
     );

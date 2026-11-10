@@ -132,6 +132,13 @@ export type LiveCapture = {
   pipVideoWidth?: number;
   /** pip only: broadcast look - framed video, branded bars, scripture card. */
   pipBroadcast?: boolean;
+  /**
+   * pip only: clean card look (the Pewbeam style) - dark card, verse on the
+   * text side left-aligned with the reference pinned bottom-left, the video
+   * inset beside it with rounded corners, and an optional footer line
+   * (pipBottomText). Ignored when pipBroadcast is on.
+   */
+  pipClean?: boolean;
   /** pip broadcast: text on the top bar (e.g. church or service name). */
   pipTopText?: string;
   /** pip broadcast: text on the bottom bar (e.g. website, social handle). */
