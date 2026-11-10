@@ -19,12 +19,13 @@ Allow: /
 # - Offline Bible engine (multiple English versions plus Yoruba, Hausa, Igbo)
 # - Projector output to a second screen, with themes and backgrounds
 # - OBS browser-source streaming and native NDI output
-# - AI auto-follow: advances slides by listening to the room (via Deepgram)
+# - AI auto-follow: advances lyrics and puts up scripture (reference, quoted or paraphrased verses, with confidence; optional on-device meaning model) by listening to the room (via Deepgram)
 # - Phone remote control and a stage/confidence display
 # - Presentations: build slide decks in-app or import PowerPoint (.pptx)
 # - Scrolling announcement ticker for on-screen notices
 # - Video backgrounds and clips with sound, played out of a chosen audio device
 # - Runs in a browser as well as on the desktop, including on a phone or tablet
+# - Phone camera and screen cast over Wi-Fi; visual theme designer; lower thirds and broadcast layouts; your own Bible versions; lyric import and song search; send media to a chosen screen; logo overlay
 
 # ── KEY FACTS ─────────────────────────────────
 # - Free forever, no watermark, no subscription
