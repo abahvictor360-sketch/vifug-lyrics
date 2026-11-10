@@ -59,24 +59,37 @@ const PREVIEW_SIZE: Record<number, string> = { 2: "0.8rem", 3: "0.64rem", 4: "0.
  */
 export function WelcomeDialog({
   onChoose,
+  hosted = false,
+  initialMode = "church",
+  initialLines = 2,
 }: {
   /**
    * keepLibrary=false clears the bundled songs before the dialog closes.
    * linesPerSlide is whatever was picked above, saved with the same click.
    */
   onChoose: (keepLibrary: boolean, linesPerSlide: number, mode: AppMode) => Promise<void> | void;
+  /**
+   * The shared hosted copy asks on every visit. Its library belongs to
+   * everyone, so the question about removing the bundled songs is never
+   * offered there: this welcome only chooses what Vifug is for and how big the
+   * words are, and cannot delete anything.
+   */
+  hosted?: boolean;
+  /** What is chosen to begin with - the current setting, when this is a return visit. */
+  initialMode?: AppMode;
+  initialLines?: number;
 }) {
   const [busy, setBusy] = useState<"keep" | "empty" | null>(null);
   // Church is what Vifug has always been, so it is the answer for anyone who
   // does not stop to think about the question.
-  const [mode, setMode] = useState<AppMode>("church");
+  const [mode, setMode] = useState<AppMode>(initialMode);
   const church = mode === "church";
   // Two is what the app has always defaulted to, so leaving it alone changes
   // nothing for anyone who does not care.
-  const [lines, setLines] = useState(2);
+  const [lines, setLines] = useState(initialLines);
   // One question per page: what it is for, how big the words are, then (church only) the song library.
   const [step, setStep] = useState(0);
-  const steps = church ? 3 : 2;
+  const steps = church && !hosted ? 3 : 2;
   const last = step === steps - 1;
 
   const choose = async (keep: boolean) => {
@@ -84,7 +97,7 @@ export function WelcomeDialog({
     try {
       // Outside church the bundled hymns are only hidden, never removed, so the
       // library is always kept: "start empty" is a church-only, permanent choice.
-      await onChoose(church ? keep : true, lines, mode);
+      await onChoose(church && !hosted ? keep : true, lines, mode);
     } finally {
       setBusy(null);
     }
@@ -181,7 +194,7 @@ export function WelcomeDialog({
           </div>
         )}
 
-        {step === 2 && church && (
+        {step === 2 && church && !hosted && (
           <div className="mt-5 text-left">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
               And your song library
@@ -237,7 +250,7 @@ export function WelcomeDialog({
               Next <ChevronRight className="h-4 w-4" />
             </button>
           )}
-          {last && !church && (
+          {last && (!church || hosted) && (
             <button
               type="button"
               onClick={() => choose(true)}
@@ -248,7 +261,7 @@ export function WelcomeDialog({
               Get started
             </button>
           )}
-          {last && church && <span />}
+          {last && church && !hosted && <span />}
         </div>
 
         <a

@@ -24,6 +24,7 @@ import { useSettings, useUpdateSettings, type AppSettings, type ThemeOverride } 
 import { SettingsPage, type SectionId as SettingsSectionId } from "../components/settings-page";
 import { MediaLibrary } from "../components/media-library";
 import { WelcomeDialog } from "../components/welcome-dialog";
+import { isHostedApp } from "../lib/hosted";
 import { appModeOf } from "../lib/app-mode";
 import { MediaPanel } from "../components/media-panel";
 import { MicPicker } from "../components/mic-picker";
@@ -816,7 +817,12 @@ export default function OperatorPage() {
   // (a stray event, a race) rather than a genuine choice, and one extra
   // render of the prompt is a far smaller cost than silently losing it.
   const welcomeShownAtRef = useRef<number | null>(null);
-  if (settings?.firstRun && welcomeShownAtRef.current === null) welcomeShownAtRef.current = Date.now();
+  // On the shared hosted copy (app.vifug.com) the welcome is shown on every
+  // visit, so each person can choose Church, Media or Presentations for the
+  // session. A desktop install asks once, as before.
+  const [hostedWelcomeDone, setHostedWelcomeDone] = useState(false);
+  const showWelcome = !!settings && (!!settings.firstRun || (isHostedApp() && !hostedWelcomeDone));
+  if (showWelcome && welcomeShownAtRef.current === null) welcomeShownAtRef.current = Date.now();
 
   // AI auto-follow - advances the LIVE slide by listening to the room. Manual
   // override always wins: it calls the same stage.goLive the operator uses.
@@ -1762,8 +1768,11 @@ export default function OperatorPage() {
           onStageNotes={setStageNotes}
         />
       )}
-      {settings?.firstRun && (
+      {showWelcome && (
         <WelcomeDialog
+          hosted={isHostedApp() && !settings?.firstRun}
+          initialMode={appModeOf(settings).id}
+          initialLines={settings?.linesPerSlide ?? 2}
           onChoose={async (keepLibrary, linesPerSlide, chosenMode) => {
             // See welcomeShownAtRef above - reject anything faster than a
             // human could actually read and click.
@@ -1786,6 +1795,7 @@ export default function OperatorPage() {
               qc.invalidateQueries({ queryKey: ["songs"] });
             }
             patchSettings({ firstRun: false, linesPerSlide, appMode: chosenMode });
+            setHostedWelcomeDone(true);
           }}
         />
       )}
