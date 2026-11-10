@@ -559,14 +559,39 @@ export function MediaPanel({
                         className="flex-1"
                       />
                     </label>
-                    <label className="flex items-center gap-2 text-[12px]">
-                      <input
-                        type="checkbox"
-                        checked={!!currentCapture.pipBroadcast}
-                        onChange={(e) => updateCapture({ pipBroadcast: e.target.checked })}
-                      />
-                      Broadcast look (framed video, branded bars)
-                    </label>
+                    <div className="flex gap-1.5">
+                      {([
+                        { id: "split", label: "Split" },
+                        { id: "clean", label: "Clean card" },
+                        { id: "broadcast", label: "Broadcast" },
+                      ] as const).map((st) => {
+                        const cur = currentCapture.pipBroadcast ? "broadcast" : currentCapture.pipClean ? "clean" : "split";
+                        return (
+                          <button
+                            key={st.id}
+                            type="button"
+                            title={
+                              st.id === "clean"
+                                ? "Verse on one side, reference bottom-left, video inset on the other"
+                                : st.id === "broadcast"
+                                  ? "Framed video, branded bars, scripture card"
+                                  : "Video and words split the screen"
+                            }
+                            onClick={() => updateCapture({ pipBroadcast: st.id === "broadcast", pipClean: st.id === "clean" })}
+                            className={`flex-1 rounded-md border px-2 py-1 text-[12px] ${
+                              cur === st.id
+                                ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                                : "border-[var(--v-border)]"
+                            }`}
+                          >
+                            {st.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {currentCapture.pipClean && !currentCapture.pipBroadcast && (
+                      <input type="text" placeholder="Footer line (e.g. yourchurch.org)" value={currentCapture.pipBottomText ?? ""} onChange={(e) => updateCapture({ pipBottomText: e.target.value })} className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]" />
+                    )}
                     {currentCapture.pipBroadcast && (
                       <>
                         <input type="text" placeholder="Top bar text (e.g. Sunday Service)" value={currentCapture.pipTopText ?? ""} onChange={(e) => updateCapture({ pipTopText: e.target.value })} className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]" />

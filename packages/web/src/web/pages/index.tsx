@@ -4,7 +4,7 @@ import {
   Search, Plus, Upload, Music4, Pencil, Trash2, Monitor, MonitorX,
   ChevronLeft, ChevronRight, Square, Ban, Settings2, Repeat, X, Clapperboard,
   Image as ImageIcon, Radio, Languages, Ear, Check, Film, Palette, Link2, Loader2, Rocket,
-  BookOpen, SendHorizontal, Eye, Maximize,
+  BookOpen, SendHorizontal, Eye, Maximize, PictureInPicture2,
   ListChecks, ArrowUp, ArrowDown, CalendarDays, PlayCircle, GripVertical, History,
   Mic, MicOff, HelpCircle, Mail, Download, MonitorPlay, Volume2, VolumeX, SlidersHorizontal, Circle,
   Timer as TimerIcon,
@@ -15,7 +15,9 @@ import { VButton, SectionChip, Spinner, VuMeter, dbLabel } from "../components/b
 import { PresentationsPanel } from "../components/presentation-panel";
 import { SlideRender } from "../components/slide-render";
 import { usePublishAudioOutput } from "../hooks/use-audio-output";
+import { createPortal } from "react-dom";
 import { LiveOutput } from "../components/live-output";
+import { usePictureInPicture } from "../hooks/use-pip";
 import { SongEditor } from "../components/song-editor";
 import { ImportModal } from "../components/import-modal";
 import { BiblePanel } from "../components/bible-panel";
@@ -436,6 +438,7 @@ export default function OperatorPage() {
    * tablet, or a laptop plugged into the projector with no second display.
    */
   const [fullScreenOutput, setFullScreenOutput] = useState(false);
+  const pip = usePictureInPicture();
   const updateMedia = useUpdateMedia();
 
   const songs = useSongList(search);
@@ -492,6 +495,20 @@ export default function OperatorPage() {
       setOrder(ids);
     }
   }, [full.data]);
+
+  // A Bible or presentation theme of its own: that saved theme's look and its
+  // own background picture. No id (or an id that no longer exists) follows the
+  // lyric theme, so nothing changes for anyone who never picks one.
+  const ownThemeBase = useCallback(
+    (id: string | null | undefined, fallback: LiveTheme): LiveTheme => {
+      const t = id ? themes.data?.find((x) => x.id === id) : undefined;
+      if (!t) return fallback;
+      const bgId = (t as { backgroundId?: string | null }).backgroundId;
+      const own = bgId ? mediaToBackground(media.data?.find((x) => x.id === bgId)) : null;
+      return { ...themeToLive(t as Record<string, unknown>), background: own ?? fallback.background };
+    },
+    [themes.data, media.data],
+  );
 
   // Resolve the active background media into a LiveBackground for the theme.
   const activeBackground = useMemo<LiveBackground>(() => {
@@ -606,13 +623,14 @@ export default function OperatorPage() {
 
   // Bible theme = active lyric theme with per-display Bible overrides merged in.
   // Bible slides always show the scripture reference caption on the output.
+  const bibleBase = useMemo(() => ownThemeBase(settings?.bibleThemeId, activeTheme), [ownThemeBase, settings?.bibleThemeId, activeTheme]);
   const bibleTheme = useMemo<LiveTheme>(
     () => ({
-      ...tightenMargin(mergeOverride(activeTheme, settings?.bibleTheme), settings?.bibleTheme),
+      ...tightenMargin(mergeOverride(bibleBase, settings?.bibleTheme), settings?.bibleTheme),
       ...(settings?.bibleBackgroundId !== undefined ? { background: bibleBackground } : {}),
       showCaption: true,
     }),
-    [activeTheme, settings?.bibleTheme, settings?.bibleBackgroundId, bibleBackground],
+    [bibleBase, settings?.bibleTheme, settings?.bibleBackgroundId, bibleBackground],
   );
 
   // Presentation background: same three states as the Bible's (see above).
@@ -640,16 +658,17 @@ export default function OperatorPage() {
    * below gives it the room to use, so letting it fill is what matches what
    * the operator sees in the preview.
    */
+  const presentationBase = useMemo(() => ownThemeBase(settings?.presentationThemeId, activeTheme), [ownThemeBase, settings?.presentationThemeId, activeTheme]);
   const presentationTheme = useMemo<LiveTheme>(
     () => ({
-      ...tightenMargin(mergeOverride(activeTheme, settings?.presentationTheme), settings?.presentationTheme),
+      ...tightenMargin(mergeOverride(presentationBase, settings?.presentationTheme), settings?.presentationTheme),
       // Decks get a background of their own, the same three states as the
       // Bible's: unset inherits the lyric background, null is deliberately
       // plain, an id is that picture or video. A slide carrying its own
       // background still wins over it (see lib/stage.ts).
       ...(settings?.presentationBackgroundId !== undefined ? { background: presentationBackground } : {}),
     }),
-    [activeTheme, settings?.presentationTheme, settings?.presentationBackgroundId, presentationBackground],
+    [presentationBase, settings?.presentationTheme, settings?.presentationBackgroundId, presentationBackground],
   );
 
   const stageSlides =
@@ -1553,6 +1572,13 @@ export default function OperatorPage() {
                   projector.openProjector(id);
                   setScreenMenu(null);
                 }}
+                pipSupported={pip.supported}
+                pipActive={pip.active}
+                onTogglePip={() => {
+                  // Straight from the click: the API needs a user gesture.
+                  void pip.toggle();
+                  setScreenMenu(null);
+                }}
                 onFullScreenHere={() => {
                   // Requested straight from the click, because the Fullscreen
                   // API only grants it during a user gesture - opening the
@@ -1811,6 +1837,12 @@ export default function OperatorPage() {
           onClose={() => setTranslateOpen(false)}
         />
       )}
+
+      {pip.pipWindow &&
+        createPortal(
+          <LiveOutput playAudio={false} hideFullscreen onExit={pip.close} exitLabel="Close" />,
+          pip.pipWindow.document.body,
+        )}
 
       {fullScreenOutput && (
         <LiveOutput
@@ -2113,6 +2145,9 @@ function ScreenContextMenu({
   obsConfigured,
   onSendToDisplay,
   onFullScreenHere,
+  pipSupported,
+  pipActive,
+  onTogglePip,
   onCloseProjection,
   onSendToObs,
   onCopyStreamUrl,
@@ -2136,6 +2171,10 @@ function ScreenContextMenu({
   obsConfigured: boolean;
   onSendToDisplay: (displayId: number) => void;
   onFullScreenHere: () => void;
+  /** Browser can float the output in a small always-on-top window. */
+  pipSupported: boolean;
+  pipActive: boolean;
+  onTogglePip: () => void;
   onCloseProjection: () => void;
   onSendToObs: () => void;
   onCopyStreamUrl: () => void;
@@ -2229,6 +2268,13 @@ function ScreenContextMenu({
           <Maximize className="h-4 w-4 shrink-0" />,
           "Full screen on this device",
           onFullScreenHere,
+        )}
+      {pipSupported &&
+        item(
+          <PictureInPicture2 className="h-4 w-4 shrink-0" />,
+          pipActive ? "Close picture-in-picture" : "Picture-in-picture",
+          onTogglePip,
+          { active: pipActive, hint: pipActive ? "floating" : "stays on top" },
         )}
       {/* Chrome and Edge can open the output on a monitor of its own, but only
           once the operator has allowed it - and the browser will only ask in

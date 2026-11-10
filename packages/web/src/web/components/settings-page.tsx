@@ -1361,6 +1361,30 @@ function LyricsSection({
   previewTheme: LiveTheme;
 }) {
   const linesPerSlide = settings?.linesPerSlide ?? 2;
+  const activateTheme = (id: string) => {
+    // A theme that ships with a picture (Violet Haze, Blue Halftone ...)
+    // brings it along - choosing the look and then also having to find
+    // its picture in the Background list would be two steps for one
+    // idea. A theme with no picture leaves the background as it was, as
+    // before. Either way the Background list below still changes it.
+    //
+    // The theme is for lyrics, Scripture and presentations alike. The
+    // Bible and presentation backgrounds are "unset = share the lyric
+    // background" until somebody picks one of their own, so clearing them
+    // here (undefined drops the key) puts both back on the shared picture
+    // - including one an earlier choice had pinned to something else.
+    const bg = themes.find((t) => t.id === id)?.backgroundId;
+    patchSettings(
+      bg
+        ? {
+            activeThemeId: id,
+            activeBackgroundId: bg,
+            bibleBackgroundId: undefined,
+            presentationBackgroundId: undefined,
+          }
+        : { activeThemeId: id },
+    );
+  };
   return (
     <div>
       {/* The theme editor brings its own preview - it previews the theme row
@@ -1376,31 +1400,64 @@ function LyricsSection({
         onPickBackground={(id) =>
           patchSettings({ activeBackgroundId: id, bibleBackgroundId: undefined, presentationBackgroundId: undefined })
         }
-        onActivate={(id) => {
-          // A theme that ships with a picture (Violet Haze, Blue Halftone ...)
-          // brings it along - choosing the look and then also having to find
-          // its picture in the Background list would be two steps for one
-          // idea. A theme with no picture leaves the background as it was, as
-          // before. Either way the Background list below still changes it.
-          //
-          // The theme is for lyrics, Scripture and presentations alike. The
-          // Bible and presentation backgrounds are "unset = share the lyric
-          // background" until somebody picks one of their own, so clearing them
-          // here (undefined drops the key) puts both back on the shared picture
-          // - including one an earlier choice had pinned to something else.
-          const bg = themes.find((t) => t.id === id)?.backgroundId;
-          patchSettings(
-            bg
-              ? {
-                  activeThemeId: id,
-                  activeBackgroundId: bg,
-                  bibleBackgroundId: undefined,
-                  presentationBackgroundId: undefined,
-                }
-              : { activeThemeId: id },
-          );
-        }}
+        onActivate={activateTheme}
       />
+
+      <Group title="Theme for each screen" icon={Palette}>
+        <p className="mb-2 text-[11px] text-[var(--v-text-faint)]">
+          One theme can dress lyrics, Bible and presentations alike, or each can have its own. Bible and presentations
+          follow the lyric theme until you pick one for them.
+        </p>
+        {(
+          [
+            { label: "Lyrics", value: settings?.activeThemeId ?? themes[0]?.id ?? "", own: false },
+            { label: "Bible", value: settings?.bibleThemeId ?? "", own: true },
+            { label: "Presentations", value: settings?.presentationThemeId ?? "", own: true },
+          ] as const
+        ).map((row) => (
+          <label key={row.label} className="mb-1.5 flex items-center gap-2 text-sm">
+            <span className="w-28 shrink-0 text-[var(--v-text-dim)]">{row.label}</span>
+            <select
+              value={row.value}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                if (row.label === "Lyrics") {
+                  if (id) activateTheme(id);
+                  return;
+                }
+                // Picking a theme for one screen type drops any background
+                // pinned to it, so the theme's own picture (if it has one)
+                // shows rather than an earlier choice.
+                if (row.label === "Bible") patchSettings({ bibleThemeId: id ?? undefined, bibleBackgroundId: undefined });
+                else patchSettings({ presentationThemeId: id ?? undefined, presentationBackgroundId: undefined });
+              }}
+              className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+            >
+              {row.own && <option value="">Same as lyrics</option>}
+              {themes.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </label>
+        ))}
+        <VButton
+          variant="subtle"
+          size="sm"
+          className="mt-1"
+          disabled={!settings?.bibleThemeId && !settings?.presentationThemeId}
+          title="Make Bible and presentations use the lyric theme again"
+          onClick={() =>
+            patchSettings({
+              bibleThemeId: undefined,
+              presentationThemeId: undefined,
+              bibleBackgroundId: undefined,
+              presentationBackgroundId: undefined,
+            })
+          }
+        >
+          Use the lyric theme for everything
+        </VButton>
+      </Group>
 
       <Group title="Look & feel" icon={Type}>
         <OverrideEditor
