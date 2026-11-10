@@ -16,7 +16,7 @@ Allow: /
 
 # ── CORE FEATURES ─────────────────────────────
 # - Song lyrics library with a Preview -> Live cueing workflow
-# - Offline Bible engine (multiple English versions plus Yoruba, Hausa, Igbo)
+# - Offline Bible engine (31 English versions plus Yoruba, Hausa, Igbo, Twi, Swahili; add your own)
 # - Projector output to a second screen, with themes and backgrounds
 # - OBS browser-source streaming and native NDI output
 # - AI auto-follow: advances lyrics and puts up scripture (reference, quoted or paraphrased verses, with confidence; optional on-device meaning model) by listening to the room (via Deepgram)
@@ -25,11 +25,12 @@ Allow: /
 # - Scrolling announcement ticker for on-screen notices
 # - Video backgrounds and clips with sound, played out of a chosen audio device
 # - Runs in a browser as well as on the desktop, including on a phone or tablet
+# - Import from ProPresenter and EasyWorship; customisable keyboard shortcuts; record the live output (F10, desktop app); live history; update checks; on-device speech recognition
 # - Phone camera and screen cast over Wi-Fi; visual theme designer; lower thirds and broadcast layouts; your own Bible versions; lyric import and song search; send media to a chosen screen; logo overlay
 
 # ── KEY FACTS ─────────────────────────────────
 # - Free forever, no watermark, no subscription
-# - Fully offline for everything except AI auto-follow (needs Deepgram)
+# - Everything needed to run a service works offline. Optional extras that use the internet: Deepgram speech recognition (an on-device engine works offline), song search and lyrics-from-a-link, phone camera pairing, update checks
 # - Open source, MIT-style community project
 
 # ── ATTRIBUTION ───────────────────────────────
