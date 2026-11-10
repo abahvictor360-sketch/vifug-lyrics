@@ -10,11 +10,15 @@ function Nameplate({ nameplate, scale }: { nameplate: NonNullable<LiveCapture>["
   const logo = useMediaUrl(nameplate?.logo);
   if (!nameplate?.name) return null;
   const unit = scale ? "cqw" : "vw";
+  // In a small preview box the usual minimum text size is far too big for the
+  // box, so the card would overflow it; the minimums shrink with the box there.
+  const minBig = scale ? "0.4rem" : "0.75rem";
+  const minSmall = scale ? "0.3rem" : "0.6rem";
   const style = nameplate.style ?? "classic";
   const accent = nameplate.accent || (style === "pill" ? "#22c55e" : style === "social" ? "#e11d48" : "#1d4ed8");
   const font = 'var(--font-lyric), "Archivo", system-ui, sans-serif';
-  const nameSize = `clamp(0.75rem, 1.7${unit}, 2.2rem)`;
-  const subSize = `clamp(0.6rem, 1.05${unit}, 1.4rem)`;
+  const nameSize = `clamp(${minBig}, 1.7${unit}, 2.2rem)`;
+  const subSize = `clamp(${minSmall}, 1.05${unit}, 1.4rem)`;
   const sub = nameplate.title;
 
   if (style === "broadcast") {
@@ -90,11 +94,11 @@ function Nameplate({ nameplate, scale }: { nameplate: NonNullable<LiveCapture>["
         boxShadow: "0 4px 20px rgba(0,0,0,0.35)",
       }}
     >
-      <div style={{ fontSize: `clamp(0.75rem, 1.6${unit}, 2rem)`, fontWeight: 700, lineHeight: 1.15 }}>
+      <div style={{ fontSize: `clamp(${minBig}, 1.6${unit}, 2rem)`, fontWeight: 700, lineHeight: 1.15 }}>
         {nameplate.name}
       </div>
       {sub && (
-        <div style={{ fontSize: `clamp(0.6rem, 1.05${unit}, 1.3rem)`, opacity: 0.8, marginTop: "0.2em" }}>
+        <div style={{ fontSize: `clamp(${minSmall}, 1.05${unit}, 1.3rem)`, opacity: 0.8, marginTop: "0.2em" }}>
           {sub}
         </div>
       )}
@@ -144,6 +148,10 @@ export function CaptureStage({
   const capture = state.capture;
   if (!capture) return <SlideRender state={state} scale={scale} playAudio={playAudio} />;
 
+  // In a small preview the card's sizes are percentages of THIS box, not of the
+  // window, so the stage has to be its own measuring box (otherwise they resolve
+  // against the whole page and come out far too large).
+  const root: React.CSSProperties = { position: "absolute", inset: 0, ...(scale ? { containerType: "size" } : {}) };
   const layout = capture.layout ?? "full";
   const nameplate = <Nameplate nameplate={capture.nameplate} scale={scale} />;
   const audioSource = capture.audioSource ?? "none";
@@ -158,7 +166,7 @@ export function CaptureStage({
 
   if (layout === "full") {
     return (
-      <div style={{ position: "absolute", inset: 0 }}>
+      <div style={root}>
         <ShapedVideo capture={capture} av={av} />
         {nameplate}
       </div>
@@ -168,7 +176,7 @@ export function CaptureStage({
   if (layout === "overlay") {
     const overlayMode = capture.overlayMode ?? "fullscreen";
     return (
-      <div style={{ position: "absolute", inset: 0 }}>
+      <div style={root}>
         <ShapedVideo capture={capture} av={av} />
         {overlayMode === "lower_third" ? (
           <LowerThirdBand capture={capture}>
@@ -250,7 +258,7 @@ export function CaptureStage({
       </div>
     );
     return (
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", background: "#06080f" }}>
+      <div style={{ ...root, display: "flex", flexDirection: "column", background: "#06080f" }}>
         {capture.pipTopText ? bar(capture.pipTopText, true) : <div style={{ height: "3%", background: accent, flex: "none" }} />}
         <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: videoFirst ? "row" : "row-reverse", gap: "2%", padding: "2%" }}>
           <div
@@ -279,8 +287,7 @@ export function CaptureStage({
   return (
     <div
       style={{
-        position: "absolute",
-        inset: 0,
+        ...root,
         display: "flex",
         flexDirection: videoFirst ? "row" : "row-reverse",
       }}

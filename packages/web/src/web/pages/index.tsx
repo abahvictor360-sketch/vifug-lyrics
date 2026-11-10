@@ -70,6 +70,7 @@ import { loadHistory, recordHistory, clearHistory, type LiveHistoryEntry } from 
 import type { Slide } from "../lib/paginator";
 import type { DisplayInfo } from "../lib/desktop";
 import { subscribeRemoteCommands } from "../lib/realtime";
+import { fetchRemoteMode, getPairCode, registerPairCode, roomOf } from "../lib/browser-secrets";
 import { MAIN_SCREEN } from "../lib/screens";
 import { canInstall, isInstalled, promptInstall, subscribeInstall } from "../lib/pwa";
 import {
@@ -722,7 +723,35 @@ export default function OperatorPage() {
   advanceGoesLiveRef.current = advanceGoesLive;
   const advanceNext = () => (advanceGoesLiveRef.current ? stageRef.current.next() : stageRef.current.previewNext());
   const advancePrev = () => (advanceGoesLiveRef.current ? stageRef.current.prev() : stageRef.current.previewPrev());
+  // On the shared hosted app each browser listens only for its own phone: it
+  // makes a pairing code, tells the server its hash, and subscribes to that
+  // room. Anywhere else the one shared PIN works as it always did.
+  const [remoteRoom, setRemoteRoom] = useState<string | null | undefined>(undefined);
   useEffect(() => {
+    let off = false;
+    const setUp = async () => {
+      if ((await fetchRemoteMode()) !== "per-browser") {
+        if (!off) setRemoteRoom(null);
+        return;
+      }
+      const code = getPairCode();
+      await registerPairCode(code);
+      if (!off) setRemoteRoom(await roomOf(code));
+    };
+    void setUp();
+    // A new code in Settings, or this browser's code going stale on the server.
+    const again = () => void setUp();
+    window.addEventListener("vifug:pair-code-changed", again);
+    const refresh = setInterval(again, 6 * 3600 * 1000);
+    return () => {
+      off = true;
+      window.removeEventListener("vifug:pair-code-changed", again);
+      clearInterval(refresh);
+    };
+  }, []);
+  useEffect(() => {
+    // Wait until it is known whether this is a per-browser room or the shared PIN.
+    if (remoteRoom === undefined) return;
     return subscribeRemoteCommands((cmd) => {
       const s = stageRef.current;
       switch (cmd.action) {
@@ -750,8 +779,8 @@ export default function OperatorPage() {
           }
           break;
       }
-    });
-  }, []);
+    }, remoteRoom ?? undefined);
+  }, [remoteRoom]);
 
   /**
    * Leaving full-screen output puts the operator back where they were. Esc is

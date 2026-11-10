@@ -29,6 +29,7 @@ import { htmlToLyrics, extractSongMeta, decodeEntities } from "./lib/html-to-lyr
 import { vetLyrics, parseSongSearch } from "./lib/lyrics-vet";
 import { castPut, castGet, castList, ROOM_RE, KEY_RE } from "./lib/cast-store";
 import { insertThemeIfMissing, ensureMediaRow, findRedundantThemes } from "./lib/theme-seed";
+import { perBrowserSecrets, registerRoom, roomRegistered, roomOf, stripSecrets, CODE_RE } from "./lib/pairing";
 import { loadPolicy, savePolicy, sanitisePolicy, publicPolicy, verifyLicence, isAdmin } from "./lib/entitlement";
 import { getLiveState, setLiveState, subscribeLive } from "./lib/live-store";
 import {
@@ -1406,13 +1407,29 @@ const app = new Hono()
   // Tells the Remote page whether it must ask for a PIN before showing
   // controls. Never returns the PIN itself - only whether one is required.
   .get("/remote/auth", async (c) => {
+    // On the shared hosted app there is no shared PIN: every browser pairs its
+    // own phone with its own code (see lib/pairing.ts). The phone is told which
+    // kind of code to ask for.
+    if (perBrowserSecrets()) return c.json({ requirePin: true, mode: "per-browser" }, 200);
     const { requirePin } = await remoteAuthConfig();
-    return c.json({ requirePin }, 200);
+    return c.json({ requirePin, mode: "shared" }, 200);
+  })
+  // A browser announces its own pairing code (as a hash) so a phone that types
+  // the same code can be recognised. Only the hash ever reaches the server.
+  .put("/remote/pair", async (c) => {
+    if (!perBrowserSecrets()) return c.json({ ok: false, mode: "shared" }, 200);
+    const { code } = await c.req.json<{ code?: string }>().catch(() => ({}) as { code?: string });
+    if (!code || !CODE_RE.test(code)) return c.json({ error: "the code must be six digits" }, 400);
+    await registerRoom(roomOf(code));
+    return c.json({ ok: true }, 200);
   })
   // Exchange a PIN for permission to drive the service. Returns ok:false
   // rather than an error code so a wrong PIN is a normal UI state.
   .post("/remote/auth", async (c) => {
     const { pin } = await c.req.json<{ pin?: string }>();
+    if (perBrowserSecrets()) {
+      return c.json({ ok: !!pin && CODE_RE.test(pin) && (await roomRegistered(roomOf(pin))) }, 200);
+    }
     const cfg = await remoteAuthConfig();
     if (!cfg.requirePin) return c.json({ ok: true }, 200);
     return c.json({ ok: !!cfg.pin && pin === cfg.pin }, 200);
@@ -1432,11 +1449,22 @@ const app = new Hono()
     // The server listens on 0.0.0.0 so phones on the Wi-Fi can reach it, which
     // also means an unauthenticated command endpoint would let anyone on the
     // network blank the screen mid-service. Every command carries the PIN.
-    const cfg = await remoteAuthConfig();
-    if (cfg.requirePin && (!cfg.pin || cmd.pin !== cfg.pin)) {
-      return c.json({ error: "unauthorized" }, 401);
+    // Hosted: the code identifies WHICH browser the command is for, and it is
+    // delivered to that browser only. Otherwise one shared PIN, as before.
+    let room: string | undefined;
+    if (perBrowserSecrets()) {
+      if (!cmd.pin || !CODE_RE.test(cmd.pin) || !(await roomRegistered(roomOf(cmd.pin)))) {
+        return c.json({ error: "unauthorized" }, 401);
+      }
+      room = roomOf(cmd.pin);
+    } else {
+      const cfg = await remoteAuthConfig();
+      if (cfg.requirePin && (!cfg.pin || cmd.pin !== cfg.pin)) {
+        return c.json({ error: "unauthorized" }, 401);
+      }
     }
     const command = {
+      room,
       action: cmd.action,
       index: cmd.index,
       songId: cmd.songId,
@@ -1453,8 +1481,12 @@ const app = new Hono()
     return c.json({ ok: true }, 200);
   })
   .get("/remote/stream", (c) => {
+    const room = c.req.query("room") ?? "";
+    // When commands are scoped to browsers, a listener that names no room hears nothing.
+    const scoped = perBrowserSecrets();
     return streamSSE(c, async (stream) => {
       const unsub = subscribeRemote((cmd) => {
+        if (scoped ? cmd.room !== room : cmd.room && cmd.room !== room) return;
         stream.writeSSE({ event: "command", data: JSON.stringify(cmd) }).catch(() => {});
       });
       let alive = true;
@@ -1573,10 +1605,18 @@ const app = new Hono()
   .get("/remote/poll", async (c) => {
     const raw = c.req.query("seq");
     if (raw === undefined) return c.json({ commands: [], seq: await latestRemoteSeq() }, 200);
-    const after = Number(raw);
+    let after = Number(raw);
+    const room = c.req.query("room") ?? "";
+    const scoped = perBrowserSecrets();
     const deadline = Date.now() + HOLD_MS;
     for (;;) {
-      const batch = await readRemoteCommandsAfter(after);
+      const all = await readRemoteCommandsAfter(after);
+      // Only this browser's commands; the position still moves past the rest.
+      const batch = {
+        seq: all.seq,
+        commands: all.commands.filter((cmd) => (scoped ? cmd.room === room : !cmd.room || cmd.room === room)),
+      };
+      after = all.seq;
       if (batch.commands.length) return c.json(batch, 200);
       if (Date.now() >= deadline) return c.json({ commands: [], seq: after }, 200);
       await sleep(POLL_INTERVAL_MS);
@@ -1596,14 +1636,18 @@ const app = new Hono()
     if (row) {
       try {
         const cfg = JSON.parse(row.config) as { deepgramApiKey?: string | null; autoFollowLang?: string | null };
-        if (!key) key = cfg.deepgramApiKey?.trim() || undefined;
+        // On the shared hosted app a key saved in the settings record is never
+        // handed out: each browser brings its own, kept only in that browser.
+        if (!key && !perBrowserSecrets()) key = cfg.deepgramApiKey?.trim() || undefined;
         if (cfg.autoFollowLang) language = cfg.autoFollowLang;
       } catch { /* ignore malformed config */ }
     }
-    if (!key) return c.json({ enabled: false, reason: "no_key" }, 200);
     // Deepgram's auto language detection ("multi") requires nova-3; single
     // languages run on nova-2 (broadest per-language coverage).
     const model = language === "multi" ? "nova-3" : "nova-2";
+    // The model and language are returned even without a key, so a browser
+    // that holds its own key can still use the chosen language.
+    if (!key) return c.json({ enabled: false, reason: "no_key", model, language }, 200);
     return c.json({ enabled: true, key, model, language, provider: "deepgram" }, 200);
   })
 
@@ -1656,7 +1700,18 @@ const app = new Hono()
       await db.insert(schema.settings).values({ id: "app", config: JSON.stringify(def) });
       [row] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
     }
-    const config = JSON.parse(row!.config) as Record<string, unknown>;
+    let config = JSON.parse(row!.config) as Record<string, unknown>;
+
+    // Hosted: the Deepgram key and the remote PIN belong to individual
+    // browsers, never to the shared record. Anything an earlier version left
+    // in it is removed, and nothing secret is ever sent back.
+    if (perBrowserSecrets()) {
+      const stripped = stripSecrets(config);
+      if (stripped.changed) {
+        await db.update(schema.settings).set({ config: JSON.stringify(stripped.config) }).where(eq(schema.settings.id, "app"));
+      }
+      return c.json({ config: stripped.config }, 200);
+    }
 
     /**
      * Make sure a PIN exists before handing Settings something to display.
@@ -1684,7 +1739,9 @@ const app = new Hono()
   .put("/settings", async (c) => {
     const body = await c.req.json<{ config: Record<string, unknown> }>();
     const [row] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
-    const config = JSON.stringify(body.config ?? {});
+    // Hosted: never keep a Deepgram key or a shared PIN in the shared record.
+    const incoming = perBrowserSecrets() ? stripSecrets(body.config ?? {}).config : (body.config ?? {});
+    const config = JSON.stringify(incoming);
     if (!row) await db.insert(schema.settings).values({ id: "app", config });
     else await db.update(schema.settings).set({ config }).where(eq(schema.settings.id, "app"));
     return c.json({ ok: true }, 200);

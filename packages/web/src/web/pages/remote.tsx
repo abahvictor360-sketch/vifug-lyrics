@@ -6,6 +6,7 @@ import {
 import type { LiveState } from "../lib/live-bus";
 import { IDLE_STATE, DEFAULT_THEME } from "../lib/live-bus";
 import { subscribeSnapshot } from "../lib/realtime";
+import { fetchRemoteMode } from "../lib/browser-secrets";
 import { uploadMediaFile } from "../hooks/use-media";
 
 /**
@@ -56,6 +57,11 @@ async function sendCommand(body: RemoteCommandBody) {
  */
 function PinGate({ onUnlock }: { onUnlock: (pin: string) => void }) {
   const [pin, setPin] = useState("");
+  // On the shared hosted app the code belongs to one browser; say where to find it.
+  const [perBrowser, setPerBrowser] = useState(false);
+  useEffect(() => {
+    void fetchRemoteMode().then((m) => setPerBrowser(m === "per-browser"));
+  }, []);
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
 
@@ -88,7 +94,9 @@ function PinGate({ onUnlock }: { onUnlock: (pin: string) => void }) {
       <div className="w-full max-w-xs text-center">
         <h1 className="mb-1 text-xl font-bold">Vifug Remote</h1>
         <p className="mb-5 text-sm text-white/50">
-          Enter the PIN shown in the app under Settings › Streaming &amp; output, in Outputs &amp; companion screens.
+          {perBrowser
+            ? "Enter the pairing code shown in Vifug on your computer, under Settings › Streaming & output › Phone pairing code. It is different in every browser."
+            : "Enter the PIN shown in the app under Settings › Streaming & output, in Outputs & companion screens."}
         </p>
         <input
           value={pin}
@@ -96,13 +104,13 @@ function PinGate({ onUnlock }: { onUnlock: (pin: string) => void }) {
           onKeyDown={(e) => e.key === "Enter" && pin && submit()}
           inputMode="numeric"
           autoComplete="one-time-code"
-          placeholder="••••"
-          aria-label="Remote PIN"
+          placeholder={perBrowser ? "••••••" : "••••"}
+          aria-label={perBrowser ? "Pairing code" : "Remote PIN"}
           className={`w-full rounded-2xl border-2 bg-white/5 py-4 text-center text-3xl tracking-[0.4em] outline-none ${
             error ? "border-red-500" : "border-white/15 focus:border-emerald-500"
           }`}
         />
-        {error && <p className="mt-2 text-sm text-red-400">That PIN didn’t work - try again.</p>}
+        {error && <p className="mt-2 text-sm text-red-400">{perBrowser ? "That code didn’t work - check it and try again." : "That PIN didn’t work - try again."}</p>}
         <button
           onClick={submit}
           disabled={!pin || checking}

@@ -6,6 +6,7 @@ import { parseSpokenVersion } from "../lib/spoken-version";
 import { ParaphraseTracker } from "../lib/follow-detect";
 import type { VerseCandidate } from "../lib/verse-rank";
 import { api } from "../lib/api";
+import { usesBrowserSecrets, getDeepgramKey } from "../lib/browser-secrets";
 
 /** "john 3:16" is how the parser speaks; "John 3:16" is how a person reads. */
 function titleCase(ref: string): string {
@@ -584,13 +585,23 @@ export function useAutoFollow(opts: {
     setStatus("connecting");
     try {
       const cfgRes = await api.autofollow.config.$get();
-      const cfg = (await cfgRes.json()) as
-        | { enabled: false; reason?: string }
+      const server = (await cfgRes.json()) as
+        | { enabled: false; reason?: string; model?: string; language?: string }
         | { enabled: true; key: string; model: string; language?: string; provider: string };
-      if (!cfg.enabled) {
+      // In a browser the key is the visitor's own, kept in this browser only;
+      // the desktop app keeps using the one in its own settings.
+      const ownKey = usesBrowserSecrets() ? getDeepgramKey() : null;
+      const key = ownKey ?? (server.enabled ? server.key : null);
+      if (!key) {
+        setErrorText(usesBrowserSecrets() ? "Add your Deepgram key in Settings → AI auto-follow." : null);
         setStatus("unavailable");
         return;
       }
+      const cfg = {
+        key,
+        model: server.model ?? "nova-2",
+        language: server.language,
+      };
 
       const stream = await openMic();
 

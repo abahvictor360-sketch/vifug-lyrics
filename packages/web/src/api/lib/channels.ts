@@ -13,6 +13,8 @@
 
 export type StageSnapshot = Record<string, unknown> & { rev?: number; srev?: number };
 export type RemoteCommand = {
+  /** Which browser this command is for (a hash of its pairing code); set on the shared hosted app. */
+  room?: string;
   action: string;
   index?: number;
   ts?: number;

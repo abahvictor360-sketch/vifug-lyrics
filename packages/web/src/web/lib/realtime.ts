@@ -141,6 +141,8 @@ export type RemoteCommandMessage = {
  */
 export function subscribeRemoteCommands(
   onCommand: (cmd: RemoteCommandMessage) => void,
+  /** On the shared hosted app: only this browser's commands (a hash of its pairing code). */
+  room?: string,
 ): () => void {
   let stopped = false;
   let es: EventSource | null = null;
@@ -149,7 +151,7 @@ export function subscribeRemoteCommands(
 
   const sse = () => {
     if (stopped) return;
-    es = new EventSource("/api/remote/stream");
+    es = new EventSource(room ? `/api/remote/stream?room=${room}` : "/api/remote/stream");
     es.addEventListener("command", (e) => {
       try {
         onCommand(JSON.parse((e as MessageEvent).data) as RemoteCommandMessage);
@@ -169,7 +171,8 @@ export function subscribeRemoteCommands(
       try {
         controller = new AbortController();
         // No seq on the first call: the reply carries the head to start from.
-        const url = seq === null ? "/api/remote/poll" : `/api/remote/poll?seq=${seq}`;
+        const q = room ? `&room=${room}` : "";
+        const url = seq === null ? `/api/remote/poll${room ? `?room=${room}` : ""}` : `/api/remote/poll?seq=${seq}${q}`;
         const r = await fetch(url, { signal: controller.signal });
         if (stopped) return;
         if (!r.ok) throw new Error(String(r.status));

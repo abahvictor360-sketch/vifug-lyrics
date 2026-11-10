@@ -57,6 +57,7 @@ import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-medi
 import { MediaImg } from "./media-el";
 import { StreamSourceCard } from "./stream-source-card";
 import { ThemeDesigner } from "./theme-designer";
+import { usesBrowserSecrets, getDeepgramKey, setDeepgramKey, getPairCode, newPairCode, registerPairCode, fetchRemoteMode, type RemoteMode } from "../lib/browser-secrets";
 import { AddBibleVersion } from "./add-bible-version";
 import { APP_MODES, appModeOf, type AppMode } from "../lib/app-mode";
 import { useQueryClient } from "@tanstack/react-query";
@@ -2461,16 +2462,7 @@ function AiSection({
           </>
         )}
 
-        <label className="mt-3 block">
-          <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Deepgram API key</span>
-          <input
-            type="password"
-            placeholder="dg_..."
-            value={settings?.deepgramApiKey ?? ""}
-            onChange={(e) => patchSettings({ deepgramApiKey: e.target.value || null })}
-            className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
-          />
-        </label>
+        <DeepgramKeyField settings={settings} patchSettings={patchSettings} />
         <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
           Powers the live speech recognition. New to this?{" "}
           <a href="https://vifug.com/deepgram-api-key.html" target="_blank" rel="noreferrer" className="text-[var(--v-accent)] hover:underline">
@@ -3834,6 +3826,96 @@ function ShortcutsPanel({
 }
 
 /**
+ * The Deepgram key. In a browser it belongs to that browser alone: it is kept
+ * in the browser's own storage and never sent to Vifug's server, so one
+ * person's key is never visible to, or used by, another. The desktop app is a
+ * single person's installation and keeps it in its own settings.
+ */
+function DeepgramKeyField({
+  settings,
+  patchSettings,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+}) {
+  const own = usesBrowserSecrets();
+  const [local, setLocal] = useState(() => getDeepgramKey() ?? "");
+  return (
+    <div className="mt-3">
+      <label className="block">
+        <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">
+          Deepgram API key{own ? " (kept in this browser only)" : ""}
+        </span>
+        <input
+          type="password"
+          placeholder="dg_..."
+          autoComplete="off"
+          value={own ? local : (settings?.deepgramApiKey ?? "")}
+          onChange={(e) => {
+            if (own) {
+              setLocal(e.target.value);
+              setDeepgramKey(e.target.value || null);
+            } else {
+              patchSettings({ deepgramApiKey: e.target.value || null });
+            }
+          }}
+          className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+        />
+      </label>
+      {own && (
+        <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
+          Each person who opens Vifug in a browser uses their own key. It is saved on this device only, is never sent to
+          Vifug&rsquo;s server and is not shared with anyone else using the site.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * This browser's own phone-pairing code, on the shared hosted app. It is made
+ * here, kept here, and only a one-way hash reaches the server - so a phone that
+ * types it controls this browser and nobody else's.
+ */
+function PairCodePanel() {
+  const [code, setCode] = useState(() => getPairCode());
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="mb-4 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] p-3">
+      <p className="flex items-center gap-1.5 text-sm font-medium">
+        <Lock className="h-3.5 w-3.5 text-[var(--v-accent)]" /> Phone pairing code (this browser only)
+      </p>
+      <p className="mt-0.5 text-[12px] text-[var(--v-text-faint)]">
+        Open the Remote on your phone and type this code. It controls this browser and no one else&rsquo;s, and it is
+        different in every browser. Make a new one if it has been shared.
+      </p>
+      <div className="mt-2.5 flex items-center gap-2">
+        <code className="rounded bg-[var(--v-surface)] px-3 py-1.5 text-lg font-semibold tracking-[0.3em] text-[var(--v-accent)]">
+          {revealed ? code : "••••••"}
+        </code>
+        <button
+          onClick={() => setRevealed((v) => !v)}
+          className="rounded-md border border-[var(--v-border)] px-2 py-1.5 text-[12px] hover:bg-[var(--v-surface)]"
+        >
+          {revealed ? "Hide" : "Show"}
+        </button>
+        <button
+          onClick={async () => {
+            const next = newPairCode();
+            setCode(next);
+            await registerPairCode(next);
+          }}
+          className="rounded-md border border-[var(--v-border)] px-2 py-1.5 text-[12px] hover:bg-[var(--v-surface)]"
+          title="A phone already paired will have to enter the new code"
+        >
+          New code
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Phone-remote lock. The remote can blank the screen or jump slides mid-
  * service, and the server is reachable by every device on the Wi-Fi, so this
  * is on by default. The PIN is shown here because this panel is exactly where
@@ -3848,6 +3930,12 @@ function RemotePinPanel({
 }) {
   const remote = settings?.remote ?? { requirePin: true, pin: null };
   const [revealed, setRevealed] = useState(false);
+  // On the shared hosted app the PIN is per browser, not one shared secret.
+  const [mode, setMode] = useState<RemoteMode | null>(null);
+  useEffect(() => {
+    void fetchRemoteMode().then(setMode);
+  }, []);
+  if (mode === "per-browser") return <PairCodePanel />;
 
   const randomPin = () => String(Math.floor(1000 + Math.random() * 9000));
 
