@@ -7,6 +7,10 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
+- NEW: **install from the terminal.** One command downloads and installs the newest release: `curl -fsSL https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.sh | bash` on macOS and Linux, `irm https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.ps1 | iex` in Windows PowerShell. Run it again to update.
+- NEW: **slide thumbnails with a coloured label bar and a size slider.** Each slide in the grid now carries a bar along the bottom with its number and section (Verse 1, Chorus), in the section's colour; the bar turns red on the live slide and green on the cued one. The words scale with the card, and a Slide size slider above the grid makes the cards bigger or smaller and is remembered on that device.
+- NEW: **a status bar along the bottom.** One line showing what is on air (song, section and slide count), whether the output is open and on which screen, the recording time, auto-follow, the theme and the clock. Hidden on phones.
+- CHANGED: **Preview and Live have title bars.** Each picture has a coloured header attached to it; the Live one turns solid red while something is on air.
 - CHANGED: **the theme designer is in the Settings side menu.** "Theme designer" now sits under Lyrics in the menu and opens in the Settings window itself, with the slide on the left and the controls on the right, instead of a second window on top. Pick which theme to edit at the top, start a new one, or put the one you are editing on the lyric screen. The button in Settings → Lyrics takes you there.
 - CHANGED: **small tidy-ups across the app.** The Preview and Live pictures line up. The Settings window is wider and its menu hints no longer cut off. An empty song library says so and points at New and Import, and a search with no matches says what was searched. The Plans tab has a proper "Select a plan" screen. The top-bar button that opens the media library is labelled Library, so it is not confused with the Media tab, and the browser badge reads Browser instead of Preview. The font-size slider in the designer is full width.
 

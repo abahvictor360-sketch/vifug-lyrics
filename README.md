@@ -6,6 +6,26 @@ Created and maintained by **[Victor Abah](https://github.com/abahvictor360-sketc
 
 Monorepo: Bun workspaces + Turborepo.
 
+## Install from the terminal
+
+One command per system. Each downloads the newest release from GitHub; run it again to update.
+
+**macOS and Linux**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.sh | bash
+```
+
+macOS puts Vifug in `/Applications`. Linux (x86_64) puts the AppImage at `~/.local/bin/vifug` and adds a menu entry.
+
+**Windows (PowerShell)**
+
+```powershell
+irm https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.ps1 | iex
+```
+
+This runs the normal installer. For no installer windows, run `$env:VIFUG_SILENT = "1"` first.
+
 ## Project Structure
 
 ```
