@@ -5,11 +5,14 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [1.30.0] — 2026-11-11
+## [Unreleased]
 
 - FIX: **the Clean card side-by-side layout collapsed to a thin strip at the top of the screen.** It now fills the screen as intended. The verse also no longer runs into the reference under it, "Video left" and "Video right" were the wrong way round in this layout and are corrected (the camera starts on the right), and the footer and reference text scale with the picture so they are the right size in the small Preview and Live pictures.
 - FIX: the screen menu is wider, so "Picture-in-picture" and "Open on another monitor…" are no longer cut off.
 - DOCS: **a guide chapter for everything new in 1.29 and 1.30**, with screenshots: installing from the terminal, the theme designer step by step, a theme for each screen, the slide grid and status bar, picture-in-picture and Clean card. The landing page now opens with a screenshot of the app, shows the new features with pictures, shortens the feature list behind "Show all features", and has the terminal install commands beside the download button.
+
+## [1.30.0] — 2026-11-11
+
 - NEW: **install from the terminal.** One command downloads and installs the newest release: `curl -fsSL https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.sh | bash` on macOS and Linux, `irm https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.ps1 | iex` in Windows PowerShell. Run it again to update.
 - NEW: **slide thumbnails with a coloured label bar and a size slider.** Each slide in the grid now carries a bar along the bottom with its number and section (Verse 1, Chorus), in the section's colour; the bar turns red on the live slide and green on the cued one. The words scale with the card, and a Slide size slider above the grid makes the cards bigger or smaller and is remembered on that device.
 - NEW: **a status bar along the bottom.** One line showing what is on air (song, section and slide count), whether the output is open and on which screen, the recording time, auto-follow, the theme and the clock. Hidden on phones.
