@@ -22,7 +22,9 @@
     "node_modules/grandiose/**"
   ],
   "extraResources": [
-    { "from": "../web/local.db", "to": "seed.db" }
+    { "from": "../web/local.db", "to": "seed.db" },
+    // ffmpeg for live streaming, fetched by fetch-ffmpeg.ts at build time.
+    { "from": "build/ffmpeg", "to": "ffmpeg" }
   ],
   "productName": "Vifug",
   "directories": {

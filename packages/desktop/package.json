@@ -13,7 +13,8 @@
     "dev": "vite",
     "copy:web": "bun copy-web.ts",
     "copy:win-runtime": "bun win-runtime.ts",
-    "build": "bun run copy:web && bun run copy:win-runtime && vite build",
+    "fetch:ffmpeg": "bun fetch-ffmpeg.ts",
+    "build": "bun run copy:web && bun run copy:win-runtime && bun run fetch:ffmpeg && vite build",
     "bump": "bun bump-version.ts",
     "dist": "bun run bump && cd ../web && bun run reseed:local && bun run build && cd ../desktop && bun run build && electron-builder",
     "typecheck": "tsc --noEmit"

@@ -78,6 +78,19 @@ export interface ElectronAPI {
   /** Tear down a surface created by recorderSurface(). */
   recorderRelease?: () => Promise<{ ok: boolean }>;
 
+  /** Live streaming to RTMP servers. Absent on older desktop builds. */
+  streamStatus?: () => Promise<{ running: boolean; error: string | null; available: boolean }>;
+  streamStart?: (opts: {
+    urls: string[];
+    height: number;
+    fps: number;
+    videoKbps: number;
+    hasAudio: boolean;
+  }) => Promise<{ ok: boolean; error?: string }>;
+  streamStop?: () => Promise<{ ok: boolean }>;
+  streamChunk?: (data: ArrayBuffer) => void;
+  onStreamState?: (cb: (state: { running: boolean; error: string | null }) => void) => () => void;
+
   /** Copy the library (database + media) into a dated folder the user picks. */
   backupCreate?: () => Promise<{ ok: boolean; folder?: string; error?: string; canceled?: boolean }>;
   /** Replace the library from a backup folder, then relaunch. */

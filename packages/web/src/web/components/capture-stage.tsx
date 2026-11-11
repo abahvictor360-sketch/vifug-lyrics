@@ -282,6 +282,7 @@ export function CaptureStage({
       state.songTitle && state.sectionLabel && !state.sectionLabel.includes(state.songTitle)
         ? `${state.sectionLabel} (${state.songTitle})`
         : state.sectionLabel;
+    const refTop = capture.pipRefPos === "top";
     return (
       <div style={{ position: "absolute", inset: 0, containerType: "size", display: "flex", flexDirection: "column", background: "#0b0b0d" }}>
         <div
@@ -297,7 +298,7 @@ export function CaptureStage({
           <div style={{ width: textPct, position: "relative", containerType: "size" }}>
             {/* The verse gets the pane above the reference line, so a long
                 passage shrinks to fit rather than running into it. */}
-            <div style={{ position: "absolute", inset: reference ? "0 0 16% 0" : 0, containerType: "size" }}>
+            <div style={{ position: "absolute", inset: !reference ? 0 : refTop ? "16% 0 0 0" : "0 0 16% 0", containerType: "size" }}>
               <SlideRender
                 state={{ ...state, theme: { ...state.theme, textAlign: "left", textFrame: null, displayMode: "fullscreen", verticalPos: "center", showCaption: false, safeMargin: 2 } }}
                 transparent
@@ -310,7 +311,9 @@ export function CaptureStage({
                 style={{
                   position: "absolute",
                   left: "2%",
-                  bottom: "3%",
+                  right: "2%",
+                  textAlign: capture.pipRefAlign ?? "left",
+                  ...(refTop ? { top: "3%" } : { bottom: "3%" }),
                   color: "#fff",
                   fontWeight: 700,
                   fontSize: "4.4cqw",

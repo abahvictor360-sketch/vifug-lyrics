@@ -12,6 +12,7 @@ import fsSync from "node:fs";
 import { startEmbeddedServer } from "./server";
 import { lanAddresses, lanAddressDetails, firewallState, allowThroughFirewall } from "./network";
 import { ndiStatus, ndiStart, ndiStop, ndiRebind } from "./ndi";
+import { streamStart, streamChunk, streamStop, streamStatus, onStreamState, type StreamStartOptions } from "./stream";
 import { beginStartupLog, logStartup, logStartupError, startupLogPath } from "./startup-log";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -590,10 +591,17 @@ ipcMain.handle("capture:sources", async () => {
 const RECORDING_WINDOW_TITLE = "Vifug Recording Surface";
 let recordingWin: BrowserWindow | null = null;
 
+/*
+ * Recording and streaming both capture this surface and either can stop
+ * first, so it is counted: the window only closes when the last user lets go.
+ */
+let recordingSurfaceUsers = 0;
+
 ipcMain.handle("recorder:surface", async () => {
   if (mainProjector()) {
     return { title: "Vifug Projector", temporary: false };
   }
+  recordingSurfaceUsers++;
   if (recordingWin && !recordingWin.isDestroyed()) {
     return { title: RECORDING_WINDOW_TITLE, temporary: true };
   }
@@ -633,10 +641,25 @@ ipcMain.handle("recorder:surface", async () => {
 });
 
 ipcMain.handle("recorder:release", () => {
+  recordingSurfaceUsers = Math.max(0, recordingSurfaceUsers - 1);
+  if (recordingSurfaceUsers > 0) return { ok: true };
   if (recordingWin && !recordingWin.isDestroyed()) recordingWin.close();
   recordingWin = null;
   return { ok: true };
 });
+
+// ---- Live streaming (RTMP via ffmpeg, see stream.ts) ----
+onStreamState((state) => {
+  for (const w of BrowserWindow.getAllWindows()) {
+    if (!w.isDestroyed()) w.webContents.send("stream:state", state);
+  }
+});
+ipcMain.handle("stream:status", () => streamStatus());
+ipcMain.handle("stream:start", (_e, opts: StreamStartOptions) => streamStart(opts));
+ipcMain.handle("stream:stop", () => streamStop());
+// send, not invoke: several chunks a second, and nothing to answer.
+ipcMain.on("stream:chunk", (_e, data: ArrayBuffer) => streamChunk(data));
+app.on("before-quit", () => { streamStop(); });
 
 /**
  * Backup and restore.

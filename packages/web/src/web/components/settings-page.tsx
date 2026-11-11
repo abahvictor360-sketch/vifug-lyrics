@@ -56,7 +56,19 @@ import { MediaPicker } from "./media-picker";
 import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-media";
 import { MediaImg } from "./media-el";
 import { StreamSourceCard } from "./stream-source-card";
+import {
+  STREAM_PLATFORMS,
+  STREAM_QUALITIES,
+  destinationUrl,
+  loadStreamConfig,
+  saveStreamConfig,
+  type StreamConfig,
+  type StreamDestination,
+  type StreamPlatform,
+  type StreamQuality,
+} from "../lib/stream-destinations";
 import { ThemeDesigner } from "./theme-designer";
+import { getDesktopAPI } from "../lib/desktop";
 import { AddBibleVersion } from "./add-bible-version";
 import { APP_MODES, appModeOf, type AppMode } from "../lib/app-mode";
 import { useQueryClient } from "@tanstack/react-query";
@@ -1339,6 +1351,156 @@ export function ColorField({
         )}
       </div>
     </label>
+  );
+}
+
+/* ---------------- Go live (RTMP destinations) ---------------- */
+
+/**
+ * Where the Stream button sends the live output. One row per platform:
+ * the server address is filled in for YouTube, Facebook and Twitch, and
+ * the operator pastes the stream key the platform gives them.
+ */
+function GoLiveGroup({ desktop }: { desktop: ReturnType<typeof useDesktop> }) {
+  const [config, setConfig] = useState<StreamConfig>(loadStreamConfig);
+  const [showKey, setShowKey] = useState<string | null>(null);
+  const [available, setAvailable] = useState<boolean | null>(null);
+  useEffect(() => {
+    void getDesktopAPI()?.streamStatus?.().then((st) => setAvailable(st.available)).catch(() => setAvailable(null));
+  }, []);
+  const save = (next: StreamConfig) => {
+    setConfig(next);
+    saveStreamConfig(next);
+  };
+  const patchDest = (id: string, p: Partial<StreamDestination>) =>
+    save({ ...config, destinations: config.destinations.map((d) => (d.id === id ? { ...d, ...p } : d)) });
+  const add = (platform: StreamPlatform) => {
+    const info = STREAM_PLATFORMS.find((x) => x.id === platform)!;
+    save({
+      ...config,
+      destinations: [
+        ...config.destinations,
+        { id: `${Date.now()}-${Math.round(Math.random() * 1e6)}`, platform, name: info.label, server: info.server, key: "", enabled: true },
+      ],
+    });
+  };
+  const canStream = !!getDesktopAPI()?.streamStart;
+  const input = "w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]";
+
+  return (
+    <Group title="Go live to YouTube, Facebook and more" icon={Radio}>
+      <p className="text-[13px] text-[var(--v-text-dim)]">
+        Stream the live output straight from Vifug, to several platforms at once. Add each platform, paste its stream
+        key, then press <b>Go live</b> under the Live picture. The stream is exactly what the room sees.
+      </p>
+      {!canStream && (
+        <p className="mt-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-[13px] text-[var(--v-text-dim)]">
+          {desktop
+            ? "This version of the desktop app cannot stream yet. Update Vifug to turn it on."
+            : "Streaming to platforms needs the desktop app. In a browser, use the OBS overlay below instead."}
+        </p>
+      )}
+      {canStream && available === false && (
+        <p className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[13px]">
+          The video encoder (ffmpeg) was not found on this computer. Reinstall Vifug, or install ffmpeg.
+        </p>
+      )}
+
+      <div className="mt-3 space-y-2">
+        {config.destinations.map((d) => {
+          const info = STREAM_PLATFORMS.find((x) => x.id === d.platform) ?? STREAM_PLATFORMS[STREAM_PLATFORMS.length - 1]!;
+          const ready = destinationUrl(d) !== null;
+          return (
+            <div key={d.id} className="rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-3">
+              <div className="flex items-center gap-2">
+                <Toggle checked={d.enabled} onChange={(v) => patchDest(d.id, { enabled: v })} />
+                <input
+                  value={d.name}
+                  onChange={(e) => patchDest(d.id, { name: e.target.value })}
+                  aria-label="Destination name"
+                  className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none"
+                />
+                <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold ${ready ? "bg-[var(--v-ok)]/15 text-[var(--v-ok)]" : "bg-[var(--v-surface-3)] text-[var(--v-text-faint)]"}`}>
+                  {ready ? (d.enabled ? "Ready" : "Off") : "Needs a key"}
+                </span>
+                <button
+                  onClick={() => save({ ...config, destinations: config.destinations.filter((x) => x.id !== d.id) })}
+                  aria-label={`Remove ${d.name}`}
+                  title="Remove"
+                  className="rounded p-1 text-[var(--v-text-faint)] hover:bg-[var(--v-live-soft)] hover:text-[var(--v-live)]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Server</span>
+                  <input
+                    value={d.server}
+                    onChange={(e) => patchDest(d.id, { server: e.target.value })}
+                    placeholder="rtmp://…"
+                    spellCheck={false}
+                    className={input}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 flex items-center justify-between text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">
+                    Stream key
+                    <button type="button" onClick={() => setShowKey(showKey === d.id ? null : d.id)} className="normal-case tracking-normal text-[var(--v-accent)] hover:underline">
+                      {showKey === d.id ? "Hide" : "Show"}
+                    </button>
+                  </span>
+                  <input
+                    type={showKey === d.id ? "text" : "password"}
+                    value={d.key}
+                    onChange={(e) => patchDest(d.id, { key: e.target.value })}
+                    placeholder="Paste the key"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className={input}
+                  />
+                </label>
+              </div>
+              <p className="mt-1.5 text-[11px] text-[var(--v-text-faint)]">Where to find it: {info.keyHelp}.</p>
+            </div>
+          );
+        })}
+        {config.destinations.length === 0 && (
+          <p className="text-[13px] text-[var(--v-text-faint)]">No destinations yet. Add one below.</p>
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-[12px] text-[var(--v-text-faint)]">Add:</span>
+        {STREAM_PLATFORMS.map((pf) => (
+          <VButton key={pf.id} variant="subtle" size="sm" onClick={() => add(pf.id)}>
+            <Plus className="h-4 w-4" /> {pf.label}
+          </VButton>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Quality</span>
+          <select value={config.quality} onChange={(e) => save({ ...config, quality: e.target.value as StreamQuality })} className={input}>
+            {STREAM_QUALITIES.map((q) => (
+              <option key={q.id} value={q.id}>{q.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center justify-between gap-3 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2">
+          <span className="min-w-0">
+            <span className="block text-sm">Send the microphone</span>
+            <span className="block text-[11px] text-[var(--v-text-faint)]">The one chosen in AI auto-follow. Off sends silence.</span>
+          </span>
+          <Toggle checked={config.microphone} onChange={(v) => save({ ...config, microphone: v })} />
+        </label>
+      </div>
+      <p className="mt-2 text-[11px] text-[var(--v-text-faint)]">
+        Stream keys are kept on this computer only - they are not in backups or on a hosted server. Anyone with a key
+        can broadcast to that channel, so do not share them.
+      </p>
+    </Group>
   );
 }
 
@@ -2700,6 +2862,7 @@ function StreamingSection({
 
   return (
     <div>
+      <GoLiveGroup desktop={desktop} />
       <Group title="Stream canvas" icon={MonitorPlay}>
         <label className="flex items-center justify-between gap-3">
           <span className="min-w-0">

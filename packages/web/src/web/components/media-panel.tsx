@@ -590,6 +590,43 @@ export function MediaPanel({
                       })}
                     </div>
                     {currentCapture.pipClean && !currentCapture.pipBroadcast && (
+                      <div className="space-y-1.5">
+                        <p className="text-[12px] text-[var(--v-text-faint)]">Bible reference</p>
+                        <div className="flex gap-1.5">
+                          {(["left", "center", "right"] as const).map((a) => (
+                            <button
+                              key={a}
+                              type="button"
+                              onClick={() => updateCapture({ pipRefAlign: a })}
+                              className={`flex-1 rounded-md border px-2 py-1 text-[12px] capitalize ${
+                                (currentCapture.pipRefAlign ?? "left") === a
+                                  ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                                  : "border-[var(--v-border)]"
+                              }`}
+                            >
+                              {a}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex gap-1.5">
+                          {(["top", "bottom"] as const).map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => updateCapture({ pipRefPos: v })}
+                              className={`flex-1 rounded-md border px-2 py-1 text-[12px] ${
+                                (currentCapture.pipRefPos ?? "bottom") === v
+                                  ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                                  : "border-[var(--v-border)]"
+                              }`}
+                            >
+                              {v === "top" ? "Above the verse" : "Below the verse"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {currentCapture.pipClean && !currentCapture.pipBroadcast && (
                       <input type="text" placeholder="Footer line (e.g. yourchurch.org)" value={currentCapture.pipBottomText ?? ""} onChange={(e) => updateCapture({ pipBottomText: e.target.value })} className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-xs outline-none focus:border-[var(--v-accent)]" />
                     )}
                     {currentCapture.pipBroadcast && (
