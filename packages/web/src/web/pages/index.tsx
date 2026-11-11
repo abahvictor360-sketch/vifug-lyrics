@@ -36,6 +36,7 @@ import { TimerOverlay } from "../components/timer-overlay";
 import { useLiveController } from "../hooks/use-live-controller";
 import { useStage, type StageController } from "../hooks/use-stage";
 import { useLiveState } from "../hooks/use-live";
+import { chipClass } from "../lib/sections";
 import { useDesktop } from "../hooks/use-desktop";
 import { useUpdateCheck, DOWNLOAD_PAGE } from "../hooks/use-update-check";
 import { UpdateDialog } from "../components/update-dialog";
@@ -1300,7 +1301,14 @@ export default function OperatorPage() {
               </div>
             )}
             {!songs.isError && songs.data?.length === 0 && (
-              <p className="px-2 py-8 text-center text-sm text-[var(--v-text-faint)]">No songs found.</p>
+              <div className="px-3 py-8 text-center">
+                <p className="text-sm text-[var(--v-text-dim)]">
+                  {search.trim() ? `No songs match "${search.trim()}".` : "Your library is empty."}
+                </p>
+                <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
+                  {search.trim() ? "Try fewer words, or part of the first line." : "Use New to type a song in, or Import to bring songs over."}
+                </p>
+              </div>
             )}
             <ul className="space-y-0.5">
               {songs.data?.map((s) => (
@@ -1421,14 +1429,16 @@ export default function OperatorPage() {
             <div className="grid grid-cols-2 gap-3">
               {/* PREVIEW (cue next) */}
               <div className="flex flex-col">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-[var(--v-accent)]">
+                <div className="flex h-7 items-center justify-between rounded-t-lg border-2 border-b-0 border-[var(--v-accent)]/50 bg-[var(--v-accent-soft)] px-2">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--v-accent)]">
                     <Eye className="h-3.5 w-3.5" /> Preview
                   </span>
-                  <span className="text-[11px] text-[var(--v-text-faint)]">{mode === "bible" ? "Scripture" : "Lyrics"}</span>
+                  <span className="text-[11px] text-[var(--v-text-faint)]">
+                    {mode === "bible" ? "Scripture" : mode === "presentation" ? "Slides" : mode === "media" ? "Media" : "Lyrics"}
+                  </span>
                 </div>
                 <div
-                  className="relative aspect-video w-full overflow-hidden rounded-lg border-2 border-[var(--v-accent)]/50"
+                  className="relative aspect-video w-full overflow-hidden rounded-b-lg border-2 border-[var(--v-accent)]/50"
                   style={{ background: "#000" }}
                   onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
                 >
@@ -1457,7 +1467,13 @@ export default function OperatorPage() {
                     backwards, for the one column a congregation can see. It
                     now goes red with a lit dot while something is actually
                     on screen, and stays quiet when nothing is. */}
-                <div className="mb-2 flex items-center justify-between">
+                <div
+                  className={`flex h-7 items-center justify-between rounded-t-lg border-2 border-b-0 px-2 ${
+                    liveState.status === "live"
+                      ? "border-[var(--v-live)] bg-[var(--v-live)] [&_span]:!text-white"
+                      : "border-[var(--v-border)] bg-[var(--v-surface-3)]"
+                  }`}
+                >
                   <span
                     className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${
                       liveState.status === "live" ? "text-[var(--v-live)]" : "text-[var(--v-text-faint)]"
@@ -1484,7 +1500,7 @@ export default function OperatorPage() {
                   {liveState.status !== "live" && <StatusPill status={liveState.status} />}
                 </div>
                 <div
-                  className={`relative aspect-video w-full overflow-hidden rounded-lg border-2 ${
+                  className={`relative aspect-video w-full overflow-hidden rounded-b-lg border-2 ${
                     liveState.status === "live"
                       ? "v-live-pulse border-[var(--v-live)]"
                       : "border-[var(--v-border)]"
@@ -1750,6 +1766,16 @@ export default function OperatorPage() {
         </aside>
       </div>
 
+      <StatusBar
+        liveState={liveState}
+        outputOpen={projector.open}
+        outputLabel={projector.targetDisplay?.label ?? null}
+        recording={recorder.status === "recording"}
+        recordSeconds={recorder.seconds}
+        autoFollow={!!settings?.autoFollow}
+        themeName={themes.data?.find((t) => t.id === settings?.activeThemeId)?.name ?? themes.data?.[0]?.name ?? null}
+      />
+
       {editorOpen && (
         <SongEditor
           song={editorOpen === "edit" ? full.data ?? null : null}
@@ -1859,6 +1885,74 @@ export default function OperatorPage() {
 
 /* ---------------- Sub-components ---------------- */
 
+/**
+ * One line along the bottom that answers "what is happening right now",
+ * the way OBS's status bar does: what is on air, where the output is going,
+ * whether it is being recorded, and the time. Everything in it is already on
+ * screen somewhere else; this is where to look when there is no time to look.
+ */
+function StatusBar({
+  liveState,
+  outputOpen,
+  outputLabel,
+  recording,
+  recordSeconds,
+  autoFollow,
+  themeName,
+}: {
+  liveState: LiveState;
+  outputOpen: boolean;
+  outputLabel: string | null;
+  recording: boolean;
+  recordSeconds: number;
+  autoFollow: boolean;
+  themeName: string | null;
+}) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const live = liveState.status === "live";
+  const what = [liveState.songTitle, liveState.sectionLabel].filter(Boolean).join(" - ");
+  const mmss = (n: number) => `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
+  const cell = "flex shrink-0 items-center gap-1.5 border-l border-[var(--v-border)] px-3";
+  return (
+    <footer
+      aria-label="Status"
+      className="hidden h-7 shrink-0 items-center border-t border-[var(--v-border)] bg-[var(--v-surface-2)] text-[11px] text-[var(--v-text-faint)] md:flex"
+    >
+      <span className={`flex min-w-0 flex-1 items-center gap-1.5 px-3 ${live ? "text-[var(--v-text)]" : ""}`}>
+        <span className={`h-2 w-2 shrink-0 rounded-full ${live ? "bg-[var(--v-live)]" : "bg-[var(--v-text-faint)]/50"}`} />
+        <span className={`shrink-0 font-semibold uppercase tracking-wide ${live ? "text-[var(--v-live)]" : ""}`}>
+          {live ? "On air" : liveState.status === "blank" ? "Blank" : "Idle"}
+        </span>
+        {live && what && <span className="min-w-0 truncate">{what}</span>}
+        {live && liveState.slideCount > 0 && (
+          <span className="shrink-0 tabular-nums">
+            {liveState.slideIndex + 1}/{liveState.slideCount}
+          </span>
+        )}
+      </span>
+      <span className={cell}>
+        <span className={`h-2 w-2 rounded-full ${outputOpen ? "bg-[var(--v-ok)]" : "bg-[var(--v-text-faint)]/50"}`} />
+        {outputOpen ? `Output: ${outputLabel ?? "open"}` : "Output: off"}
+      </span>
+      <span className={`${cell} ${recording ? "text-[var(--v-live)]" : ""}`}>
+        <span className={`h-2 w-2 rounded-full ${recording ? "bg-[var(--v-live)]" : "bg-[var(--v-text-faint)]/50"}`} />
+        <span className="tabular-nums">REC {recording ? mmss(recordSeconds) : "off"}</span>
+      </span>
+      <span className={`${cell} hidden lg:flex`}>Auto-follow: {autoFollow ? "on" : "off"}</span>
+      {themeName && <span className={`${cell} hidden max-w-[220px] xl:flex`}><span className="truncate">Theme: {themeName}</span></span>}
+      <span className={`${cell} tabular-nums text-[var(--v-text-dim)]`}>
+        {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+      </span>
+    </footer>
+  );
+}
+
+
+
 const MODE_TABS: { id: OperatorMode; label: string; icon: typeof Music4 }[] = [
   { id: "lyrics", label: "Lyrics", icon: Music4 },
   { id: "bible", label: "Bible", icon: BookOpen },
@@ -1935,7 +2029,7 @@ function TopBar({
        */}
       <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
         <span className="hidden rounded bg-[var(--v-surface-3)] px-1.5 py-0.5 text-[11px] text-[var(--v-text-faint)] xl:inline-block">
-          {desktop ? "Desktop" : "Preview"}
+          {desktop ? "Desktop" : "Browser"}
         </span>
         <UpdateNotice update={update} />
         {/* Browser only. The update pill takes this slot in the desktop app,
@@ -1951,8 +2045,8 @@ function TopBar({
           <StatusPill status={liveStatus} />
         </span>
         <HelpMenu onCheckUpdates={update.checkNow} desktop={desktop} />
-        <VButton variant="ghost" size="sm" onClick={onMedia} aria-label="Media">
-          <Clapperboard className="h-4 w-4" /> <span className="hidden lg:inline">Media</span>
+        <VButton variant="ghost" size="sm" onClick={onMedia} aria-label="Media library" title="Media library - backgrounds, pictures and videos">
+          <Clapperboard className="h-4 w-4" /> <span className="hidden lg:inline">Library</span>
         </VButton>
         <VButton variant="ghost" size="sm" onClick={onSettings} aria-label="Settings">
           <Settings2 className="h-4 w-4" /> <span className="hidden lg:inline">Settings</span>
@@ -2452,8 +2546,42 @@ function SlideGrid({
 
   let flatIndex = -1;
 
+  // Thumbnail size, remembered on this device. A big hall operator wants few
+  // large slides; someone scanning a long hymn wants many small ones.
+  const [thumb, setThumb] = useState(() => {
+    try {
+      const v = Number(localStorage.getItem("vifug:slide-thumb"));
+      return v >= 140 && v <= 420 ? v : 220;
+    } catch {
+      return 220;
+    }
+  });
+  const changeThumb = (v: number) => {
+    setThumb(v);
+    try {
+      localStorage.setItem("vifug:slide-thumb", String(v));
+    } catch {
+      /* private window: the size just is not remembered */
+    }
+  };
+
   return (
     <div className="space-y-5">
+      {slides.length > 0 && (
+        <label className="flex items-center justify-end gap-2 text-[11px] text-[var(--v-text-faint)]">
+          Slide size
+          <input
+            type="range"
+            min={140}
+            max={420}
+            step={20}
+            value={thumb}
+            onChange={(e) => changeThumb(Number(e.target.value))}
+            className="w-32"
+            aria-label="Slide thumbnail size"
+          />
+        </label>
+      )}
       {slidesByItem.map((group) => {
         const sec = song.sections.find((x) => x.id === group.sectionId);
         return (
@@ -2475,7 +2603,7 @@ function SlideGrid({
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
+            <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${thumb}px, 1fr))` }}>
               {group.slides.map((slide) => {
                 flatIndex++;
                 const idx = flatIndex;
@@ -2486,7 +2614,7 @@ function SlideGrid({
                     key={slide.slideId ?? idx}
                     onClick={() => stage.preview(idx)}
                     onDoubleClick={() => stage.goLive(idx)}
-                    className={`group relative aspect-video overflow-hidden rounded-xl border-2 bg-black text-left transition-[transform,border-color,box-shadow] duration-150 ease-out ${
+                    className={`group relative flex aspect-video flex-col overflow-hidden rounded-lg border-2 bg-black text-left transition-[transform,border-color,box-shadow] duration-150 ease-out ${
                       isLive
                         ? "v-live-pulse border-[var(--v-live)] ring-2 ring-[var(--v-live)]/40"
                         : isPreview
@@ -2494,24 +2622,28 @@ function SlideGrid({
                           : "border-[var(--v-border)] hover:-translate-y-0.5 hover:border-[var(--v-accent)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.5)]"
                     }`}
                   >
-                    <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">
+                    {/* The words, sized against the card so a bigger thumbnail
+                        means bigger words rather than more empty black. */}
+                    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-2 text-center" style={{ containerType: "size" }}>
                       {slide.sourceLines.map((l, i) => (
-                        <div key={i} className="font-lyric text-[12px] leading-tight text-white/90 line-clamp-2">
+                        <div key={i} className="font-lyric leading-tight text-white/90 line-clamp-2" style={{ fontSize: "clamp(11px, 5.2cqw, 22px)" }}>
                           {l}
                         </div>
                       ))}
                     </div>
-                    {isLive && (
-                      <span className="absolute left-1.5 top-1.5 rounded bg-[var(--v-live)] px-1.5 py-0.5 text-[11px] font-bold uppercase text-white">
-                        Live
-                      </span>
-                    )}
-                    {isPreview && (
-                      <span className="absolute left-1.5 top-1.5 rounded bg-[var(--v-accent)] px-1.5 py-0.5 text-[11px] font-bold uppercase text-black">
-                        Preview
-                      </span>
-                    )}
-                    <span className="absolute bottom-1 right-1.5 text-[11px] text-white/40">{idx + 1}</span>
+                    {/* Label bar, the way ProPresenter draws one: the slide
+                        number and its section, in the section's colour, so a
+                        chorus is findable by colour from across the grid. */}
+                    <div
+                      className={`flex h-6 shrink-0 items-center gap-1.5 px-2 text-[11px] font-semibold ${
+                        isLive ? "bg-[var(--v-live)] text-white" : isPreview ? "bg-[var(--v-accent)] text-black" : chipClass(sec?.type ?? "verse")
+                      }`}
+                    >
+                      <span className="tabular-nums">{idx + 1}</span>
+                      <span className="min-w-0 flex-1 truncate uppercase tracking-wide">{sec?.label ?? ""}</span>
+                      {isLive && <span className="uppercase">Live</span>}
+                      {isPreview && <span className="uppercase">Preview</span>}
+                    </div>
                   </button>
                 );
               })}
@@ -3539,8 +3671,14 @@ function PlansPanel({
       {/* Plan editor */}
       <div className="flex min-w-0 flex-1 flex-col">
         {!selectedId || !plan.data ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-[var(--v-text-faint)]">
-            Select or create a service plan.
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[var(--v-surface-2)]">
+              <ListChecks className="h-8 w-8 text-[var(--v-text-faint)]" />
+            </div>
+            <div>
+              <p className="font-display text-lg font-semibold">Select a plan</p>
+              <p className="text-sm text-[var(--v-text-faint)]">Pick one on the left, or name a new one and press +.</p>
+            </div>
           </div>
         ) : (
           <>
