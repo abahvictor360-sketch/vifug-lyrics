@@ -90,6 +90,27 @@ export function subscribeScreenChange(fn: () => void): () => void {
   };
 }
 
+/**
+ * Where this browser stands on listing the monitors.
+ *
+ * "denied" is worth telling apart from "prompt": once someone has blocked it
+ * (or the browser blocks it by policy), getScreenDetails rejects straight
+ * away without asking, so a "Find my screens" click did nothing at all -
+ * no prompt, no window, no word about why. The only way back is the site's
+ * permission in the browser's own settings, and the operator has to be told
+ * that.
+ */
+export async function screensPermission(): Promise<"granted" | "denied" | "prompt" | "unsupported"> {
+  if (!supportsMultiScreen()) return "unsupported";
+  try {
+    const status = await navigator.permissions?.query({ name: "window-management" as PermissionName });
+    if (status?.state === "granted" || status?.state === "denied") return status.state;
+    return "prompt";
+  } catch {
+    return "prompt";
+  }
+}
+
 /** Whether the monitor list has been granted, so the caller knows whether asking would prompt. */
 export async function screensGranted(): Promise<boolean> {
   if (!supportsMultiScreen()) return false;
