@@ -45,7 +45,7 @@ export const APP_MODES: AppModeInfo[] = [
   {
     id: "media",
     label: "Media & entertainment",
-    summary: "Shows, events, conferences, karaoke and live streams. No hymns or Bible.",
+    summary: "Studios, broadcasters, events, conferences, schools and live streams. No hymns or Bible.",
     tabs: ["lyrics", "presentation", "media", "plans", "history"],
     bible: false,
     songs: true,

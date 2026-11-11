@@ -12,8 +12,8 @@
 </script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Vifug - Free offline worship presentation software</title>
-<meta name="description" content="Free, offline-first presentation software for churches, events and media teams: lyrics, an offline Bible, projector output, OBS/NDI streaming and AI auto-follow. Free for Windows, macOS and Linux." />
+<title>Vifug - Free live presentation and streaming software for media teams</title>
+<meta name="description" content="Free, offline-first live-production software for churches, events, schools, studios and broadcasters: lyrics, slides, video and cameras on every screen, streaming to YouTube and Facebook, OBS/NDI output and an offline Bible. Free for Windows, macOS and Linux." />
 <link rel="canonical" href="https://vifug.com/" />
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
 <meta name="theme-color" content="#080a0f" />
@@ -189,7 +189,9 @@
   .nav-links a:hover { color: var(--paper); }
   .nav-links a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1.5px; background: var(--live); transform: scaleX(0); transform-origin: left; transition: transform .2s var(--ease-out); }
   .nav-links a:hover::after, .nav-links a:focus-visible::after { transform: scaleX(1); }
-  @media (max-width: 780px) { .nav-links { display: none; } }
+  .nav-links a { white-space: nowrap; }
+  @media (max-width: 1180px) { .nav-links { gap: 22px; } }
+  @media (max-width: 1020px) { .nav-links { display: none; } }
 
   /* ---------- small-screen menu ----------
      Below 780px the section links used to vanish with nothing in their place,
@@ -206,8 +208,8 @@
   .mobile-menu.open { opacity: 1; transform: none; pointer-events: auto; visibility: visible; transition-delay: 0s; }
   .mobile-menu a { padding: 12px 14px; border-radius: 10px; font-size: 15px; color: var(--dim); }
   .mobile-menu a:hover, .mobile-menu a:focus-visible { background: var(--surface); color: var(--paper); outline: none; }
-  @media (max-width: 780px) { .menu-btn { display: grid; } }
-  @media (min-width: 781px) { .mobile-menu { display: none; } }
+  @media (max-width: 1020px) { .menu-btn { display: grid; } }
+  @media (min-width: 1021px) { .mobile-menu { display: none; } }
   header .wrap { position: relative; }
 
   /* keyboard focus + skip link */
@@ -550,6 +552,14 @@
     .tour-points, .why { grid-template-columns: 1fr; }
     .features.collapsed .feat:nth-child(n+7) { display: none; }
   }
+
+  .who { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; }
+  .who-card { border: 1px solid var(--line); border-radius: 16px; padding: 22px; background: var(--raise); }
+  .who-card h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .who-card p { color: var(--dim); font-size: 14.5px; }
+  .who-card .uses { margin-top: 10px; color: var(--faint); font-size: 13px; }
+  @media (max-width: 900px) { .who { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .who { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -564,12 +574,11 @@
       </a>
       <div class="nav-links">
         <a href="#tour">Tour</a>
-        <a href="#new">What's new</a>
+        <a href="#who">Who it's for</a>
         <a href="#features">Features</a>
         <a href="#streaming">Streaming</a>
-        <a href="#faq">FAQ</a>
-        <a href="download.html">Download</a>
         <a href="guide.html">Guide</a>
+        <a href="#faq">FAQ</a>
         <a href="#support">Support</a>
         <a href="#contact">Contact</a>
       </div>
@@ -582,11 +591,13 @@
     </nav>
     <div class="mobile-menu" id="mobile-menu">
       <a href="#tour">Tour</a>
+      <a href="#who">Who it's for</a>
       <a href="#new">What's new</a>
       <a href="#features">Features</a>
-      <a href="#streaming">Streaming &amp; NDI</a>
-      <a href="#faq">FAQ</a>
+      <a href="#streaming">Streaming</a>
       <a href="guide.html">Guide</a>
+      <a href="download.html">Download</a>
+      <a href="#faq">FAQ</a>
       <a href="#support">Support</a>
       <a href="#contact">Contact</a>
     </div>
@@ -600,12 +611,13 @@
     <div>
       <span class="eyebrow">Free · offline-first · no subscription</span>
       <h1 class="h1">
-        Put the Word<br />on the screen,<br /><span class="live-word">live.</span>
+        Every screen.<br />Every stream.<br /><span class="live-word">Live.</span>
       </h1>
       <p class="lede">
-        Vifug is free presentation software for churches and live events. Put song lyrics, Bible
-        verses, slides and a camera on your projector and your stream from one window - with a
-        <b>Preview&nbsp;→&nbsp;Live</b> workflow so nothing reaches the room until you send it.
+        Vifug is free live-production software for any media team - churches, events, schools,
+        studios and broadcasters. Put lyrics, scripture, slides, video and cameras on your screens,
+        and go live to YouTube and Facebook from the same window, with a
+        <b>Preview&nbsp;→&nbsp;Live</b> workflow so nothing goes out until you send it.
         <b>No internet, no subscription, no watermark.</b>
       </p>
       <div class="dl-row">
@@ -669,9 +681,28 @@
     </div>
     <div class="why">
       <div data-aos="fade-up"><b>Free, with no catch</b><span>No subscription, no account, no watermark on your screen.</span></div>
-      <div data-aos="fade-up" data-aos-delay="70"><b>Works with no internet</b><span>325 songs and the Bible are inside the app. A service runs fully offline.</span></div>
+      <div data-aos="fade-up" data-aos-delay="70"><b>Works with no internet</b><span>Songs, the Bible and your media are inside the app. A whole programme runs offline.</span></div>
       <div data-aos="fade-up" data-aos-delay="140"><b>Bring your library</b><span>Import songs from ProPresenter and EasyWorship, plus PowerPoint and PDF decks.</span></div>
       <div data-aos="fade-up" data-aos-delay="210"><b>Any computer</b><span>Windows, macOS and Linux, or in a browser on a tablet.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WHO ===================== -->
+<section class="band" id="who">
+  <div class="wrap">
+    <div class="band-head center">
+      <span class="eyebrow" data-aos="fade-up">Who it's for</span>
+      <h2 data-aos="fade-up" data-aos-delay="60">Built for any media team</h2>
+      <p data-aos="fade-up" data-aos-delay="120">Tell Vifug what it is for on first run and it shows only what that kind of team needs. Switch any time - nothing is deleted.</p>
+    </div>
+    <div class="who">
+      <div class="who-card" data-aos="fade-up"><h3>Churches &amp; ministries</h3><p>Hymns and worship songs, an offline Bible in 31 versions, service plans and auto-follow that keeps up with the preacher.</p><p class="uses">Sunday services · conventions · online church</p></div>
+      <div class="who-card" data-aos="fade-up" data-aos-delay="70"><h3>Events &amp; concerts</h3><p>Lyrics and karaoke words, a run of show, countdown timers, sponsor logos and a scrolling announcement bar.</p><p class="uses">Concerts · weddings · award nights · karaoke</p></div>
+      <div class="who-card" data-aos="fade-up" data-aos-delay="140"><h3>Conferences &amp; schools</h3><p>PowerPoint and PDF decks, speaker name bars, a stage display with notes and a clock, and a different picture on each screen.</p><p class="uses">Conferences · assemblies · graduations · town halls</p></div>
+      <div class="who-card" data-aos="fade-up"><h3>Studios &amp; online shows</h3><p>Cameras and capture cards with lower thirds, side-by-side layouts and your logo, streamed to YouTube, Facebook and Twitch at once.</p><p class="uses">Talk shows · podcasts · webinars · live streams</p></div>
+      <div class="who-card" data-aos="fade-up" data-aos-delay="70"><h3>TV &amp; radio stations</h3><p>A clean NDI or OBS source for titles, tickers and scripture over your programme feed, driven from a keyboard or a phone.</p><p class="uses">Local TV · community radio visuals · outside broadcasts</p></div>
+      <div class="who-card" data-aos="fade-up" data-aos-delay="140"><h3>Venues &amp; signage</h3><p>Pictures and video on lobby, overflow and stage screens, each showing something different, from one computer.</p><p class="uses">Halls · hotels · campuses · overflow rooms</p></div>
     </div>
   </div>
 </section>
@@ -750,6 +781,7 @@
       <p data-aos="fade-up" data-aos-delay="120">Vifug renders slides on the fly, so changing lines-per-slide, theme or language never means rebuilding a deck.</p>
     </div>
     <div class="features collapsed" id="feature-grid">
+      <div class="feat" data-aos="fade-up"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></div><h3>Go live from the app</h3><p>Stream the live output to YouTube, Facebook, Twitch or any RTMP server - several at once - with one button. No OBS needed. Desktop app.</p></div>
       <div class="feat" data-aos="fade-up"><div class="ic"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><h3>Preview → Live stage</h3><p>Cue the next slide privately, then send it live with Enter. Arrows to move, Space to blank, Esc to clear.</p></div>
       <div class="feat" data-aos="fade-up" data-aos-delay="70"><div class="ic"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><h3>Offline Bible engine</h3><p>31 English versions (KJV, NIV, ESV, NLT, NASB, The Message and more) plus Yoruba, Hausa, Igbo, Twi and Swahili - reference jump (“John 3:16”) and full-text search, with every book held on the machine.</p></div>
       <div class="feat" data-aos="fade-up" data-aos-delay="140"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Slides &amp; PowerPoint import</h3><p>Build decks in the app with a live preview beside each slide, size individual words for emphasis, or import a .pptx or PDF - it keeps the deck's own backgrounds and text colours instead of flattening everything to plain text.</p></div>

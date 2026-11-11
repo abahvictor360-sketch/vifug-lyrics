@@ -14,6 +14,7 @@ import { MEDIA_FITS, fitLabel, resolveFit } from "../lib/media-fit";
 import { COLOR_FILTER_PRESETS } from "../lib/color-filters";
 import { useLuts, useUploadLut, useDeleteLut } from "../hooks/use-luts";
 import { useSettings, useUpdateSettings, type AppSettings } from "../hooks/use-settings";
+import { CaptureScenes } from "./capture-scenes";
 import { VButton } from "./bits";
 
 /** Audio has no screen representation, so this mode only offers what a
@@ -363,6 +364,14 @@ export function MediaPanel({
               </button>
             </>
           )}
+
+          <CaptureScenes
+            current={currentCapture}
+            onRecall={(c) => {
+              if (live.capture) liveBus().setCapture(c);
+              else onCueCapture(c);
+            }}
+          />
 
           {currentCapture && (
             <div className="w-full max-w-sm space-y-3 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-3 text-left">
