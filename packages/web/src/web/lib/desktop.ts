@@ -74,9 +74,23 @@ export interface ElectronAPI {
    * no projector is open. `temporary` says whether it was created for this
    * recording and should be released afterwards.
    */
-  recorderSurface?: () => Promise<{ title: string; temporary: boolean }>;
+  recorderSurface?: (size?: { width?: number; height?: number }) => Promise<{ title: string; temporary: boolean }>;
   /** Tear down a surface created by recorderSurface(). */
   recorderRelease?: () => Promise<{ ok: boolean }>;
+
+  /** Live streaming to RTMP servers. Absent on older desktop builds. */
+  streamStatus?: () => Promise<{ running: boolean; error: string | null; available: boolean; encoders?: string[] }>;
+  streamStart?: (opts: {
+    urls: string[];
+    height: number;
+    fps: number;
+    videoKbps: number;
+    hasAudio: boolean;
+    encoder?: string;
+  }) => Promise<{ ok: boolean; error?: string }>;
+  streamStop?: () => Promise<{ ok: boolean }>;
+  streamChunk?: (data: ArrayBuffer) => void;
+  onStreamState?: (cb: (state: { running: boolean; error: string | null }) => void) => () => void;
 
   /** Copy the library (database + media) into a dated folder the user picks. */
   backupCreate?: () => Promise<{ ok: boolean; folder?: string; error?: string; canceled?: boolean }>;

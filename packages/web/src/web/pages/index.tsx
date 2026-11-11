@@ -37,6 +37,8 @@ import { useLiveController } from "../hooks/use-live-controller";
 import { useStage, type StageController } from "../hooks/use-stage";
 import { useLiveState } from "../hooks/use-live";
 import { chipClass } from "../lib/sections";
+import { useStreamer, useStreamConfig } from "../hooks/use-streamer";
+import { readyDestinations } from "../lib/stream-destinations";
 import { useDesktop } from "../hooks/use-desktop";
 import { useUpdateCheck, DOWNLOAD_PAGE } from "../hooks/use-update-check";
 import { UpdateDialog } from "../components/update-dialog";
@@ -1005,6 +1007,9 @@ export default function OperatorPage() {
   // shortcut always calls the current toggle without re-registering the
   // listener every tick of the elapsed-time counter.
   const recorder = useRecorder();
+  const streamer = useStreamer(settings?.audio?.inputDeviceId ?? null);
+  const streamConfig = useStreamConfig();
+  const streamTargets = readyDestinations(streamConfig).length;
   const recorderRef = useRef(recorder);
   recorderRef.current = recorder;
 
@@ -1651,6 +1656,45 @@ export default function OperatorPage() {
                     : "Nothing live yet"}
             </p>
 
+            {/* Stream the live output to YouTube, Facebook, Twitch or any RTMP
+                server. Same surface the recorder captures, so the two can run
+                together. With nothing set up yet, the button is the way in. */}
+            <div className="mt-2 border-t border-[var(--v-border)] pt-2">
+              <VButton
+                variant={streamer.status === "live" ? "danger" : "subtle"}
+                className="w-full"
+                disabled={streamer.status === "starting"}
+                onClick={() => {
+                  if (streamer.status === "live") return streamer.stop();
+                  if (!streamer.supported || streamTargets === 0) {
+                    setSettingsSection("streaming");
+                    setSettingsOpen(true);
+                    return;
+                  }
+                  void streamer.start();
+                }}
+              >
+                {streamer.status === "live" ? (
+                  <>
+                    <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" /> End stream
+                    <span className="tabular-nums">
+                      {String(Math.floor(streamer.seconds / 60)).padStart(2, "0")}:
+                      {String(streamer.seconds % 60).padStart(2, "0")}
+                    </span>
+                  </>
+                ) : streamer.status === "starting" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Connecting…
+                  </>
+                ) : (
+                  <>
+                    <Radio className="h-4 w-4" /> {streamTargets > 0 ? "Go live to " + (streamTargets === 1 ? "1 platform" : `${streamTargets} platforms`) : "Stream to YouTube, Facebook…"}
+                  </>
+                )}
+              </VButton>
+              {streamer.error && <p className="mt-1 text-[12px] text-amber-500">{streamer.error}</p>}
+            </div>
+
             {/* Record the live output. Sits directly under the live preview
                 because that is the thing being recorded - and what it saves
                 is that exact surface, not the operator's screen. */}
@@ -1772,6 +1816,9 @@ export default function OperatorPage() {
         outputLabel={projector.targetDisplay?.label ?? null}
         recording={recorder.status === "recording"}
         recordSeconds={recorder.seconds}
+        streaming={streamer.status === "live"}
+        streamSeconds={streamer.seconds}
+        streamCount={streamer.count}
         autoFollow={!!settings?.autoFollow}
         themeName={themes.data?.find((t) => t.id === settings?.activeThemeId)?.name ?? themes.data?.[0]?.name ?? null}
       />
@@ -1897,9 +1944,15 @@ function StatusBar({
   outputLabel,
   recording,
   recordSeconds,
+  streaming,
+  streamSeconds,
+  streamCount,
   autoFollow,
   themeName,
 }: {
+  streaming: boolean;
+  streamSeconds: number;
+  streamCount: number;
   liveState: LiveState;
   outputOpen: boolean;
   outputLabel: string | null;
@@ -1941,6 +1994,12 @@ function StatusBar({
       <span className={`${cell} ${recording ? "text-[var(--v-live)]" : ""}`}>
         <span className={`h-2 w-2 rounded-full ${recording ? "bg-[var(--v-live)]" : "bg-[var(--v-text-faint)]/50"}`} />
         <span className="tabular-nums">REC {recording ? mmss(recordSeconds) : "off"}</span>
+      </span>
+      <span className={`${cell} ${streaming ? "text-[var(--v-live)]" : ""}`}>
+        <span className={`h-2 w-2 rounded-full ${streaming ? "animate-pulse bg-[var(--v-live)]" : "bg-[var(--v-text-faint)]/50"}`} />
+        <span className="tabular-nums">
+          STREAM {streaming ? `${mmss(streamSeconds)} · ${streamCount} ${streamCount === 1 ? "platform" : "platforms"}` : "off"}
+        </span>
       </span>
       <span className={`${cell} hidden lg:flex`}>Auto-follow: {autoFollow ? "on" : "off"}</span>
       {themeName && <span className={`${cell} hidden max-w-[220px] xl:flex`}><span className="truncate">Theme: {themeName}</span></span>}
@@ -2289,7 +2348,7 @@ function ScreenContextMenu({
 }) {
   // Keep the menu on-screen near the cursor even close to the window edge.
   // The height grows with the number of screens, so the clamp has to as well.
-  const MENU_W = 244;
+  const MENU_W = 272;
   const estHeight = 248 + displays.length * 38 + (liveFit ? 132 : 0);
   const left = Math.min(x, window.innerWidth - MENU_W - 8);
   const top = Math.max(8, Math.min(y, window.innerHeight - estHeight - 8));
@@ -2324,7 +2383,7 @@ function ScreenContextMenu({
 
   return (
     <div
-      className="fixed z-50 w-[244px] rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-1.5 shadow-2xl"
+      className="fixed z-50 w-[272px] rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-1.5 shadow-2xl"
       style={{ left, top }}
       onClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => { e.preventDefault(); onClose(); }}
@@ -2368,7 +2427,7 @@ function ScreenContextMenu({
           <PictureInPicture2 className="h-4 w-4 shrink-0" />,
           pipActive ? "Close picture-in-picture" : "Picture-in-picture",
           onTogglePip,
-          { active: pipActive, hint: pipActive ? "floating" : "stays on top" },
+          { active: pipActive, hint: pipActive ? "floating" : undefined },
         )}
       {/* Chrome and Edge can open the output on a monitor of its own, but only
           once the operator has allowed it - and the browser will only ask in

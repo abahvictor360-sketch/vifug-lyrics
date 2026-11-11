@@ -139,6 +139,9 @@ export type LiveCapture = {
    * (pipBottomText). Ignored when pipBroadcast is on.
    */
   pipClean?: boolean;
+  /** pip clean: where the Scripture reference sits. Defaults: left, bottom. */
+  pipRefAlign?: "left" | "center" | "right";
+  pipRefPos?: "top" | "bottom";
   /** pip broadcast: text on the top bar (e.g. church or service name). */
   pipTopText?: string;
   /** pip broadcast: text on the bottom bar (e.g. website, social handle). */

@@ -12,6 +12,7 @@ import fsSync from "node:fs";
 import { startEmbeddedServer } from "./server";
 import { lanAddresses, lanAddressDetails, firewallState, allowThroughFirewall } from "./network";
 import { ndiStatus, ndiStart, ndiStop, ndiRebind } from "./ndi";
+import { streamStart, streamChunk, streamStop, streamStatus, onStreamState, type StreamStartOptions } from "./stream";
 import { beginStartupLog, logStartup, logStartupError, startupLogPath } from "./startup-log";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -590,18 +591,36 @@ ipcMain.handle("capture:sources", async () => {
 const RECORDING_WINDOW_TITLE = "Vifug Recording Surface";
 let recordingWin: BrowserWindow | null = null;
 
-ipcMain.handle("recorder:surface", async () => {
+/*
+ * Recording and streaming both capture this surface and either can stop
+ * first, so it is counted: the window only closes when the last user lets go.
+ */
+let recordingSurfaceUsers = 0;
+
+ipcMain.handle("recorder:surface", async (_e, size?: { width?: number; height?: number }) => {
+  // Streaming above 1080p asks for a bigger surface, so the picture is drawn
+  // at that size rather than stretched up to it. Recording asks for nothing
+  // and gets 1080p, as before.
+  const wantW = Math.min(7680, Math.max(1280, Math.round(size?.width ?? 1920)));
+  const wantH = Math.min(4320, Math.max(720, Math.round(size?.height ?? 1080)));
   if (mainProjector()) {
     return { title: "Vifug Projector", temporary: false };
   }
+  recordingSurfaceUsers++;
   if (recordingWin && !recordingWin.isDestroyed()) {
+    // Grow, never shrink: something else may already be capturing it.
+    const [w, h] = recordingWin.getSize();
+    if (wantW > (w ?? 0) || wantH > (h ?? 0)) recordingWin.setSize(Math.max(w ?? 0, wantW), Math.max(h ?? 0, wantH));
     return { title: RECORDING_WINDOW_TITLE, temporary: true };
   }
 
   const primary = screen.getPrimaryDisplay();
   recordingWin = new BrowserWindow({
-    width: 1920,
-    height: 1080,
+    width: wantW,
+    height: wantH,
+    // Windows and Linux allow a window bigger than the screen; macOS needs
+    // to be told. Where the system still clamps it, the stream is scaled up.
+    enableLargerThanScreen: true,
     // Just off the right edge: still inside the desktop's coordinate space, so
     // the compositor keeps drawing it and desktopCapturer can see it, but not
     // over anything the operator is using.
@@ -633,10 +652,25 @@ ipcMain.handle("recorder:surface", async () => {
 });
 
 ipcMain.handle("recorder:release", () => {
+  recordingSurfaceUsers = Math.max(0, recordingSurfaceUsers - 1);
+  if (recordingSurfaceUsers > 0) return { ok: true };
   if (recordingWin && !recordingWin.isDestroyed()) recordingWin.close();
   recordingWin = null;
   return { ok: true };
 });
+
+// ---- Live streaming (RTMP via ffmpeg, see stream.ts) ----
+onStreamState((state) => {
+  for (const w of BrowserWindow.getAllWindows()) {
+    if (!w.isDestroyed()) w.webContents.send("stream:state", state);
+  }
+});
+ipcMain.handle("stream:status", () => streamStatus());
+ipcMain.handle("stream:start", (_e, opts: StreamStartOptions) => streamStart(opts));
+ipcMain.handle("stream:stop", () => streamStop());
+// send, not invoke: several chunks a second, and nothing to answer.
+ipcMain.on("stream:chunk", (_e, data: ArrayBuffer) => streamChunk(data));
+app.on("before-quit", () => { streamStop(); });
 
 /**
  * Backup and restore.
