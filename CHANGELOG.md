@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [Unreleased]
+## [1.31.0] — 2026-11-11
 
 - NEW: **stream in 2K, 4K and 8K.** The Go live panel's Quality list now runs from 720p to 1440p (2K), 2160p (4K) and 4320p (8K), at 30 or 60 frames a second, each with the upload speed it needs. A new **Encoder** choice lists the graphics-card encoders this computer's ffmpeg offers (NVIDIA, Intel, AMD or Apple) beside the software one, since a graphics card carries high resolutions far more easily. Above 1080p the output is drawn at the chosen size where the system allows it and scaled to it otherwise. Facebook and Twitch accept up to 1080p and YouTube up to 4K; 8K is for your own server.
 - NEW: **Scenes in the Capture tab.** Save a capture set-up - the camera or screen, the layout, the video shape, the name bar and the reference position - under a name such as "Interview" or "Scripture + speaker", and bring it back with one click. Recalling a scene cues it to Preview, or changes the picture straight away when a capture is already on air. Scenes are kept on that computer; one that uses a screen or window may need its source picked again after a restart.
