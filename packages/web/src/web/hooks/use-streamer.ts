@@ -107,7 +107,7 @@ export function useStreamer(micDeviceId?: string | null) {
     setStatus("starting");
     try {
       const surface = desktop.recorderSurface
-        ? await desktop.recorderSurface()
+        ? await desktop.recorderSurface({ width: quality.width, height: quality.height })
         : { title: PROJECTOR_WINDOW_TITLE, temporary: false };
       temporarySurfaceRef.current = surface.temporary;
       const sources = await desktop.listCaptureSources();
@@ -120,8 +120,8 @@ export function useStreamer(micDeviceId?: string | null) {
           mandatory: {
             chromeMediaSource: "desktop",
             chromeMediaSourceId: target.id,
-            maxWidth: 1920,
-            maxHeight: 1080,
+            maxWidth: Math.max(1920, quality.width),
+            maxHeight: Math.max(1080, quality.height),
             maxFrameRate: quality.fps,
           },
         } as unknown as MediaTrackConstraints,
@@ -152,13 +152,21 @@ export function useStreamer(micDeviceId?: string | null) {
         fps: quality.fps,
         videoKbps: quality.videoKbps,
         hasAudio,
+        encoder: config.encoder,
       });
       if (!res.ok) throw new Error(res.error || "Could not start the stream.");
 
       // VP8: cheap to encode in real time, and ffmpeg re-encodes it anyway.
-      const mimeType = hasAudio ? "video/webm;codecs=vp8,opus" : "video/webm;codecs=vp8";
+      // Above 1080p, H.264 where the browser offers it: it is usually done by
+      // the graphics chip, which VP8 at 4K is not.
+      const audioCodec = hasAudio ? ",opus" : "";
+      const candidates = [
+        ...(quality.height > 1080 ? [`video/webm;codecs=h264${audioCodec}`] : []),
+        `video/webm;codecs=vp8${audioCodec}`,
+      ];
+      const mimeType = candidates.find((m) => MediaRecorder.isTypeSupported(m)) ?? "video/webm";
       const rec = new MediaRecorder(new MediaStream(tracks), {
-        mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : "video/webm",
+        mimeType,
         videoBitsPerSecond: Math.max(6_000_000, quality.videoKbps * 1500),
         audioBitsPerSecond: 160_000,
       });

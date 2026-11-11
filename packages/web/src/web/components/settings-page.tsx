@@ -63,7 +63,9 @@ import {
   loadStreamConfig,
   saveStreamConfig,
   type StreamConfig,
+  STREAM_ENCODERS,
   type StreamDestination,
+  type StreamEncoder,
   type StreamPlatform,
   type StreamQuality,
 } from "../lib/stream-destinations";
@@ -1365,8 +1367,15 @@ function GoLiveGroup({ desktop }: { desktop: ReturnType<typeof useDesktop> }) {
   const [config, setConfig] = useState<StreamConfig>(loadStreamConfig);
   const [showKey, setShowKey] = useState<string | null>(null);
   const [available, setAvailable] = useState<boolean | null>(null);
+  const [encoders, setEncoders] = useState<string[]>(["x264"]);
   useEffect(() => {
-    void getDesktopAPI()?.streamStatus?.().then((st) => setAvailable(st.available)).catch(() => setAvailable(null));
+    void getDesktopAPI()
+      ?.streamStatus?.()
+      .then((st) => {
+        setAvailable(st.available);
+        if (st.encoders?.length) setEncoders(st.encoders);
+      })
+      .catch(() => setAvailable(null));
   }, []);
   const save = (next: StreamConfig) => {
     setConfig(next);
@@ -1488,7 +1497,15 @@ function GoLiveGroup({ desktop }: { desktop: ReturnType<typeof useDesktop> }) {
             ))}
           </select>
         </label>
-        <label className="flex items-center justify-between gap-3 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2">
+        <label className="block">
+          <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Encoder</span>
+          <select value={config.encoder} onChange={(e) => save({ ...config, encoder: e.target.value as StreamEncoder })} className={input}>
+            {STREAM_ENCODERS.filter((en) => encoders.includes(en.id) || en.id === config.encoder).map((en) => (
+              <option key={en.id} value={en.id}>{en.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center justify-between gap-3 rounded-md sm:col-span-2 border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2">
           <span className="min-w-0">
             <span className="block text-sm">Send the microphone</span>
             <span className="block text-[11px] text-[var(--v-text-faint)]">The one chosen in AI auto-follow. Off sends silence.</span>
@@ -1496,6 +1513,14 @@ function GoLiveGroup({ desktop }: { desktop: ReturnType<typeof useDesktop> }) {
           <Toggle checked={config.microphone} onChange={(v) => save({ ...config, microphone: v })} />
         </label>
       </div>
+      {(STREAM_QUALITIES.find((q) => q.id === config.quality)?.height ?? 0) > 1080 && (
+        <p className="mt-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-[12px] text-[var(--v-text-dim)]">
+          2K, 4K and 8K need a fast computer and a fast upload. Choose a graphics-card encoder if one is listed - it
+          carries high resolutions far more easily than the software one. If the stream stutters, drop one step.
+          Facebook and Twitch accept up to 1080p; YouTube accepts 4K. 8K is for your own server, and is only as sharp
+          as the screen the output is on.
+        </p>
+      )}
       <p className="mt-2 text-[11px] text-[var(--v-text-faint)]">
         Stream keys are kept on this computer only - they are not in backups or on a hosted server. Anyone with a key
         can broadcast to that channel, so do not share them.

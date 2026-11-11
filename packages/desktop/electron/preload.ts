@@ -50,12 +50,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Screen / window capture - returns pickable sources. The renderer that
   // shows the feed acquires the stream itself from the chosen id.
   listCaptureSources: () => ipcRenderer.invoke("capture:sources"),
-  recorderSurface: () => ipcRenderer.invoke("recorder:surface"),
+  recorderSurface: (size?: { width?: number; height?: number }) => ipcRenderer.invoke("recorder:surface", size),
   recorderRelease: () => ipcRenderer.invoke("recorder:release"),
 
   // Live streaming to RTMP servers (YouTube, Facebook, Twitch ...)
   streamStatus: () => ipcRenderer.invoke("stream:status"),
-  streamStart: (opts: { urls: string[]; height: number; fps: number; videoKbps: number; hasAudio: boolean }) =>
+  streamStart: (opts: { urls: string[]; height: number; fps: number; videoKbps: number; hasAudio: boolean; encoder?: string }) =>
     ipcRenderer.invoke("stream:start", opts),
   streamStop: () => ipcRenderer.invoke("stream:stop"),
   streamChunk: (data: ArrayBuffer) => ipcRenderer.send("stream:chunk", data),

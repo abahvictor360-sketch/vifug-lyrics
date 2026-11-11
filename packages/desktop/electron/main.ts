@@ -597,19 +597,30 @@ let recordingWin: BrowserWindow | null = null;
  */
 let recordingSurfaceUsers = 0;
 
-ipcMain.handle("recorder:surface", async () => {
+ipcMain.handle("recorder:surface", async (_e, size?: { width?: number; height?: number }) => {
+  // Streaming above 1080p asks for a bigger surface, so the picture is drawn
+  // at that size rather than stretched up to it. Recording asks for nothing
+  // and gets 1080p, as before.
+  const wantW = Math.min(7680, Math.max(1280, Math.round(size?.width ?? 1920)));
+  const wantH = Math.min(4320, Math.max(720, Math.round(size?.height ?? 1080)));
   if (mainProjector()) {
     return { title: "Vifug Projector", temporary: false };
   }
   recordingSurfaceUsers++;
   if (recordingWin && !recordingWin.isDestroyed()) {
+    // Grow, never shrink: something else may already be capturing it.
+    const [w, h] = recordingWin.getSize();
+    if (wantW > (w ?? 0) || wantH > (h ?? 0)) recordingWin.setSize(Math.max(w ?? 0, wantW), Math.max(h ?? 0, wantH));
     return { title: RECORDING_WINDOW_TITLE, temporary: true };
   }
 
   const primary = screen.getPrimaryDisplay();
   recordingWin = new BrowserWindow({
-    width: 1920,
-    height: 1080,
+    width: wantW,
+    height: wantH,
+    // Windows and Linux allow a window bigger than the screen; macOS needs
+    // to be told. Where the system still clamps it, the stream is scaled up.
+    enableLargerThanScreen: true,
     // Just off the right edge: still inside the desktop's coordinate space, so
     // the compositor keeps drawing it and desktopCapturer can see it, but not
     // over anything the operator is using.
