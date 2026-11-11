@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [Unreleased]
+## [1.30.0] — 2026-11-11
 
 - NEW: **install from the terminal.** One command downloads and installs the newest release: `curl -fsSL https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.sh | bash` on macOS and Linux, `irm https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.ps1 | iex` in Windows PowerShell. Run it again to update.
 - NEW: **slide thumbnails with a coloured label bar and a size slider.** Each slide in the grid now carries a bar along the bottom with its number and section (Verse 1, Chorus), in the section's colour; the bar turns red on the live slide and green on the cued one. The words scale with the card, and a Slide size slider above the grid makes the cards bigger or smaller and is remembered on that device.
