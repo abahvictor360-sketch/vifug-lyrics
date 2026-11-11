@@ -539,7 +539,7 @@ export function MediaPanel({
                           type="button"
                           onClick={() => updateCapture({ pipVideoSide: side })}
                           className={`flex-1 rounded-md border px-2 py-1 text-[12px] ${
-                            (currentCapture.pipVideoSide ?? "left") === side
+                            (currentCapture.pipVideoSide ?? (currentCapture.pipClean && !currentCapture.pipBroadcast ? "right" : "left")) === side
                               ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
                               : "border-[var(--v-border)]"
                           }`}

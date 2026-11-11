@@ -2289,7 +2289,7 @@ function ScreenContextMenu({
 }) {
   // Keep the menu on-screen near the cursor even close to the window edge.
   // The height grows with the number of screens, so the clamp has to as well.
-  const MENU_W = 244;
+  const MENU_W = 272;
   const estHeight = 248 + displays.length * 38 + (liveFit ? 132 : 0);
   const left = Math.min(x, window.innerWidth - MENU_W - 8);
   const top = Math.max(8, Math.min(y, window.innerHeight - estHeight - 8));
@@ -2324,7 +2324,7 @@ function ScreenContextMenu({
 
   return (
     <div
-      className="fixed z-50 w-[244px] rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-1.5 shadow-2xl"
+      className="fixed z-50 w-[272px] rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-2)] p-1.5 shadow-2xl"
       style={{ left, top }}
       onClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => { e.preventDefault(); onClose(); }}
@@ -2368,7 +2368,7 @@ function ScreenContextMenu({
           <PictureInPicture2 className="h-4 w-4 shrink-0" />,
           pipActive ? "Close picture-in-picture" : "Picture-in-picture",
           onTogglePip,
-          { active: pipActive, hint: pipActive ? "floating" : "stays on top" },
+          { active: pipActive, hint: pipActive ? "floating" : undefined },
         )}
       {/* Chrome and Edge can open the output on a monitor of its own, but only
           once the operator has allowed it - and the browser will only ask in

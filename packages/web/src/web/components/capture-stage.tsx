@@ -221,7 +221,8 @@ export function CaptureStage({
   // pip - split the frame. Video keeps its aspect (object-contain) so a
   // portrait camera feed isn't stretched to fill a landscape half.
   const videoWidth = Math.min(0.8, Math.max(0.2, capture.pipVideoWidth ?? (capture.pipClean && !capture.pipBroadcast ? 0.4 : 0.5)));
-  const videoFirst = (capture.pipVideoSide ?? "left") === "left";
+  // Clean card puts the words first by default, as its reference design does.
+  const videoFirst = (capture.pipVideoSide ?? (capture.pipClean && !capture.pipBroadcast ? "right" : "left")) === "left";
   const videoPct = `${videoWidth * 100}%`;
   const textPct = `${(1 - videoWidth) * 100}%`;
 
@@ -277,39 +278,42 @@ export function CaptureStage({
   }
 
   if (capture.pipClean && !capture.pipBroadcast) {
-    const unit = scale ? "cqw" : "vw";
     const reference =
       state.songTitle && state.sectionLabel && !state.sectionLabel.includes(state.songTitle)
         ? `${state.sectionLabel} (${state.songTitle})`
         : state.sectionLabel;
     return (
-      <div style={{ ...root, display: "flex", flexDirection: "column", background: "#0b0b0d" }}>
+      <div style={{ position: "absolute", inset: 0, containerType: "size", display: "flex", flexDirection: "column", background: "#0b0b0d" }}>
         <div
           style={{
             flex: 1,
             minHeight: 0,
             display: "flex",
-            flexDirection: videoFirst ? "row" : "row-reverse",
+            flexDirection: videoFirst ? "row-reverse" : "row",
             gap: "3%",
             padding: "4% 4% 2%",
           }}
         >
           <div style={{ width: textPct, position: "relative", containerType: "size" }}>
-            <SlideRender
-              state={{ ...state, theme: { ...state.theme, textAlign: "left", textFrame: null, displayMode: "fullscreen", verticalPos: "center", showCaption: false } }}
-              transparent
-              scale
-              playAudio={playAudio}
-            />
+            {/* The verse gets the pane above the reference line, so a long
+                passage shrinks to fit rather than running into it. */}
+            <div style={{ position: "absolute", inset: reference ? "0 0 16% 0" : 0, containerType: "size" }}>
+              <SlideRender
+                state={{ ...state, theme: { ...state.theme, textAlign: "left", textFrame: null, displayMode: "fullscreen", verticalPos: "center", showCaption: false, safeMargin: 2 } }}
+                transparent
+                scale
+                playAudio={playAudio}
+              />
+            </div>
             {reference && (
               <div
                 style={{
                   position: "absolute",
-                  left: 0,
-                  bottom: "4%",
+                  left: "2%",
+                  bottom: "3%",
                   color: "#fff",
                   fontWeight: 700,
-                  fontSize: `clamp(0.8rem, 4.2cqw, 3rem)`,
+                  fontSize: "4.4cqw",
                   fontFamily: 'var(--font-lyric), system-ui, sans-serif',
                 }}
               >
@@ -340,7 +344,7 @@ export function CaptureStage({
             justifyContent: "center",
             color: "rgba(255,255,255,0.85)",
             fontStyle: "italic",
-            fontSize: `clamp(0.6rem, 1.4${unit}, 1.4rem)`,
+            fontSize: "1.5cqw",
             letterSpacing: "0.03em",
           }}
         >

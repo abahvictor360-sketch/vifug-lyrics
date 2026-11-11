@@ -289,7 +289,8 @@
       <a href="#updates"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span><b>18</b>&nbsp; Staying up to date</a>
       <a href="#autofollow"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></span><b>19</b>&nbsp; AI auto-follow</a>
       <a href="#overlays"><span class="toc-ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M6 7h4M18 13h-3"/><path d="M8 21h8"/></svg></span><b>20</b>&nbsp; Timer, announcement &amp; logo</a>
-      <a href="#support"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M12 21s-6.7-4.35-9.3-8.1C1 10.2 1.7 6.9 4.6 5.4c2.2-1.1 4.6-.4 6 1.3l1.4 1.7 1.4-1.7c1.4-1.7 3.8-2.4 6-1.3 2.9 1.5 3.6 4.8 1.9 7.5C18.7 16.65 12 21 12 21Z"/></svg></span><b>21</b>&nbsp; Support Vifug</a>
+      <a href="#new"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></span><b>21</b>&nbsp; New in 1.29 and 1.30</a>
+      <a href="#support"><span class="toc-ic"><svg viewBox="0 0 24 24"><path d="M12 21s-6.7-4.35-9.3-8.1C1 10.2 1.7 6.9 4.6 5.4c2.2-1.1 4.6-.4 6 1.3l1.4 1.7 1.4-1.7c1.4-1.7 3.8-2.4 6-1.3 2.9 1.5 3.6 4.8 1.9 7.5C18.7 16.65 12 21 12 21Z"/></svg></span><b>22</b>&nbsp; Support Vifug</a>
     </div>
 
     <!-- 01 QUICK START -->
@@ -304,7 +305,7 @@
       <ol class="steps">
         <li>
           <h3>Install and launch</h3>
-          <p>Run the Windows installer and open Vifug. It ships with 325 songs and hymns and the full offline Bible already loaded - no downloads, no account, no internet required.</p>
+          <p>Run the installer for Windows, Mac or Linux and open Vifug - or <a href="#new">install it with one command from the terminal</a>. It ships with 325 songs and hymns and the full offline Bible already loaded - no downloads, no account, no internet required.</p>
         </li>
         <li>
           <h3>Choose what Vifug is for</h3>
@@ -445,7 +446,7 @@
         <div class="mini-card">
           <div class="ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <h3>Theme, font & color</h3>
-          <p>Pick a base theme, then override font family, size, weight, alignment and color independently for lyrics, Bible text, and even the translation line. For a ProPresenter-style look, open <b>Settings → Lyrics → Open the visual designer</b>: the slide is shown large with a dashed box where the words sit. Drag the box to move it, drag its edges to resize it (it snaps to the middle and edges), or start from Lower third, Left half, Centre card and more. Font, colours, outline and shadow are beside it, and the slide updates as you go. The same panel has a <b>Background picture or video</b> section: pick one from your library, upload an image or video, paste a link, or choose a plain colour, and it appears behind the words on the canvas straight away and is saved with the theme.</p>
+          <p>Pick a base theme, then override font family, size, weight, alignment and color independently for lyrics, Bible text, and even the translation line. For a ProPresenter-style look, open <b>Settings → Theme designer</b> (<a href="#new">step-by-step guide</a>): the slide is shown large with a dashed box where the words sit. Drag the box to move it, drag its edges to resize it (it snaps to the middle and edges), or start from Lower third, Left half, Centre card and more. Font, colours, outline and shadow are beside it, and the slide updates as you go. The same panel has a <b>Background picture or video</b> section: pick one from your library, upload an image or video, paste a link, or choose a plain colour, and it appears behind the words on the canvas straight away and is saved with the theme.</p>
         </div>
         <div class="mini-card">
           <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
@@ -1911,9 +1912,131 @@
       </div>
     </section>
 
-    <!-- 21 SUPPORT -->
-    <section class="chapter" id="support">
+    <!-- 21 WHAT'S NEW -->
+    <section class="chapter" id="new">
       <div class="chapter-head"><span class="chapter-num">CHAPTER 21</span></div>
+      <h2>New in 1.29 and 1.30</h2>
+      <p class="lead">Everything added in the last two releases, with where to find it and how to use it: installing from the terminal, the theme designer, a theme for each kind of screen, the new slide grid and status bar, picture-in-picture, and the Clean card layout for a camera beside Scripture.</p>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">Install or update from the terminal</h3>
+      <p>One command downloads the newest release and installs it. Run the same command again later to update.</p>
+      <p style="margin-top:12px"><b>macOS and Linux</b> - paste into Terminal:</p>
+      <pre style="margin:12px 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--raise);overflow-x:auto;font-size:13px;line-height:1.5;color:#dfe6f2;white-space:pre">curl -fsSL https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.sh | bash</pre>
+      <p><b>Windows</b> - paste into PowerShell:</p>
+      <pre style="margin:12px 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--raise);overflow-x:auto;font-size:13px;line-height:1.5;color:#dfe6f2;white-space:pre">irm https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.ps1 | iex</pre>
+      <ul style="margin:10px 0 0 20px;color:var(--dim);font-size:14.5px">
+        <li><b>macOS</b> puts Vifug in Applications.</li>
+        <li><b>Linux</b> (64-bit Intel/AMD) puts the app at <code>~/.local/bin/vifug</code> and adds it to the applications menu. If it will not start, install FUSE (on Ubuntu: <code>sudo apt install libfuse2</code>).</li>
+        <li><b>Windows</b> runs the normal installer. To install with no installer windows, run <code>$env:VIFUG_SILENT = "1"</code> first.</li>
+      </ul>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">The theme designer</h3>
+      <p>The designer now has its own entry in Settings, so it opens inside the Settings window with the slide on the left and the controls on the right.</p>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1800" src="img/app-theme-designer.png" alt="The Theme designer section of Settings: a slide with a dashed text box set to a lower third, and Text box, Font, Colours controls on the right" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">Settings → Theme designer, with the text box set to the Lower third preset.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>
+          <h3>Open it and pick a theme</h3>
+          <p>Go to <b>Settings → Theme designer</b>. Choose the theme to edit at the top, or press <b>New</b> to start one. The line on the right says which screens use that theme.</p>
+        </li>
+        <li>
+          <h3>Place the words</h3>
+          <p>Drag the dashed box on the slide to move it, and drag its edges or corners to resize it. It snaps to the middle and the edges. Or start from a preset: Full screen, Lower third, Top band, Left half, Right half or Centre card. <b>Top / Middle / Bottom</b> sets where the words sit inside the box.</p>
+        </li>
+        <li>
+          <h3>Set the font and its size</h3>
+          <p>Choose the font, weight and alignment. Leave <b>Auto-fit</b> ticked and the words grow to fill the box; untick it and drag the <b>Font size</b> slider for a fixed size.</p>
+        </li>
+        <li>
+          <h3>Colours, background, outline and shadow</h3>
+          <p>Pick the text and background colours, dim the picture behind the words, choose a background picture or video from your library, and add an outline or drop shadow with the sliders at the bottom.</p>
+        </li>
+        <li>
+          <h3>Check it, then use it</h3>
+          <p>Switch the sample between 2 lines, 4 lines and Scripture to see how each fits. Changes are saved as you make them. If the theme is not the one on the lyric screen yet, press <b>Use for lyrics</b>.</p>
+        </li>
+      </ol>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">One theme for everything, or one each</h3>
+      <p>Lyrics, Bible and presentations can share a theme or each have their own. Open <b>Settings → Lyrics → Theme for each screen</b>.</p>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1800" src="img/app-theme-per-screen.png" alt="Settings, Lyrics page: the Theme for each screen group with three pickers for Lyrics, Bible and Presentations" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">Bible and Presentations follow the lyric theme until you pick one for them.</figcaption>
+      </figure>
+      <ul style="margin:0 0 0 20px;color:var(--dim);font-size:14.5px">
+        <li><b>Same look everywhere:</b> leave Bible and Presentations on <b>Same as lyrics</b>. Changing the lyric theme changes all three.</li>
+        <li><b>A different look for Scripture or slides:</b> pick a theme beside Bible or Presentations. If that theme has its own background picture, the picture comes with it.</li>
+        <li><b>Back to one theme:</b> press <b>Use the lyric theme for everything</b>.</li>
+      </ul>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">The slide grid and the status bar</h3>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1800" src="img/app-slide-grid.png" alt="The operator window with a song open: slide thumbnails with coloured label bars, one red and marked Live, one green and marked Preview, and a status bar along the bottom" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">The live slide is red, the cued slide is green, and the bar along the bottom says what is on air.</figcaption>
+      </figure>
+      <ul style="margin:0 0 0 20px;color:var(--dim);font-size:14.5px">
+        <li><b>Label bars:</b> every slide has a bar along the bottom with its number and section (Verse 1, Chorus) in that section's colour. The bar turns <b>red</b> on the slide that is live and <b>green</b> on the one cued in Preview.</li>
+        <li><b>Slide size:</b> drag the slider above the grid for bigger or smaller thumbnails. The size is remembered on that computer.</li>
+        <li><b>Preview and Live:</b> each picture has a title bar. The Live bar turns solid red while something is on air.</li>
+        <li><b>Status bar:</b> the line along the bottom shows what is on air (song, section and slide number), whether the output is open, the recording time, auto-follow, the theme and the clock.</li>
+      </ul>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">Picture-in-picture</h3>
+      <p>A small window that floats above your other apps and shows exactly what is on air, so you can watch the output while working in something else.</p>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1800" src="img/app-pip-menu.png" alt="The menu that opens on a right-click of the Preview picture, with Full screen on this device, Picture-in-picture and Open on another monitor" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">Right-click the Preview or Live picture to open this menu.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>
+          <h3>Open it</h3>
+          <p>Right-click the Preview or Live picture and choose <b>Picture-in-picture</b>.</p>
+        </li>
+        <li>
+          <h3>Move it where you like</h3>
+          <p>Drag the floating window anywhere, on any monitor. It stays on top and follows the live output.</p>
+        </li>
+        <li>
+          <h3>Close it</h3>
+          <p>Use the window's own close button, or choose <b>Close picture-in-picture</b> from the same menu.</p>
+        </li>
+      </ol>
+      <div class="callout tip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14a5 5 0 1 0-6.18 0c.86.63 1.09 1.15 1.09 2h4c0-.85.23-1.37 1.09-2Z"/></svg>
+        <p><b>Chrome and Edge only (version 116 or newer).</b> The menu item is hidden in browsers that cannot do it, such as Firefox and Safari.</p>
+      </div>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">Clean card: Scripture beside the camera</h3>
+      <p>A side-by-side layout for preaching: the verse on one side, the reference underneath it, and the camera in a rounded frame on the other.</p>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1800" src="img/app-clean-card.png" alt="The Clean card layout on the output: John 3:16 on the left with its reference below, a camera picture in a rounded frame on the right, and a footer line at the bottom" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">Clean card on the output, shown here with a test camera in the Portrait shape.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>
+          <h3>Choose a camera</h3>
+          <p>Open the <b>Media</b> tab, then <b>Capture</b>, then <b>Choose source</b>. Pick <b>Side by side</b>, pick your camera, and press <b>Cue to Preview</b>.</p>
+        </li>
+        <li>
+          <h3>Pick Clean card</h3>
+          <p>In the Layout panel, under Side by side, choose <b>Clean card</b>. <b>Video left / Video right</b> swaps the sides, and <b>Video width</b> sets how much room the camera takes.</p>
+        </li>
+        <li>
+          <h3>Shape the camera and add a footer</h3>
+          <p>Under <b>Video shape &amp; size</b> choose Portrait (or any other shape) for the camera. Type a website or handle in <b>Footer line</b> to show it along the bottom.</p>
+        </li>
+        <li>
+          <h3>Put a verse beside it</h3>
+          <p>Go to the <b>Bible</b> tab, click a verse, and press <b>GO LIVE</b>. The reference and translation appear under the verse, for example John 3:16 (KJV).</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 22 SUPPORT -->
+    <section class="chapter" id="support">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 22</span></div>
       <h2>Support Vifug</h2>
       <p class="lead">
         Vifug is free to use and looked after by one person. If it has saved your team time, there are several
