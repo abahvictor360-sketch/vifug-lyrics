@@ -83,7 +83,10 @@ export function ThemeDesigner({
   onPickBackground,
   mediaDefaults,
   onClose,
+  embedded = false,
 }: {
+  /** Render inline (a Settings section) rather than as a dialog of its own. */
+  embedded?: boolean;
   theme: ThemeRow;
   patch: (p: ThemeDraft) => void;
   /** The picture on the live screen right now (null = none). */
@@ -93,7 +96,7 @@ export function ThemeDesigner({
   mediaDefaults?: { fit?: "cover" | "contain" | "fill"; muted?: boolean };
   /** The picture behind the words on the live screen, so the canvas matches it. */
   previewBackground?: LiveTheme["background"];
-  onClose: () => void;
+  onClose?: () => void;
 }) {
   const dialog = useDialog();
   // Edits show at once and are saved as they are made; the row catches up a
@@ -231,32 +234,16 @@ export function ThemeDesigner({
   };
 
   useEffect(() => {
+    if (embedded || !onClose) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, embedded]);
 
-  return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/80 p-3 sm:p-6" onClick={onClose}>
-      <div
-        ref={dialog.ref}
-        {...dialog.dialogProps}
-        aria-labelledby="designer-title"
-        onClick={(e) => e.stopPropagation()}
-        className="focus:outline-none flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[var(--v-border)] bg-[var(--v-surface-2)]"
-      >
-        <div className="flex items-center justify-between border-b border-[var(--v-border)] px-4 py-3">
-          <h2 id="designer-title" className="text-sm font-semibold">
-            Design theme: <span className="text-[var(--v-accent)]">{theme.name}</span>
-          </h2>
-          <button onClick={onClose} aria-label="Close the designer" className="rounded p-1 text-[var(--v-text-faint)] hover:text-white">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+  const body = (
+        <div className={embedded ? "grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]" : "grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_320px]"}>
           {/* The slide, with the text box on top of it. */}
-          <div className="min-w-0">
+          <div className={embedded ? "min-w-0 self-start xl:sticky xl:top-0" : "min-w-0"}>
             <div
               ref={canvasRef}
               className="relative aspect-video w-full select-none overflow-hidden rounded-lg border border-[var(--v-border)] bg-black"
@@ -372,7 +359,7 @@ export function ThemeDesigner({
                     placeholder="auto"
                     value={row.fontSize ?? ""}
                     onChange={(e) => change({ fontSize: e.target.value === "" ? null : Number(e.target.value) })}
-                    className={`${field} w-16`}
+                    className={field.replace("w-full", "w-20 shrink-0")}
                   />
                 </div>
                 <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
@@ -472,6 +459,29 @@ export function ThemeDesigner({
             </button>
           </div>
         </div>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/80 p-3 sm:p-6" onClick={onClose}>
+      <div
+        ref={dialog.ref}
+        {...dialog.dialogProps}
+        aria-labelledby="designer-title"
+        onClick={(e) => e.stopPropagation()}
+        className="focus:outline-none flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[var(--v-border)] bg-[var(--v-surface-2)]"
+      >
+        <div className="flex items-center justify-between border-b border-[var(--v-border)] px-4 py-3">
+          <h2 id="designer-title" className="text-sm font-semibold">
+            Design theme: <span className="text-[var(--v-accent)]">{theme.name}</span>
+          </h2>
+          <button onClick={onClose} aria-label="Close the designer" className="rounded p-1 text-[var(--v-text-faint)] hover:text-white">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {body}
       </div>
     </div>
   );

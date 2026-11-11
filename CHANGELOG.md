@@ -5,6 +5,11 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- CHANGED: **the theme designer is in the Settings side menu.** "Theme designer" now sits under Lyrics in the menu and opens in the Settings window itself, with the slide on the left and the controls on the right, instead of a second window on top. Pick which theme to edit at the top, start a new one, or put the one you are editing on the lyric screen. The button in Settings → Lyrics takes you there.
+- CHANGED: **small tidy-ups across the app.** The Preview and Live pictures line up. The Settings window is wider and its menu hints no longer cut off. An empty song library says so and points at New and Import, and a search with no matches says what was searched. The Plans tab has a proper "Select a plan" screen. The top-bar button that opens the media library is labelled Library, so it is not confused with the Media tab, and the browser badge reads Browser instead of Preview. The font-size slider in the designer is full width.
+
 ## [1.29.0] — 2026-11-10
 
 - NEW: **a "Clean card" side-by-side style.** In the capture layout panel, Side by side now has Split, Clean card and Broadcast. Clean card is a dark card with the verse on one side (left-aligned), the Scripture reference pinned bottom-left, the camera inset beside it with rounded corners, and an optional footer line along the bottom, matching the Pewbeam look. The logo still sits top-right.

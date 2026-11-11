@@ -1300,7 +1300,14 @@ export default function OperatorPage() {
               </div>
             )}
             {!songs.isError && songs.data?.length === 0 && (
-              <p className="px-2 py-8 text-center text-sm text-[var(--v-text-faint)]">No songs found.</p>
+              <div className="px-3 py-8 text-center">
+                <p className="text-sm text-[var(--v-text-dim)]">
+                  {search.trim() ? `No songs match "${search.trim()}".` : "Your library is empty."}
+                </p>
+                <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
+                  {search.trim() ? "Try fewer words, or part of the first line." : "Use New to type a song in, or Import to bring songs over."}
+                </p>
+              </div>
             )}
             <ul className="space-y-0.5">
               {songs.data?.map((s) => (
@@ -1421,11 +1428,13 @@ export default function OperatorPage() {
             <div className="grid grid-cols-2 gap-3">
               {/* PREVIEW (cue next) */}
               <div className="flex flex-col">
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-2 flex h-6 items-center justify-between">
                   <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-[var(--v-accent)]">
                     <Eye className="h-3.5 w-3.5" /> Preview
                   </span>
-                  <span className="text-[11px] text-[var(--v-text-faint)]">{mode === "bible" ? "Scripture" : "Lyrics"}</span>
+                  <span className="text-[11px] text-[var(--v-text-faint)]">
+                    {mode === "bible" ? "Scripture" : mode === "presentation" ? "Slides" : mode === "media" ? "Media" : "Lyrics"}
+                  </span>
                 </div>
                 <div
                   className="relative aspect-video w-full overflow-hidden rounded-lg border-2 border-[var(--v-accent)]/50"
@@ -1457,7 +1466,7 @@ export default function OperatorPage() {
                     backwards, for the one column a congregation can see. It
                     now goes red with a lit dot while something is actually
                     on screen, and stays quiet when nothing is. */}
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-2 flex h-6 items-center justify-between">
                   <span
                     className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${
                       liveState.status === "live" ? "text-[var(--v-live)]" : "text-[var(--v-text-faint)]"
@@ -1935,7 +1944,7 @@ function TopBar({
        */}
       <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
         <span className="hidden rounded bg-[var(--v-surface-3)] px-1.5 py-0.5 text-[11px] text-[var(--v-text-faint)] xl:inline-block">
-          {desktop ? "Desktop" : "Preview"}
+          {desktop ? "Desktop" : "Browser"}
         </span>
         <UpdateNotice update={update} />
         {/* Browser only. The update pill takes this slot in the desktop app,
@@ -1951,8 +1960,8 @@ function TopBar({
           <StatusPill status={liveStatus} />
         </span>
         <HelpMenu onCheckUpdates={update.checkNow} desktop={desktop} />
-        <VButton variant="ghost" size="sm" onClick={onMedia} aria-label="Media">
-          <Clapperboard className="h-4 w-4" /> <span className="hidden lg:inline">Media</span>
+        <VButton variant="ghost" size="sm" onClick={onMedia} aria-label="Media library" title="Media library - backgrounds, pictures and videos">
+          <Clapperboard className="h-4 w-4" /> <span className="hidden lg:inline">Library</span>
         </VButton>
         <VButton variant="ghost" size="sm" onClick={onSettings} aria-label="Settings">
           <Settings2 className="h-4 w-4" /> <span className="hidden lg:inline">Settings</span>
@@ -3539,8 +3548,14 @@ function PlansPanel({
       {/* Plan editor */}
       <div className="flex min-w-0 flex-1 flex-col">
         {!selectedId || !plan.data ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-[var(--v-text-faint)]">
-            Select or create a service plan.
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[var(--v-surface-2)]">
+              <ListChecks className="h-8 w-8 text-[var(--v-text-faint)]" />
+            </div>
+            <div>
+              <p className="font-display text-lg font-semibold">Select a plan</p>
+              <p className="text-sm text-[var(--v-text-faint)]">Pick one on the left, or name a new one and press +.</p>
+            </div>
           </div>
         ) : (
           <>

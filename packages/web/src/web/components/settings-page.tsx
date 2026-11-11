@@ -96,7 +96,7 @@ export type ProjectorApi = {
 };
 
 export type SectionId =
-  | "lyrics" | "bible" | "presentations" | "streaming" | "ai" | "shortcuts" | "general" | "about";
+  | "lyrics" | "designer" | "bible" | "presentations" | "streaming" | "ai" | "shortcuts" | "general" | "about";
 
 /**
  * Streaming, AI and Shortcuts used to live inside General, which had grown
@@ -105,10 +105,11 @@ export type SectionId =
  */
 const SECTIONS: { id: SectionId; label: string; icon: typeof Music4; hint: string }[] = [
   { id: "lyrics", label: "Lyrics", icon: Music4, hint: "Theme, background & fonts" },
+  { id: "designer", label: "Theme designer", icon: Palette, hint: "Text box, fonts & colours" },
   { id: "bible", label: "Bible", icon: BookOpen, hint: "Versions & scripture look" },
   { id: "presentations", label: "Presentations", icon: MonitorPlay, hint: "Slide look & media defaults" },
-  { id: "streaming", label: "Streaming & output", icon: Radio, hint: "Canvas, NDI, OBS & companion screens" },
-  { id: "ai", label: "AI auto-follow", icon: Ear, hint: "Microphone & speech recognition" },
+  { id: "streaming", label: "Streaming & output", icon: Radio, hint: "NDI, OBS & screens" },
+  { id: "ai", label: "AI auto-follow", icon: Ear, hint: "Mic & speech engine" },
   { id: "shortcuts", label: "Shortcuts", icon: Keyboard, hint: "Keys for the live controls" },
   { id: "general", label: "General", icon: Settings2, hint: "Projector & live behavior" },
   { id: "about", label: "About", icon: Info, hint: "What Vifug is & who made it" },
@@ -117,6 +118,7 @@ const SECTIONS: { id: SectionId; label: string; icon: typeof Music4; hint: strin
 /** Heading shown above each section's panels. */
 const SECTION_TITLES: Record<SectionId, string> = {
   lyrics: "Lyrics",
+  designer: "Theme designer",
   bible: "Bible",
   presentations: "Presentations",
   streaming: "Streaming & output",
@@ -237,7 +239,7 @@ export function SettingsPage({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-8">
-      <div ref={dialog.ref} {...dialog.dialogProps} aria-label={`Settings - ${SECTION_TITLES[section]}`} className="focus:outline-none flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[var(--v-border)] bg-[var(--v-surface)] shadow-2xl sm:flex-row">
+      <div ref={dialog.ref} {...dialog.dialogProps} aria-label={`Settings - ${SECTION_TITLES[section]}`} className={`focus:outline-none flex h-full w-full ${section === "designer" ? "max-w-[1400px]" : "max-w-6xl"} flex-col overflow-hidden rounded-2xl border border-[var(--v-border)] bg-[var(--v-surface)] shadow-2xl sm:flex-row`}>
         {/* Section nav: a column beside the panel on a desktop, a scrolling
             strip above it on a phone, where 13rem of fixed side nav left the
             settings themselves about a thumb wide. */}
@@ -293,6 +295,15 @@ export function SettingsPage({
           <div className="v-scroll min-h-0 flex-1 overflow-y-auto p-6">
             {section === "lyrics" && (
               <LyricsSection
+                settings={settings}
+                patchSettings={patchSettings}
+                themes={themes}
+                previewTheme={lyricPreviewTheme}
+                onOpenDesigner={() => setSection("designer")}
+              />
+            )}
+            {section === "designer" && (
+              <DesignerSection
                 settings={settings}
                 patchSettings={patchSettings}
                 themes={themes}
@@ -552,16 +563,12 @@ function ThemeEditor({
   activeId,
   onActivate,
   previewBackground,
-  activeBackgroundId,
-  onPickBackground,
-  mediaDefaults,
+  onOpenDesigner,
 }: {
+  onOpenDesigner: () => void;
   themes: ThemeRow[];
   activeId: string | null;
   onActivate: (id: string) => void;
-  activeBackgroundId?: string | null;
-  onPickBackground?: (id: string | null) => void;
-  mediaDefaults?: { fit?: "cover" | "contain" | "fill"; muted?: boolean };
   /** The picture or colour behind the words on the live screen, so the preview matches it. */
   previewBackground?: LiveTheme["background"];
 }) {
@@ -572,7 +579,6 @@ function ThemeEditor({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [designing, setDesigning] = useState(false);
 
   // Edit whichever theme is on air, so the preview matches the screen.
   const theme = themes.find((t) => t.id === activeId) ?? themes[0];
@@ -698,20 +704,9 @@ function ThemeEditor({
           </p>
         ) : null}
 
-        <VButton variant="primary" size="sm" className="mt-3" onClick={() => setDesigning(true)}>
-          <Palette className="h-4 w-4" /> Open the visual designer
+        <VButton variant="primary" size="sm" className="mt-3" onClick={onOpenDesigner}>
+          <Palette className="h-4 w-4" /> Open the theme designer
         </VButton>
-        {designing && (
-          <ThemeDesigner
-            theme={theme}
-            patch={patch}
-            previewBackground={previewBackground}
-            activeBackgroundId={activeBackgroundId}
-            onPickBackground={onPickBackground}
-            mediaDefaults={mediaDefaults}
-            onClose={() => setDesigning(false)}
-          />
-        )}
 
         <p className="mt-2 text-[12px] text-[var(--v-text-faint)]">
           Editing <b className="text-[var(--v-text-dim)]">{theme.name}</b> - the theme every song
@@ -1347,9 +1342,14 @@ export function ColorField({
   );
 }
 
-/* ---------------- Lyrics ---------------- */
+/* ---------------- Theme designer ---------------- */
 
-function LyricsSection({
+/**
+ * The visual designer as a section of its own, beside the others in the side
+ * menu, instead of a dialog opened on top of the Settings dialog. It edits
+ * whichever theme is picked here; "Use for lyrics" puts that theme on screen.
+ */
+function DesignerSection({
   settings,
   patchSettings,
   themes,
@@ -1359,6 +1359,90 @@ function LyricsSection({
   patchSettings: (p: Partial<AppSettings>) => void;
   themes: ThemeRow[];
   previewTheme: LiveTheme;
+}) {
+  const update = useUpdateTheme();
+  const create = useCreateTheme();
+  const activeId = settings?.activeThemeId ?? themes[0]?.id ?? null;
+  const [editingId, setEditingId] = useState<string | null>(activeId);
+  const theme = themes.find((t) => t.id === editingId) ?? themes.find((t) => t.id === activeId) ?? themes[0];
+  if (!theme) return <p className="text-sm text-[var(--v-text-faint)]">No themes yet.</p>;
+  const isLyricTheme = theme.id === activeId;
+  const usedBy = [
+    isLyricTheme ? "Lyrics" : null,
+    (settings?.bibleThemeId ?? activeId) === theme.id ? "Bible" : null,
+    (settings?.presentationThemeId ?? activeId) === theme.id ? "Presentations" : null,
+  ].filter(Boolean);
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <label className="flex min-w-[220px] flex-1 items-center gap-2 text-sm sm:flex-none">
+          <span className="shrink-0 text-[var(--v-text-dim)]">Theme</span>
+          <select
+            value={theme.id}
+            onChange={(e) => setEditingId(e.target.value)}
+            className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)] sm:w-64"
+          >
+            {themes.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </label>
+        <VButton
+          variant="subtle"
+          size="sm"
+          title="Start a new theme from the app defaults"
+          onClick={() => create.mutate({ name: "New theme" }, { onSuccess: (r) => setEditingId(r.id) })}
+        >
+          <Plus className="h-4 w-4" /> New
+        </VButton>
+        {!isLyricTheme && (
+          <VButton
+            variant="subtle"
+            size="sm"
+            title="Put this theme on the lyric screen"
+            onClick={() => patchSettings({ activeThemeId: theme.id })}
+          >
+            <Check className="h-4 w-4" /> Use for lyrics
+          </VButton>
+        )}
+        <span className="ml-auto text-[12px] text-[var(--v-text-faint)]">
+          {usedBy.length ? `Used by ${usedBy.join(", ")}` : "Not on any screen yet"} · saved as you go
+        </span>
+      </div>
+      <ThemeDesigner
+        embedded
+        theme={theme}
+        patch={(p) => update.mutate({ id: theme.id, patch: p })}
+        previewBackground={isLyricTheme ? previewTheme.background : undefined}
+        activeBackgroundId={isLyricTheme ? (settings?.activeBackgroundId ?? null) : (theme.backgroundId ?? null)}
+        mediaDefaults={{ fit: settings?.mediaDefaults?.fit ?? "cover", muted: !(settings?.mediaDefaults?.videoSound ?? true) }}
+        // Only the lyric theme's picture goes straight on screen; another
+        // theme just remembers its own.
+        onPickBackground={
+          isLyricTheme
+            ? (id) => patchSettings({ activeBackgroundId: id, bibleBackgroundId: undefined, presentationBackgroundId: undefined })
+            : undefined
+        }
+      />
+    </div>
+  );
+}
+
+/* ---------------- Lyrics ---------------- */
+
+function LyricsSection({
+  settings,
+  patchSettings,
+  themes,
+  previewTheme,
+  onOpenDesigner,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+  themes: ThemeRow[];
+  previewTheme: LiveTheme;
+  onOpenDesigner: () => void;
 }) {
   const linesPerSlide = settings?.linesPerSlide ?? 2;
   const activateTheme = (id: string) => {
@@ -1393,14 +1477,8 @@ function LyricsSection({
         themes={themes}
         activeId={settings?.activeThemeId ?? null}
         previewBackground={previewTheme.background}
-        activeBackgroundId={settings?.activeBackgroundId ?? null}
-        mediaDefaults={{ fit: settings?.mediaDefaults?.fit ?? "cover", muted: !(settings?.mediaDefaults?.videoSound ?? true) }}
-        // A picture chosen while designing is the theme's picture, so it goes on
-        // the screen the same way choosing the theme would put it there.
-        onPickBackground={(id) =>
-          patchSettings({ activeBackgroundId: id, bibleBackgroundId: undefined, presentationBackgroundId: undefined })
-        }
         onActivate={activateTheme}
+        onOpenDesigner={onOpenDesigner}
       />
 
       <Group title="Theme for each screen" icon={Palette}>
