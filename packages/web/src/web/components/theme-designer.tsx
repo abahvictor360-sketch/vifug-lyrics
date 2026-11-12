@@ -275,16 +275,6 @@ export function ThemeDesigner({
     setGuides({ x: null, y: null });
   }
 
-  const setNum = (k: keyof TextFrame, v: number) => {
-    if (!Number.isFinite(v)) return;
-    const f = { ...shown, [k]: v };
-    f.w = Math.min(100, Math.max(MIN_W, f.w));
-    f.h = Math.min(100, Math.max(MIN_H, f.h));
-    f.x = Math.min(100 - f.w, Math.max(0, f.x));
-    f.y = Math.min(100 - f.h, Math.max(0, f.y));
-    change({ textFrame: JSON.stringify(f) });
-  };
-
   /*
    * Align & position. Works on whatever is selected: the words' box, or one
    * of the layers. Aligning moves it to an edge or the centre of the slide
