@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [Unreleased]
+## [1.32.0] — 2026-11-12
 
 - NEW: **full screen in the room, lower third online.** Settings → Streaming & output has a new "What the online audience sees" choice. "Same as the room" streams the main screen as before. "Lower third over the camera" leaves every screen in the building showing the full display, while the stream shows a camera you choose with the same words along the bottom - in an automatic design that keeps the room's font and colours on a dark bar, or in a theme of your own. It applies to the Go live button (desktop app), which now streams that picture instead of the projector's, and to the OBS / vMix overlay, where the words become the lower third and you add the camera in OBS. The same picture can be opened full screen at /#/broadcast.
 - NEW: **themes can be for presentations only.** The designer's "For" choice now offers Everything, Lyrics only, Scripture only, Presentations only and Speaker name. The Presentations theme list shows only themes that suit presentations, as the Lyrics and Bible lists already did for theirs; a Presentations-only theme opens with a slide sample and has a "Use for presentations" button. "Lyrics and Scripture" is now called "Everything", and themes set to it are offered in all three lists as before.
