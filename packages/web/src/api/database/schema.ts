@@ -172,6 +172,8 @@ export const themes = sqliteTable("themes", {
   textFrame: text("text_frame"),
   // Pictures, videos and live cameras placed on the slide: JSON array of layers.
   layers: text("layers"),
+  // What the theme is meant for: "lyrics", "scripture", or null for both.
+  purpose: text("purpose"),
   // CSS font stack for this theme; null = the default lyric font.
   fontFamily: text("font_family"),
   // Drop shadow behind the words, JSON {color,blur,x,y}.

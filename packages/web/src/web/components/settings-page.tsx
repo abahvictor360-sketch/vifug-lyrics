@@ -81,7 +81,7 @@ import type { LiveState, LiveTheme } from "../lib/live-bus";
 import { themeToLive } from "../lib/live-bus";
 import { MAIN_SCREEN, screenIdFrom, screenUrl } from "../lib/screens";
 import type { useDesktop } from "../hooks/use-desktop";
-import { useCreateTheme, useUpdateTheme, useDeleteTheme, type ThemeDraft, type Theme as ThemeRow } from "../hooks/use-songs";
+import { useCreateTheme, useUpdateTheme, useDeleteTheme, themeSuits, type ThemeDraft, type Theme as ThemeRow } from "../hooks/use-songs";
 import { DOWNLOAD_PAGE } from "../hooks/use-update-check";
 import { useNetworkOrigin } from "../hooks/use-network-origin";
 import type { DisplayInfo, FirewallState } from "../lib/desktop";
@@ -626,7 +626,7 @@ function ThemeEditor({
             onChange={(e) => onActivate(e.target.value)}
             className="min-w-[180px] flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
           >
-            {themes.map((t) => (
+            {themes.filter((t) => t.id === theme.id || themeSuits(t, "lyrics")).map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
               </option>
@@ -1571,8 +1571,24 @@ function DesignerSection({
             className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)] sm:w-64"
           >
             {themes.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={t.id}>
+                {t.name}
+                {t.purpose === "scripture" ? " (Scripture)" : t.purpose === "lyrics" ? " (Lyrics)" : ""}
+              </option>
             ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="shrink-0 text-[var(--v-text-dim)]">For</span>
+          <select
+            value={theme.purpose ?? ""}
+            title="What this theme is designed for. It decides which theme lists offer it."
+            onChange={(e) => update.mutate({ id: theme.id, patch: { purpose: e.target.value || null } })}
+            className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+          >
+            <option value="">Lyrics and Scripture</option>
+            <option value="lyrics">Lyrics only</option>
+            <option value="scripture">Scripture only</option>
           </select>
         </label>
         <VButton
@@ -1583,7 +1599,17 @@ function DesignerSection({
         >
           <Plus className="h-4 w-4" /> New
         </VButton>
-        {!isLyricTheme && (
+        {theme.purpose !== "lyrics" && settings?.bibleThemeId !== theme.id && !(isLyricTheme && !settings?.bibleThemeId) && (
+          <VButton
+            variant="subtle"
+            size="sm"
+            title="Use this theme whenever Scripture is on screen"
+            onClick={() => patchSettings({ bibleThemeId: theme.id, bibleBackgroundId: undefined })}
+          >
+            <Check className="h-4 w-4" /> Use for Scripture
+          </VButton>
+        )}
+        {!isLyricTheme && theme.purpose !== "scripture" && (
           <VButton
             variant="subtle"
             size="sm"
@@ -1699,7 +1725,16 @@ function LyricsSection({
               className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
             >
               {row.own && <option value="">Same as lyrics</option>}
-              {themes.map((t) => (
+              {themes
+                // Lyrics and Bible offer the themes made for them (and the one
+                // already chosen, whatever it is, so it never vanishes).
+                .filter(
+                  (t) =>
+                    t.id === row.value ||
+                    row.label === "Presentations" ||
+                    themeSuits(t, row.label === "Bible" ? "scripture" : "lyrics"),
+                )
+                .map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>

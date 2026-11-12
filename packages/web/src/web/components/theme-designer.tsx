@@ -3,6 +3,7 @@ import {
   X, RotateCcw, Image as ImageIcon, Film, Camera, Trash2,
   AlignStartVertical, AlignCenterVertical, AlignEndVertical,
   AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
+  ArrowDownToLine, ArrowDown, ArrowUp, ArrowUpToLine,
 } from "lucide-react";
 import { SlideRender } from "./slide-render";
 import { FontPicker } from "./font-picker";
@@ -117,7 +118,9 @@ export function ThemeDesigner({
   );
   useEffect(() => setDraft({}), [theme.id]);
 
-  const [sample, setSample] = useState(0);
+  const [sample, setSample] = useState(theme.purpose === "scripture" ? 2 : 0);
+  // A Scripture theme is judged on a verse, a lyric theme on lines of a song.
+  useEffect(() => setSample(theme.purpose === "scripture" ? 2 : 0), [theme.id, theme.purpose]);
   const frame = parseTextFrame(row.textFrame);
   const shown: TextFrame = frame ?? { x: 8, y: 8, w: 84, h: 84 };
   // While dragging, the box follows the pointer without saving every pixel.
@@ -294,6 +297,38 @@ export function ThemeDesigner({
     if (selected) patchLayer(selected.id, f);
     else change({ textFrame: JSON.stringify(f) });
   };
+  /*
+   * Stacking order. Everything on the slide sits in one pile, back to front:
+   * the layers behind the words, the words, then the layers in front of them.
+   * Moving something forward or backward swaps it with its neighbour in that
+   * pile - and the words are in the pile too, so "send the words backward" is
+   * the same as bringing the layer behind them forward.
+   */
+  const WORDS = "__words__";
+  const stack: string[] = [
+    ...layers.filter((l) => !l.front).map((l) => l.id),
+    WORDS,
+    ...layers.filter((l) => !!l.front).map((l) => l.id),
+  ];
+  const selId = selected ? selected.id : WORDS;
+  const stackPos = stack.indexOf(selId);
+  const restack = (to: number) => {
+    const next = stack.filter((id) => id !== selId);
+    next.splice(Math.min(next.length, Math.max(0, to)), 0, selId);
+    const wordsAt = next.indexOf(WORDS);
+    saveLayers(
+      next
+        .filter((id) => id !== WORDS)
+        .map((id) => ({ ...layers.find((l) => l.id === id)!, front: next.indexOf(id) > wordsAt })),
+    );
+  };
+  const ORDER: { title: string; icon: typeof ArrowUp; to: number; off: boolean }[] = [
+    { title: "Send to the back", icon: ArrowDownToLine, to: 0, off: stackPos === 0 },
+    { title: "Send backward", icon: ArrowDown, to: stackPos - 1, off: stackPos === 0 },
+    { title: "Bring forward", icon: ArrowUp, to: stackPos + 1, off: stackPos === stack.length - 1 },
+    { title: "Bring to the front", icon: ArrowUpToLine, to: stack.length - 1, off: stackPos === stack.length - 1 },
+  ];
+
   const ALIGN: { id: string; title: string; icon: typeof AlignStartVertical; to: () => Partial<TextFrame> }[] = [
     { id: "l", title: "Align to the left edge", icon: AlignStartVertical, to: () => ({ x: 0 }) },
     { id: "ch", title: "Centre left to right", icon: AlignCenterVertical, to: () => ({ x: (100 - selBox.w) / 2 }) },
@@ -488,6 +523,48 @@ export function ThemeDesigner({
                   Fill the slide
                 </button>
               </div>
+              {layers.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-1">
+                    <span className="mr-1 text-[11px] text-[var(--v-text-faint)]">Order</span>
+                    {ORDER.map((o) => {
+                      const Icon = o.icon;
+                      return (
+                        <button
+                          key={o.title}
+                          type="button"
+                          title={o.title}
+                          aria-label={o.title}
+                          disabled={o.off}
+                          onClick={() => restack(o.to)}
+                          className="grid h-8 flex-1 place-items-center rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] hover:border-[var(--v-accent)] disabled:opacity-35 disabled:hover:border-[var(--v-border)]"
+                        >
+                          <Icon className="h-4 w-4" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* The pile itself, front first, so the order is something to read rather than guess. */}
+                  <ol className="mt-1.5 space-y-0.5 text-[11px]">
+                    {[...stack].reverse().map((id, i) => {
+                      const l = layers.find((x) => x.id === id);
+                      const isSel = id === selId;
+                      return (
+                        <li key={id}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLayer(l ? l.id : null)}
+                            className={`flex w-full items-center gap-1.5 rounded px-1.5 py-0.5 text-left ${isSel ? "bg-[var(--v-surface-3)] text-[var(--v-text)]" : "text-[var(--v-text-faint)] hover:text-[var(--v-text)]"}`}
+                          >
+                            <span className="w-8 shrink-0 text-[10px] uppercase tracking-wide">{i === 0 ? "Front" : i === stack.length - 1 ? "Back" : ""}</span>
+                            <span className="min-w-0 truncate">{l ? l.name : "Words"}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              )}
               <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
                 Acts on {selected ? <b className="text-sky-300">{selected.name}</b> : <b className="text-[var(--v-accent)]">the words</b>}. Numbers are percent of the slide. Click the slide and use the arrow keys to nudge; hold Shift for bigger steps.
               </p>
@@ -718,10 +795,6 @@ export function ThemeDesigner({
                         <label className="flex items-center gap-1">
                           <input type="checkbox" checked={l.fit === "cover"} onChange={(e) => patchLayer(l.id, { fit: e.target.checked ? "cover" : "contain" })} />
                           Fill the box
-                        </label>
-                        <label className="flex items-center gap-1">
-                          <input type="checkbox" checked={!!l.front} onChange={(e) => patchLayer(l.id, { front: e.target.checked })} />
-                          In front of the words
                         </label>
                         <label className="flex min-w-[120px] flex-1 items-center gap-1">
                           Round

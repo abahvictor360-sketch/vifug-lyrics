@@ -130,7 +130,14 @@ export type ThemeDraft = {
   textShadow?: string | null;
   /** ThemeLayer[] as JSON: pictures, videos and cameras placed on the slide. */
   layers?: string | null;
+  /** "lyrics" or "scripture"; null = suits both. Decides which pickers offer it. */
+  purpose?: string | null;
 };
+
+/** Whether a theme belongs in a picker for this kind of content. */
+export function themeSuits(t: { purpose?: string | null }, kind: "lyrics" | "scripture"): boolean {
+  return !t.purpose || t.purpose === kind;
+}
 
 export function useCreateTheme() {
   const qc = useQueryClient();
