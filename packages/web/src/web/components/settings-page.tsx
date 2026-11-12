@@ -1573,7 +1573,7 @@ function DesignerSection({
             {themes.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
-                {t.purpose === "scripture" ? " (Scripture)" : t.purpose === "lyrics" ? " (Lyrics)" : ""}
+                {t.purpose === "scripture" ? " (Scripture)" : t.purpose === "lyrics" ? " (Lyrics)" : t.purpose === "speaker" ? " (Speaker name)" : ""}
               </option>
             ))}
           </select>
@@ -1583,12 +1583,29 @@ function DesignerSection({
           <select
             value={theme.purpose ?? ""}
             title="What this theme is designed for. It decides which theme lists offer it."
-            onChange={(e) => update.mutate({ id: theme.id, patch: { purpose: e.target.value || null } })}
+            onChange={(e) => {
+              const purpose = e.target.value || null;
+              // A theme with no text box yet, turned into a speaker's name bar,
+              // starts as one: bottom-left, left-aligned, on a bar. Anything
+              // already designed is left exactly as it is.
+              const starter =
+                purpose === "speaker" && !theme.textFrame && !theme.textBar
+                  ? {
+                      textFrame: JSON.stringify({ x: 5, y: 74, w: 46, h: 18 }),
+                      textAlign: "left",
+                      textBar: JSON.stringify({ color: "#1d4ed8", radius: 15 }),
+                      transition: "slide-right",
+                      transitionMs: 500,
+                    }
+                  : {};
+              update.mutate({ id: theme.id, patch: { purpose, ...starter } });
+            }}
             className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
           >
             <option value="">Lyrics and Scripture</option>
             <option value="lyrics">Lyrics only</option>
             <option value="scripture">Scripture only</option>
+            <option value="speaker">Speaker name (lower third)</option>
           </select>
         </label>
         <VButton
@@ -1599,7 +1616,7 @@ function DesignerSection({
         >
           <Plus className="h-4 w-4" /> New
         </VButton>
-        {theme.purpose !== "lyrics" && settings?.bibleThemeId !== theme.id && !(isLyricTheme && !settings?.bibleThemeId) && (
+        {theme.purpose !== "lyrics" && theme.purpose !== "speaker" && settings?.bibleThemeId !== theme.id && !(isLyricTheme && !settings?.bibleThemeId) && (
           <VButton
             variant="subtle"
             size="sm"
@@ -1609,7 +1626,12 @@ function DesignerSection({
             <Check className="h-4 w-4" /> Use for Scripture
           </VButton>
         )}
-        {!isLyricTheme && theme.purpose !== "scripture" && (
+        {theme.purpose === "speaker" && (
+          <span className="text-[12px] text-[var(--v-text-faint)]">
+            Use it from Media → Capture → Preacher nameplate → My design.
+          </span>
+        )}
+        {!isLyricTheme && theme.purpose !== "scripture" && theme.purpose !== "speaker" && (
           <VButton
             variant="subtle"
             size="sm"
@@ -1731,7 +1753,7 @@ function LyricsSection({
                 .filter(
                   (t) =>
                     t.id === row.value ||
-                    row.label === "Presentations" ||
+                    (row.label === "Presentations" && t.purpose !== "speaker") ||
                     themeSuits(t, row.label === "Bible" ? "scripture" : "lyrics"),
                 )
                 .map((t) => (
@@ -1764,7 +1786,7 @@ function LyricsSection({
               className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
             >
               <option value="">Same as what is sent</option>
-              {themes.map((t) => (
+              {themes.filter((t) => t.id === row.value || t.purpose !== "speaker").map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>

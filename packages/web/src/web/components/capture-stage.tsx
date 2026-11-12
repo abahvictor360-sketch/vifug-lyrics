@@ -9,6 +9,32 @@ import { useAudioOutputMuted } from "../hooks/use-audio-output";
 function Nameplate({ nameplate, scale }: { nameplate: NonNullable<LiveCapture>["nameplate"]; scale?: boolean }) {
   const logo = useMediaUrl(nameplate?.logo);
   if (!nameplate?.name) return null;
+  // A lower third designed in the theme designer: the name is the slide's
+  // text and the title its smaller second line, drawn by the same renderer
+  // as every other slide, so the bar, font, position and motion are the
+  // theme's own.
+  if (nameplate.theme) {
+    return (
+      <div style={{ position: "absolute", inset: 0, containerType: "size", pointerEvents: "none" }}>
+        <SlideRender
+          state={{
+            status: "live",
+            sourceLines: [nameplate.name],
+            translationLines: nameplate.title ? [nameplate.title] : [],
+            sectionLabel: "",
+            songTitle: "",
+            slideId: `nameplate-${nameplate.name}`,
+            slideIndex: 0,
+            slideCount: 1,
+            theme: { ...nameplate.theme, background: null, showCaption: false },
+            rev: 0,
+          }}
+          transparent
+          scale
+        />
+      </div>
+    );
+  }
   const unit = scale ? "cqw" : "vw";
   const style = nameplate.style ?? "classic";
   const accent = nameplate.accent || (style === "pill" ? "#22c55e" : style === "social" ? "#e11d48" : "#1d4ed8");

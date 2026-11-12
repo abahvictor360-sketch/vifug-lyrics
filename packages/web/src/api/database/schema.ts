@@ -174,6 +174,8 @@ export const themes = sqliteTable("themes", {
   layers: text("layers"),
   // What the theme is meant for: "lyrics", "scripture", or null for both.
   purpose: text("purpose"),
+  // A backdrop bar behind the words, JSON {color,radius}; null = none.
+  textBar: text("text_bar"),
   // CSS font stack for this theme; null = the default lyric font.
   fontFamily: text("font_family"),
   // Drop shadow behind the words, JSON {color,blur,x,y}.
@@ -185,6 +187,9 @@ export const fonts = sqliteTable("fonts", {
   name: text("name").notNull(),
   source: text("source").notNull(), // system|uploaded
   filePath: text("file_path"),
+  // An uploaded font file, base64, so it travels with the library and needs no file store.
+  data: text("data"),
+  mime: text("mime"),
 });
 
 export const playlists = sqliteTable("playlists", {

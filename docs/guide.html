@@ -2051,7 +2051,7 @@
       </figure>
 <ul style="margin:8px 0 0 20px;color:var(--dim);font-size:14.5px;line-height:1.7">
         <li><b>Theme</b> (top left) chooses which theme you are editing. Editing a theme changes every screen that uses it, straight away.</li>
-        <li><b>For</b> says what the theme is designed for: <b>Lyrics and Scripture</b>, <b>Lyrics only</b> or <b>Scripture only</b>. A Scripture-only theme is offered in the Bible theme list and not in the lyric ones (and the other way round), and the designer shows it with the Scripture sample. A theme already in use somewhere stays in use if you change this.</li>
+        <li><b>For</b> says what the theme is designed for: <b>Lyrics and Scripture</b>, <b>Lyrics only</b>, <b>Scripture only</b> or <b>Speaker name (lower third)</b>. A Scripture-only theme is offered in the Bible theme list and not in the lyric ones (and the other way round), and the designer shows it with the Scripture sample. A theme already in use somewhere stays in use if you change this.</li>
         <li><b>New</b> starts a fresh theme from the app's defaults and switches to it. To keep a look and try a variation, use <b>Duplicate</b> under Settings → Lyrics → Themes, then edit the copy here.</li>
         <li>The line on the right says where the theme is in use, for example "Used by Lyrics, Bible, Presentations", or "Not on any screen yet" for a theme you are still building.</li>
         <li><b>Use for lyrics</b> and <b>Use for Scripture</b> appear when the theme you are editing is not already used for that. Press one to put the theme on screen for songs or for Bible verses.</li>
@@ -2112,7 +2112,7 @@
         <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">Untick Auto-fit to set a fixed size with the slider.</figcaption>
       </figure>
 <ul style="margin:8px 0 0 20px;color:var(--dim);font-size:14.5px;line-height:1.7">
-        <li><b>Font:</b> choose the typeface. The list includes the fonts on your computer.</li>
+        <li><b>Font:</b> choose the typeface: one of the app's, one installed on your computer, or a font file of your own (see "Your own fonts" below).</li>
         <li><b>Font size - Auto-fit (ticked):</b> the words are sized to fill the text box, so two lines come out large and six lines smaller. This is the right choice for most themes.</li>
         <li><b>Font size - fixed (unticked):</b> drag the slider, or type a number in the box beside it. Every slide then uses that size, whatever its length. Use this when the size must match across slides, such as a lower third on a stream. If long slides overflow the box, make the box bigger or the size smaller.</li>
         <li><b>Weight:</b> how heavy the letters are, from 300 (light) to 900 (black). 600 to 700 reads well from the back of a room.</li>
@@ -2152,6 +2152,49 @@
         <li>A camera in a theme is opened by every screen showing that theme, so it must be plugged into the computer that drives those screens. It will not appear on a phone or another computer.</li>
         <li>Where a blue box lies over the green text box, a click lands on the blue box. Move the layer aside to drag the text box underneath.</li>
       </ul>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:34px 0 10px">Motion and animation</h3>
+      <ul style="margin:8px 0 0 20px;color:var(--dim);font-size:14.5px;line-height:1.7">
+        <li><b>The words come in with:</b> in the <b>Motion</b> group, choose how the words arrive each time the slide changes - Fade in, Rise from below, Drop from above, Slide in from the left or right, Zoom in, or Focus in. <b>Standard</b> is how Vifug has always changed slides, and <b>None</b> cuts straight in.</li>
+        <li><b>Speed:</b> how long the entrance takes, from 0.1 to 2 seconds. Half a second suits most rooms; slower reads as more gentle.</li>
+        <li><b>Play it on the slide</b> runs the motion again on the canvas so you can judge it.</li>
+        <li><b>Pictures, videos and cameras</b> have a <b>Motion</b> choice of their own in the layer list: fade, slide, rise, drop or zoom in when the theme appears, or <b>Float</b> and <b>Pulse</b>, which keep moving gently the whole time.</li>
+      </ul>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:34px 0 10px">Your own fonts</h3>
+      <p>Open the <b>Font</b> list. It has three parts: <b>Your own fonts</b>, <b>App fonts</b>, and <b>Your system fonts</b> - every font installed on the computer, listed by the desktop app (a browser may ask permission first, or not offer them).</p>
+      <ul style="margin:8px 0 0 20px;color:var(--dim);font-size:14.5px;line-height:1.7">
+        <li><b>Add a font file…</b> at the top of the list takes a .ttf, .otf, .woff or .woff2 file up to about 6 MB. It is selected straight away and named after the file.</li>
+        <li>An added font is kept with your library, so it is in backups and works on every screen, including a phone or tablet used as a screen. A system font only works on computers that have it installed.</li>
+        <li>The bin beside an added font removes it. Themes that used it fall back to the default font.</li>
+        <li>Only add fonts you have the right to use.</li>
+      </ul>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:34px 0 10px">Design a lower third for a speaker's name</h3>
+      <p>A name bar for the preacher or a guest can be designed here like any other theme, then put over the camera.</p>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1800" src="img/td-speaker.png" alt="The designer editing a Speaker name theme: a blue bar across the lower part of the slide with a name and a smaller title" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">A Speaker name theme. The sample shows a name with a title under it.</figcaption>
+      </figure>
+      <ol class="steps">
+        <li>
+          <h3>Make the theme</h3>
+          <p>Press <b>New</b>, then set <b>For</b> to <b>Speaker name (lower third)</b>. A new theme starts as a name bar at the bottom left, on a blue bar, sliding in from the left. The canvas switches to the <b>Speaker</b> sample: a name, with the title under it in smaller type.</p>
+        </li>
+        <li>
+          <h3>Design it</h3>
+          <p>Move and size the text box - it is the bar. Under Colours, <b>Bar behind the words</b> turns the bar on, with its colour and rounded corners. Choose the font, the text colour and the motion. Add your logo as a picture layer if you want one on the bar.</p>
+        </li>
+        <li>
+          <h3>Put it on air</h3>
+          <p>Go to <b>Media → Capture</b>, choose your camera, and under <b>Preacher nameplate</b> type the name and title. In <b>My design</b>, choose your theme. The name bar appears over the camera in your design.</p>
+        </li>
+      </ol>
+      <figure style="margin:22px 0">
+        <img width="2880" height="1800" src="img/td-speaker-onair.png" alt="A camera picture with the designed blue name bar across the bottom reading Pastor Grace Okoro, Guest Speaker" loading="lazy" style="width:100%;height:auto;border-radius:10px;border:1px solid var(--line, rgba(255,255,255,.12))">
+        <figcaption style="margin-top:8px;font-size:13px;color:var(--faint)">The same design on air over a (test) camera.</figcaption>
+      </figure>
+      <p>Auto-fit makes the name as large as the box allows, so make the box the size you want the bar to be. Speaker name themes are kept out of the lyric and Bible theme lists.</p>
 
       <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:34px 0 10px">6. Outline and shadow</h3>
       <ul style="margin:8px 0 0 20px;color:var(--dim);font-size:14.5px;line-height:1.7">

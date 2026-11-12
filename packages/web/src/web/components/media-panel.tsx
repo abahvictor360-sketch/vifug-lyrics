@@ -7,7 +7,7 @@ import { useSessionMedia, useMedia, useUploadMedia, useDeleteMedia, useUpdateMed
 import { UploadError } from "./upload-error";
 import { CapturePicker } from "./capture";
 import { useLiveState } from "../hooks/use-live";
-import { liveBus, type LiveCapture } from "../lib/live-bus";
+import { liveBus, themeToLive, type LiveCapture } from "../lib/live-bus";
 import type { StageSlide } from "../lib/stage";
 import type { LiveBackground } from "../lib/live-bus";
 import { MEDIA_FITS, fitLabel, resolveFit } from "../lib/media-fit";
@@ -15,6 +15,7 @@ import { COLOR_FILTER_PRESETS } from "../lib/color-filters";
 import { useLuts, useUploadLut, useDeleteLut } from "../hooks/use-luts";
 import { useSettings, useUpdateSettings, type AppSettings } from "../hooks/use-settings";
 import { CaptureScenes } from "./capture-scenes";
+import { useThemes } from "../hooks/use-songs";
 import { VButton } from "./bits";
 
 /** Audio has no screen representation, so this mode only offers what a
@@ -176,6 +177,7 @@ export function MediaPanel({
   // straight to the bus so the change shows immediately, mirroring how the
   // Stream panel's video-volume slider updates the projector without a resend.
   const currentCapture = live.capture ?? pendingCapture;
+  const speakerThemes = (useThemes().data ?? []).filter((t) => t.purpose === "speaker");
   const updateCapture = (patch: Partial<NonNullable<LiveCapture>>) => {
     if (!currentCapture) return;
     const updated = { ...currentCapture, ...patch };
@@ -778,6 +780,33 @@ export function MediaPanel({
                         </button>
                       ))}
                     </div>
+                    <label className="flex items-center gap-2 text-[11px] text-[var(--v-text-faint)]">
+                      My design
+                      <select
+                        value={currentCapture.nameplate?.themeId ?? ""}
+                        onChange={(e) => {
+                          const row = speakerThemes.find((t) => t.id === e.target.value);
+                          updateCapture({
+                            nameplate: {
+                              ...currentCapture.nameplate!,
+                              themeId: row ? row.id : null,
+                              theme: row ? themeToLive(row as unknown as Record<string, unknown>) : null,
+                            },
+                          });
+                        }}
+                        className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-xs outline-none focus:border-[var(--v-accent)]"
+                      >
+                        <option value="">Use a built-in style above</option>
+                        {speakerThemes.map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    {speakerThemes.length === 0 && (
+                      <p className="text-[11px] text-[var(--v-text-faint)]">
+                        Design your own in Settings → Theme designer: make a theme and set "For" to Speaker name.
+                      </p>
+                    )}
                     {currentCapture.nameplate?.style === "social" && (
                       <input
                         type="text"

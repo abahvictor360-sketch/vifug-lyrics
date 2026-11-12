@@ -3,14 +3,14 @@ import {
   X, RotateCcw, Image as ImageIcon, Film, Camera, Trash2,
   AlignStartVertical, AlignCenterVertical, AlignEndVertical,
   AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
-  ArrowDownToLine, ArrowDown, ArrowUp, ArrowUpToLine,
+  ArrowDownToLine, ArrowDown, ArrowUp, ArrowUpToLine, Play,
 } from "lucide-react";
 import { SlideRender } from "./slide-render";
 import { FontPicker } from "./font-picker";
 import { MediaPicker } from "./media-picker";
 import { useDialog } from "../hooks/use-dialog";
 import type { Theme as ThemeRow, ThemeDraft } from "../hooks/use-songs";
-import { themeToLive, parseTextFrame, parseLayers, type LiveState, type LiveTheme, type TextFrame, type ThemeLayer } from "../lib/live-bus";
+import { themeToLive, parseTextFrame, parseLayers, TEXT_MOTIONS, LAYER_MOTIONS, type LiveState, type LiveTheme, type TextFrame, type ThemeLayer, type LayerMotion } from "../lib/live-bus";
 import { useMedia } from "../hooks/use-media";
 
 /**
@@ -31,11 +31,14 @@ const PRESETS: { label: string; frame: TextFrame | null }[] = [
   { label: "Centre card", frame: { x: 18, y: 24, w: 64, h: 52 } },
 ];
 
-const SAMPLES: { label: string; lines: string[]; caption: string }[] = [
+const SAMPLES: { label: string; lines: string[]; caption: string; sub?: string }[] = [
   { label: "2 lines", lines: ["Amazing grace, how sweet the sound", "That saved a wretch like me"], caption: "Verse 1" },
   { label: "4 lines", lines: ["Amazing grace, how sweet the sound", "That saved a wretch like me", "I once was lost, but now am found", "Was blind, but now I see"], caption: "Verse 1" },
   { label: "Scripture", lines: ["For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."], caption: "John 3:16 · KJV" },
+  // A speaker's name bar: the name, with the title under it in smaller type.
+  { label: "Speaker", lines: ["Pastor John Adeyemi"], caption: "", sub: "Senior Pastor" },
 ];
+const sampleFor = (purpose: string | null | undefined) => (purpose === "scripture" ? 2 : purpose === "speaker" ? 3 : 0);
 
 type Handle = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 const HANDLES: { id: Exclude<Handle, "move">; style: React.CSSProperties; cursor: string }[] = [
@@ -118,9 +121,12 @@ export function ThemeDesigner({
   );
   useEffect(() => setDraft({}), [theme.id]);
 
-  const [sample, setSample] = useState(theme.purpose === "scripture" ? 2 : 0);
-  // A Scripture theme is judged on a verse, a lyric theme on lines of a song.
-  useEffect(() => setSample(theme.purpose === "scripture" ? 2 : 0), [theme.id, theme.purpose]);
+  const [sample, setSample] = useState(sampleFor(theme.purpose));
+  // A Scripture theme is judged on a verse, a lyric theme on lines of a song,
+  // a speaker's name bar on a name.
+  useEffect(() => setSample(sampleFor(theme.purpose)), [theme.id, theme.purpose]);
+  // Bumped by the Play button so the entrance and layer motion run again.
+  const [replay, setReplay] = useState(0);
   const frame = parseTextFrame(row.textFrame);
   const shown: TextFrame = frame ?? { x: 8, y: 8, w: 84, h: 84 };
   // While dragging, the box follows the pointer without saving every pixel.
@@ -361,16 +367,17 @@ export function ThemeDesigner({
     layers: shownLayers,
   };
   const s = SAMPLES[sample]!;
+  const bar = liveTheme.textBar ?? null;
   const state: LiveState = {
     status: "live",
     sourceLines: s.lines,
-    translationLines: [],
+    translationLines: s.sub ? [s.sub] : [],
     sectionLabel: s.caption,
     songTitle: "",
-    slideId: null,
+    slideId: `sample-${sample}-${replay}`,
     slideIndex: 0,
     slideCount: 1,
-    theme: { ...liveTheme, showCaption: true },
+    theme: { ...liveTheme, showCaption: !!s.caption },
     rev: 0,
   };
 
@@ -396,7 +403,7 @@ export function ThemeDesigner({
               onPointerUp={end}
               onPointerCancel={end}
             >
-              <SlideRender state={state} scale />
+              <SlideRender key={replay} state={state} scale />
               {/* Guides appear while a box edge is on the middle or an edge. */}
               {guides.x !== null && <span className="pointer-events-none absolute inset-y-0 w-px bg-[var(--v-accent)]" style={{ left: `${guides.x}%` }} />}
               {guides.y !== null && <span className="pointer-events-none absolute inset-x-0 h-px bg-[var(--v-accent)]" style={{ top: `${guides.y}%` }} />}
@@ -672,6 +679,29 @@ export function ThemeDesigner({
                   <input type="color" value={row.bgColor ?? "#000000"} onChange={(e) => change({ bgColor: e.target.value })} className="h-8 w-full cursor-pointer rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)]" />
                 </label>
               </div>
+              <div className="mt-2 rounded-md border border-[var(--v-border)] p-2">
+                <label className="flex items-center gap-2 text-[12px]">
+                  <input
+                    type="checkbox"
+                    checked={!!bar}
+                    onChange={(e) => change({ textBar: e.target.checked ? JSON.stringify({ color: "#1d4ed8", radius: 15 }) : null })}
+                  />
+                  Bar behind the words
+                </label>
+                {bar && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <label className="text-[11px] text-[var(--v-text-faint)]">
+                      Bar colour
+                      <input type="color" value={bar.color.startsWith("#") ? bar.color.slice(0, 7) : "#1d4ed8"} onChange={(e) => change({ textBar: JSON.stringify({ ...bar, color: e.target.value }) })} className="h-8 w-full cursor-pointer rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)]" />
+                    </label>
+                    <label className="text-[11px] text-[var(--v-text-faint)]">
+                      Rounded corners
+                      <input type="range" min={0} max={100} value={bar.radius} onChange={(e) => change({ textBar: JSON.stringify({ ...bar, radius: Number(e.target.value) }) })} className="w-full" />
+                    </label>
+                  </div>
+                )}
+                <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">A solid bar the width of the text box, for a lower third or a name bar.</p>
+              </div>
               <label className="mt-2 block text-[11px] text-[var(--v-text-faint)]">
                 Dim the background picture {row.overlayScrim ?? 0}%
                 <input type="range" min={0} max={90} value={row.overlayScrim ?? 0} onChange={(e) => change({ overlayScrim: Number(e.target.value) })} className="w-full" />
@@ -800,11 +830,52 @@ export function ThemeDesigner({
                           Round
                           <input type="range" min={0} max={50} value={l.radius ?? 0} onChange={(e) => patchLayer(l.id, { radius: Number(e.target.value) })} className="min-w-0 flex-1" />
                         </label>
+                        <label className="flex w-full items-center gap-1">
+                          Motion
+                          <select
+                            value={l.motion ?? ""}
+                            onChange={(e) => {
+                              patchLayer(l.id, { motion: (e.target.value || undefined) as LayerMotion | undefined });
+                              setReplay((n) => n + 1);
+                            }}
+                            className="min-w-0 flex-1 rounded border border-[var(--v-border)] bg-[var(--v-surface-3)] px-1 py-0.5 text-[11px] outline-none"
+                          >
+                            {LAYER_MOTIONS.map((m) => (
+                              <option key={m.id} value={m.id}>{m.label}</option>
+                            ))}
+                          </select>
+                        </label>
                       </div>
                     </li>
                   ))}
                 </ul>
               )}
+            </section>
+
+            <section>
+              <p className={label}>Motion</p>
+              <label className="block text-[11px] text-[var(--v-text-faint)]">
+                The words come in with
+                <select value={row.transition ?? "fade"} onChange={(e) => { change({ transition: e.target.value }); setReplay((n) => n + 1); }} className={field}>
+                  {TEXT_MOTIONS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="mt-2 block text-[11px] text-[var(--v-text-faint)]">
+                Speed {((row.transitionMs ?? 300) / 1000).toFixed(1)}s
+                <input type="range" min={100} max={2000} step={100} value={row.transitionMs ?? 300} onChange={(e) => change({ transitionMs: Number(e.target.value) })} className="w-full" />
+              </label>
+              <button
+                type="button"
+                onClick={() => setReplay((n) => n + 1)}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2.5 py-1 text-[11px] hover:border-[var(--v-accent)]"
+              >
+                <Play className="h-3 w-3" /> Play it on the slide
+              </button>
+              <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+                Plays each time the slide changes. Pictures, videos and cameras have their own motion, set on each one in the list above.
+              </p>
             </section>
 
             <section>

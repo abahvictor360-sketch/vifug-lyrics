@@ -25,6 +25,13 @@ export function ThemeLayers({ layers, front }: { layers: ThemeLayer[] | undefine
             overflow: "hidden",
             borderRadius: l.radius ? `${l.radius}%` : undefined,
             pointerEvents: "none",
+            animation: l.motion
+              ? l.motion === "float"
+                ? "vf-float 6s ease-in-out infinite"
+                : l.motion === "pulse"
+                  ? "vf-pulse 2.6s ease-in-out infinite"
+                  : `vf-in-${l.motion} 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both`
+              : undefined,
           }}
         >
           {l.kind === "image" && (

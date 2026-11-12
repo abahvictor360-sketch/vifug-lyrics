@@ -132,6 +132,8 @@ export type ThemeDraft = {
   layers?: string | null;
   /** "lyrics" or "scripture"; null = suits both. Decides which pickers offer it. */
   purpose?: string | null;
+  /** {color,radius} as JSON: a backdrop bar behind the words. */
+  textBar?: string | null;
 };
 
 /** Whether a theme belongs in a picker for this kind of content. */

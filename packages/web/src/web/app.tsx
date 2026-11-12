@@ -7,11 +7,14 @@ import RemotePage from "./pages/remote";
 import CastPage from "./pages/cast";
 import { EntitlementGate } from "./components/entitlement-gate";
 import { Provider } from "./components/provider";
+import { CustomFontFaces } from "./hooks/use-fonts";
 import { AgentFeedback } from "@runablehq/website-runtime";
 
 function App() {
   return (
     <Provider>
+      {/* The operator's own fonts, registered on every surface that draws words. */}
+      <CustomFontFaces />
       <Switch>
         <Route path="/" component={Index} />
         <Route path="/projector" component={ProjectorPage} />

@@ -45,7 +45,50 @@ export type ThemeLayer = {
   radius?: number;
   /** Drawn over the words instead of behind them. */
   front?: boolean;
+  /** How it arrives or keeps moving; absent = it is simply there. */
+  motion?: LayerMotion;
 };
+
+export type LayerMotion = "fade" | "slide-left" | "slide-right" | "slide-up" | "slide-down" | "zoom" | "float" | "pulse";
+
+/** How the words arrive when the slide changes. "fade" is the long-standing default. */
+export const TEXT_MOTIONS: { id: string; label: string }[] = [
+  { id: "fade", label: "Standard" },
+  { id: "none", label: "None (cut)" },
+  { id: "fade-in", label: "Fade in" },
+  { id: "slide-up", label: "Rise from below" },
+  { id: "slide-down", label: "Drop from above" },
+  { id: "slide-left", label: "Slide in from the right" },
+  { id: "slide-right", label: "Slide in from the left" },
+  { id: "zoom", label: "Zoom in" },
+  { id: "blur", label: "Focus in" },
+];
+
+export const LAYER_MOTIONS: { id: LayerMotion | ""; label: string }[] = [
+  { id: "", label: "No motion" },
+  { id: "fade", label: "Fade in" },
+  { id: "slide-right", label: "Slide in from the left" },
+  { id: "slide-left", label: "Slide in from the right" },
+  { id: "slide-up", label: "Rise from below" },
+  { id: "slide-down", label: "Drop from above" },
+  { id: "zoom", label: "Zoom in" },
+  { id: "float", label: "Float (keeps moving)" },
+  { id: "pulse", label: "Pulse (keeps moving)" },
+];
+
+/** Keyframes for the words' entrance, for the Web Animations API. */
+export function textMotionKeyframes(id: string): Keyframe[] | null {
+  switch (id) {
+    case "fade-in": return [{ opacity: 0 }, { opacity: 1 }];
+    case "slide-up": return [{ opacity: 0, transform: "translateY(18%)" }, { opacity: 1, transform: "none" }];
+    case "slide-down": return [{ opacity: 0, transform: "translateY(-18%)" }, { opacity: 1, transform: "none" }];
+    case "slide-left": return [{ opacity: 0, transform: "translateX(10%)" }, { opacity: 1, transform: "none" }];
+    case "slide-right": return [{ opacity: 0, transform: "translateX(-10%)" }, { opacity: 1, transform: "none" }];
+    case "zoom": return [{ opacity: 0, transform: "scale(0.82)" }, { opacity: 1, transform: "none" }];
+    case "blur": return [{ opacity: 0, filter: "blur(14px)" }, { opacity: 1, filter: "blur(0)" }];
+    default: return null;
+  }
+}
 
 export function parseLayers(raw: unknown): ThemeLayer[] {
   if (!raw) return [];
@@ -104,6 +147,8 @@ export type LiveTheme = {
   textFrame?: TextFrame | null;
   /** Pictures, videos and cameras placed on the slide. */
   layers?: ThemeLayer[];
+  /** A backdrop bar behind the words (a lower third's bar). */
+  textBar?: { color: string; radius: number } | null;
   overlayScrim: number; // 0-100
   displayMode: "fullscreen" | "lower_third" | "lower_third_bg";
   verticalPos: "top" | "center" | "bottom";
@@ -226,6 +271,13 @@ export type LiveCapture = {
     handle?: string;
     /** Small logo or avatar image for the "pill" style. */
     logo?: string;
+    /**
+     * A lower third designed in the theme designer (a "Speaker name" theme),
+     * carried whole so every screen can draw it. Set = it replaces `style`.
+     */
+    theme?: LiveTheme | null;
+    /** Which theme `theme` came from, so the picker can show it selected. */
+    themeId?: string | null;
   } | null;
   /**
    * Where this capture's sound comes from.
@@ -340,6 +392,14 @@ export function themeToLive(t: Record<string, unknown> | undefined): LiveTheme {
     fontFamily: (t.fontFamily as string) ?? null,
     textFrame: parseTextFrame(t.textFrame),
     layers: parseLayers(t.layers),
+    textBar: (() => {
+      try {
+        const v = typeof t.textBar === "string" ? JSON.parse(t.textBar) : t.textBar;
+        return v && typeof v.color === "string" ? { color: v.color, radius: Number(v.radius) || 0 } : null;
+      } catch {
+        return null;
+      }
+    })(),
     safeMargin: (t.safeMargin as number) ?? 8,
     overlayScrim: (t.overlayScrim as number) ?? 0,
     displayMode: (t.displayMode as LiveTheme["displayMode"]) ?? "fullscreen",
