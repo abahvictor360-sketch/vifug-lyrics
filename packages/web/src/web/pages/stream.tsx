@@ -3,6 +3,7 @@ import { SlideRender } from "../components/slide-render";
 import { AnnouncementTicker } from "../components/announcement-ticker";
 import { LogoOverlay } from "../components/logo-overlay";
 import { TimerOverlay } from "../components/timer-overlay";
+import { useScreenTheme } from "../hooks/use-screen-theme";
 import { useSettings } from "../hooks/use-settings";
 import { usePublishAudioOutput } from "../hooks/use-audio-output";
 import { IDLE_STATE, DEFAULT_THEME, type LiveState } from "../lib/live-bus";
@@ -26,8 +27,11 @@ function parseCanvas(canvas: string | undefined): [number, number] {
 }
 
 export default function StreamPage() {
-  const [state, setState] = useState<LiveState>(IDLE_STATE);
+  const [sent, setState] = useState<LiveState>(IDLE_STATE);
   const settings = useSettings({ refetchInterval: 4000 }).data;
+  // The stream can wear its own theme - a lower third over the camera while
+  // the room sees full-screen words.
+  const state = useScreenTheme(sent, settings?.streamThemeId);
   const announcement = settings?.announcement;
   usePublishAudioOutput(settings?.audio?.outputDeviceId, settings?.audio?.outputMuted);
   const [cw, ch] = parseCanvas(settings?.stream?.canvas);

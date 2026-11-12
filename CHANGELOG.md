@@ -5,6 +5,11 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- NEW: **a different look for each screen and audience.** Settings → Lyrics → Theme for each screen now has a row for the stream overlay and for every extra screen you have added. Give one a theme and that screen wears it - a lower third for viewers at home, plain large type for the stage, your brand colours in the lobby - while the main screen carries on with what you send. "Same as what is sent" puts it back, and an edit to the theme reaches the screen within a few seconds.
+- NEW: **pictures, video and a live camera in a theme.** The theme designer has a new "Pictures, video & camera on the slide" section: add a picture or video from your media library, or a camera or capture card, then drag it on the slide to place it and drag its corner to resize it. Each can fill its box or fit inside it, sit behind or in front of the words, and have rounded corners up to a circle. They are saved with the theme, show wherever the theme is used, and are always silent.
+
 ## [1.31.0] — 2026-11-11
 
 - NEW: **stream in 2K, 4K and 8K.** The Go live panel's Quality list now runs from 720p to 1440p (2K), 2160p (4K) and 4320p (8K), at 30 or 60 frames a second, each with the upload speed it needs. A new **Encoder** choice lists the graphics-card encoders this computer's ffmpeg offers (NVIDIA, Intel, AMD or Apple) beside the software one, since a graphics card carries high resolutions far more easily. Above 1080p the output is drawn at the chosen size where the system allows it and scaled to it otherwise. Facebook and Twitch accept up to 1080p and YouTube up to 4K; 8K is for your own server.

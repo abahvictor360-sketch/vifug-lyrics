@@ -22,6 +22,46 @@ export type LiveBackground = {
 /** A box on the slide, in percent of its width and height. */
 export type TextFrame = { x: number; y: number; w: number; h: number };
 
+/**
+ * Something placed on the slide besides the words: a picture, a video or a
+ * live camera, each in a box of its own (percent of the slide, like the text
+ * box). Saved on the theme, so a logo in the corner or the speaker's camera
+ * beside the lyrics is part of the look rather than something set up by hand
+ * each service.
+ */
+export type ThemeLayer = {
+  id: string;
+  kind: "image" | "video" | "camera";
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** image/video: the media library item's address. camera: the capture source id. */
+  src: string;
+  /** What to call it in the designer's list. */
+  name: string;
+  fit: "cover" | "contain";
+  /** Corner rounding, 0-50 percent of the shorter side. */
+  radius?: number;
+  /** Drawn over the words instead of behind them. */
+  front?: boolean;
+};
+
+export function parseLayers(raw: unknown): ThemeLayer[] {
+  if (!raw) return [];
+  try {
+    const v = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(v)) return [];
+    return v.filter(
+      (l): l is ThemeLayer =>
+        !!l && typeof l === "object" && typeof l.src === "string" && ["image", "video", "camera"].includes(l.kind) &&
+        [l.x, l.y, l.w, l.h].every((n) => typeof n === "number" && Number.isFinite(n)),
+    );
+  } catch {
+    return [];
+  }
+}
+
 export function parseTextFrame(raw: unknown): TextFrame | null {
   try {
     const o = typeof raw === "string" ? JSON.parse(raw) : raw;
@@ -62,6 +102,8 @@ export type LiveTheme = {
    * a cropped projector never loses words even if a theme places them at an edge.
    */
   textFrame?: TextFrame | null;
+  /** Pictures, videos and cameras placed on the slide. */
+  layers?: ThemeLayer[];
   overlayScrim: number; // 0-100
   displayMode: "fullscreen" | "lower_third" | "lower_third_bg";
   verticalPos: "top" | "center" | "bottom";
@@ -297,6 +339,7 @@ export function themeToLive(t: Record<string, unknown> | undefined): LiveTheme {
     fontSize: (t.fontSize as number) ?? null,
     fontFamily: (t.fontFamily as string) ?? null,
     textFrame: parseTextFrame(t.textFrame),
+    layers: parseLayers(t.layers),
     safeMargin: (t.safeMargin as number) ?? 8,
     overlayScrim: (t.overlayScrim as number) ?? 0,
     displayMode: (t.displayMode as LiveTheme["displayMode"]) ?? "fullscreen",

@@ -161,6 +161,8 @@ export type AppSettings = {
   bibleThemeId?: string | null;
   /** Same for presentations and media slides. */
   presentationThemeId?: string | null;
+  /** The stream overlay (OBS / vMix browser source) can wear a theme of its own. */
+  streamThemeId?: string | null;
   /**
    * Scripture-only background. undefined = same background as lyrics,
    * null = explicitly plain (theme color only), string = a media id.

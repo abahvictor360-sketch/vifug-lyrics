@@ -30,6 +30,8 @@ export type Screen = {
    * one. null = no preference; a browser screen never has one.
    */
   displayId: number | null;
+  /** A theme of this screen's own; null/undefined = whatever the operator sends. */
+  themeId?: string | null;
 };
 
 export const DEFAULT_SCREENS: Screen[] = [

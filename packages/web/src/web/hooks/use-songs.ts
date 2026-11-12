@@ -86,8 +86,9 @@ export function useFullSong(id: string | null) {
   });
 }
 
-export function useThemes() {
+export function useThemes(opts?: { refetchInterval?: number }) {
   return useQuery({
+    refetchInterval: opts?.refetchInterval,
     queryKey: ["themes"],
     queryFn: async () => {
       const res = await api.themes.$get();
@@ -127,6 +128,8 @@ export type ThemeDraft = {
   fontFamily?: string | null;
   /** {color,blur,x,y} as JSON. */
   textShadow?: string | null;
+  /** ThemeLayer[] as JSON: pictures, videos and cameras placed on the slide. */
+  layers?: string | null;
 };
 
 export function useCreateTheme() {

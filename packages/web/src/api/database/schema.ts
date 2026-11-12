@@ -170,6 +170,8 @@ export const themes = sqliteTable("themes", {
   transitionMs: integer("transition_ms").default(300),
   // The text box on the slide as {x,y,w,h} percentages; null = the whole screen minus the margin.
   textFrame: text("text_frame"),
+  // Pictures, videos and live cameras placed on the slide: JSON array of layers.
+  layers: text("layers"),
   // CSS font stack for this theme; null = the default lyric font.
   fontFamily: text("font_family"),
   // Drop shadow behind the words, JSON {color,blur,x,y}.

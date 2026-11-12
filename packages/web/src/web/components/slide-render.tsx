@@ -5,6 +5,7 @@ import { levelTap, publishMediaLevel } from "../lib/audio-taps";
 import { useAudioOutputMuted, useRoutedAudio } from "../hooks/use-audio-output";
 import { colorFilterCss } from "../lib/color-filters";
 import { useMediaUrl } from "../hooks/use-media-url";
+import { ThemeLayers } from "./theme-layers";
 
 /**
  * The ONE render engine. Produces the lyric slide from live state + theme.
@@ -712,6 +713,9 @@ export function SlideRender({
         />
       )}
 
+      {/* The theme's own pictures, videos and cameras, behind the words. */}
+      {state.status !== "blank" && <ThemeLayers layers={t.layers} front={false} />}
+
       {showText && (
         <div
           ref={textRef}
@@ -787,6 +791,8 @@ export function SlideRender({
           )}
         </div>
       )}
+      {/* ...and the ones the theme puts over the words (a logo, a frame). */}
+      {state.status !== "blank" && <ThemeLayers layers={t.layers} front />}
     </div>
   );
 }

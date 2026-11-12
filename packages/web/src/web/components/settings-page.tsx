@@ -1705,6 +1705,41 @@ function LyricsSection({
             </select>
           </label>
         ))}
+        <p className="mb-2 mt-3 text-[11px] text-[var(--v-text-faint)]">
+          Each audience can see its own look. The stream overlay and every extra screen show what you send unless you
+          give them a theme here - a lower third for viewers at home, plain large type for the stage, your brand
+          colours in the lobby.
+        </p>
+        {[
+          { key: "stream", label: "Stream overlay", value: settings?.streamThemeId ?? "" },
+          ...(settings?.screens ?? []).map((sc) => ({ key: sc.id, label: sc.name, value: sc.themeId ?? "" })),
+        ].map((row) => (
+          <label key={row.key} className="mb-1.5 flex items-center gap-2 text-sm">
+            <span className="w-28 shrink-0 truncate text-[var(--v-text-dim)]" title={row.label}>{row.label}</span>
+            <select
+              value={row.value}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                if (row.key === "stream") patchSettings({ streamThemeId: id ?? undefined });
+                else
+                  patchSettings({
+                    screens: (settings?.screens ?? []).map((sc) => (sc.id === row.key ? { ...sc, themeId: id } : sc)),
+                  });
+              }}
+              className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+            >
+              <option value="">Same as what is sent</option>
+              {themes.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </label>
+        ))}
+        {(settings?.screens ?? []).length === 0 && (
+          <p className="mb-2 text-[11px] text-[var(--v-text-faint)]">
+            Add more screens (stage, lobby, overflow) under Streaming &amp; output, and each gets a row here.
+          </p>
+        )}
         <VButton
           variant="subtle"
           size="sm"
