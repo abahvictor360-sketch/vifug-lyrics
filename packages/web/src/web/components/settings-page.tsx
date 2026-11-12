@@ -1573,7 +1573,7 @@ function DesignerSection({
             {themes.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
-                {t.purpose === "scripture" ? " (Scripture)" : t.purpose === "lyrics" ? " (Lyrics)" : t.purpose === "speaker" ? " (Speaker name)" : ""}
+                {t.purpose === "scripture" ? " (Scripture)" : t.purpose === "lyrics" ? " (Lyrics)" : t.purpose === "speaker" ? " (Speaker name)" : t.purpose === "presentation" ? " (Presentations)" : ""}
               </option>
             ))}
           </select>
@@ -1602,9 +1602,10 @@ function DesignerSection({
             }}
             className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
           >
-            <option value="">Lyrics and Scripture</option>
+            <option value="">Everything</option>
             <option value="lyrics">Lyrics only</option>
             <option value="scripture">Scripture only</option>
+            <option value="presentation">Presentations only</option>
             <option value="speaker">Speaker name (lower third)</option>
           </select>
         </label>
@@ -1616,7 +1617,19 @@ function DesignerSection({
         >
           <Plus className="h-4 w-4" /> New
         </VButton>
-        {theme.purpose !== "lyrics" && theme.purpose !== "speaker" && settings?.bibleThemeId !== theme.id && !(isLyricTheme && !settings?.bibleThemeId) && (
+        {(!theme.purpose || theme.purpose === "presentation") &&
+          settings?.presentationThemeId !== theme.id &&
+          !(isLyricTheme && !settings?.presentationThemeId) && (
+            <VButton
+              variant="subtle"
+              size="sm"
+              title="Use this theme whenever a presentation slide is on screen"
+              onClick={() => patchSettings({ presentationThemeId: theme.id, presentationBackgroundId: undefined })}
+            >
+              <Check className="h-4 w-4" /> Use for presentations
+            </VButton>
+          )}
+        {(!theme.purpose || theme.purpose === "scripture") && settings?.bibleThemeId !== theme.id && !(isLyricTheme && !settings?.bibleThemeId) && (
           <VButton
             variant="subtle"
             size="sm"
@@ -1631,7 +1644,7 @@ function DesignerSection({
             Use it from Media → Capture → Preacher nameplate → My design.
           </span>
         )}
-        {!isLyricTheme && theme.purpose !== "scripture" && theme.purpose !== "speaker" && (
+        {!isLyricTheme && (!theme.purpose || theme.purpose === "lyrics") && (
           <VButton
             variant="subtle"
             size="sm"
@@ -1753,8 +1766,7 @@ function LyricsSection({
                 .filter(
                   (t) =>
                     t.id === row.value ||
-                    (row.label === "Presentations" && t.purpose !== "speaker") ||
-                    themeSuits(t, row.label === "Bible" ? "scripture" : "lyrics"),
+                    themeSuits(t, row.label === "Bible" ? "scripture" : row.label === "Presentations" ? "presentation" : "lyrics"),
                 )
                 .map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>

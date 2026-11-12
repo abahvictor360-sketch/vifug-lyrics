@@ -37,8 +37,11 @@ const SAMPLES: { label: string; lines: string[]; caption: string; sub?: string }
   { label: "Scripture", lines: ["For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."], caption: "John 3:16 · KJV" },
   // A speaker's name bar: the name, with the title under it in smaller type.
   { label: "Speaker", lines: ["Pastor John Adeyemi"], caption: "", sub: "Senior Pastor" },
+  // A presentation slide: a heading and a few short points.
+  { label: "Slide", lines: ["Three ways to pray", "Ask  ·  Seek  ·  Knock"], caption: "" },
 ];
-const sampleFor = (purpose: string | null | undefined) => (purpose === "scripture" ? 2 : purpose === "speaker" ? 3 : 0);
+const sampleFor = (purpose: string | null | undefined) =>
+  purpose === "scripture" ? 2 : purpose === "speaker" ? 3 : purpose === "presentation" ? 4 : 0;
 
 type Handle = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 const HANDLES: { id: Exclude<Handle, "move">; style: React.CSSProperties; cursor: string }[] = [
