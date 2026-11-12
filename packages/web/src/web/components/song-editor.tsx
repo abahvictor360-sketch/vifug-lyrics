@@ -7,7 +7,7 @@ import { parseFormats, serializeFormats, type TextAlign } from "../lib/rich-text
 import { api } from "../lib/api";
 import { VButton, SectionChip } from "./bits";
 import { SECTION_TYPES } from "../lib/sections";
-import { useThemes, type FullSongResponse } from "../hooks/use-songs";
+import { useThemes, themeSuits, type FullSongResponse } from "../hooks/use-songs";
 import { MediaPicker } from "./media-picker";
 import { ColorField } from "./settings-page";
 import { useDialog } from "../hooks/use-dialog";
@@ -256,7 +256,7 @@ export function SongEditor({
                 className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
               >
                 <option value="">App default</option>
-                {(themes.data ?? []).map((t) => (
+                {(themes.data ?? []).filter((t) => t.id === themeId || themeSuits(t, "lyrics")).map((t) => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>

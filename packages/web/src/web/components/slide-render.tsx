@@ -5,6 +5,8 @@ import { levelTap, publishMediaLevel } from "../lib/audio-taps";
 import { useAudioOutputMuted, useRoutedAudio } from "../hooks/use-audio-output";
 import { colorFilterCss } from "../lib/color-filters";
 import { useMediaUrl } from "../hooks/use-media-url";
+import { ThemeLayers } from "./theme-layers";
+import { textMotionKeyframes } from "../lib/live-bus";
 
 /**
  * The ONE render engine. Produces the lyric slide from live state + theme.
@@ -626,6 +628,18 @@ export function SlideRender({
       ? `${state.sectionLabel} (${state.songTitle})`
       : state.sectionLabel;
 
+  // The words' entrance, replayed whenever the slide's text changes. Done with
+  // the Web Animations API on the existing node rather than by remounting it,
+  // so the measuring that sizes the type is left undisturbed.
+  const slideKey = `${state.slideId ?? ""}|${state.sourceLines.join("\n")}`;
+  useEffect(() => {
+    const el = textRef.current;
+    const frames = textMotionKeyframes(t.transition);
+    if (!el || !frames || state.status !== "live") return;
+    const anim = el.animate(frames, { duration: Math.max(80, t.transitionMs || 300), easing: "cubic-bezier(0.2, 0.7, 0.2, 1)" });
+    return () => anim.cancel();
+  }, [slideKey, t.transition, t.transitionMs, state.status]);
+
   return (
     <div
       ref={boxRef}
@@ -712,6 +726,9 @@ export function SlideRender({
         />
       )}
 
+      {/* The theme's own pictures, videos and cameras, behind the words. */}
+      {state.status !== "blank" && <ThemeLayers layers={t.layers} front={false} />}
+
       {showText && (
         <div
           ref={textRef}
@@ -722,6 +739,11 @@ export function SlideRender({
             // lower_third_bg draws a backdrop bar behind the text band
             ...(t.displayMode === "lower_third_bg"
               ? { background: t.bgColor, padding: "0.5em 0.8em", borderRadius: "0.15em" }
+              : {}),
+            // A bar of the theme's own, whatever the display mode: the backdrop
+            // of a lower third designed in the theme designer.
+            ...(t.textBar
+              ? { background: t.textBar.color, padding: "0.35em 0.7em", borderRadius: `${t.textBar.radius / 100}em`, boxSizing: "border-box" as const }
               : {}),
           }}
         >
@@ -787,6 +809,8 @@ export function SlideRender({
           )}
         </div>
       )}
+      {/* ...and the ones the theme puts over the words (a logo, a frame). */}
+      {state.status !== "blank" && <ThemeLayers layers={t.layers} front />}
     </div>
   );
 }

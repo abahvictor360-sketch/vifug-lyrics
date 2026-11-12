@@ -659,6 +659,63 @@ ipcMain.handle("recorder:release", () => {
   return { ok: true };
 });
 
+/*
+ * The picture for the online audience, when it differs from the room's.
+ *
+ * With "lower third over the camera" chosen, the stream cannot capture the
+ * projector: that is the room's picture, full-screen words and all. It gets
+ * a window of its own showing /broadcast - the camera with the words as a
+ * lower third - parked off-screen like the recording surface.
+ */
+const BROADCAST_WINDOW_TITLE = "Vifug Broadcast Surface";
+let broadcastWin: BrowserWindow | null = null;
+
+ipcMain.handle("broadcast:surface", async (_e, size?: { width?: number; height?: number }) => {
+  const wantW = Math.min(7680, Math.max(1280, Math.round(size?.width ?? 1920)));
+  const wantH = Math.min(4320, Math.max(720, Math.round(size?.height ?? 1080)));
+  if (broadcastWin && !broadcastWin.isDestroyed()) {
+    broadcastWin.setSize(wantW, wantH);
+    return { title: BROADCAST_WINDOW_TITLE, temporary: true };
+  }
+  const primary = screen.getPrimaryDisplay();
+  broadcastWin = new BrowserWindow({
+    width: wantW,
+    height: wantH,
+    enableLargerThanScreen: true,
+    x: primary.bounds.x + primary.bounds.width + 40,
+    y: primary.bounds.y,
+    frame: false,
+    show: true,
+    skipTaskbar: true,
+    focusable: false,
+    backgroundColor: "#000000",
+    title: BROADCAST_WINDOW_TITLE,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.mjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  broadcastWin.setMenuBarVisibility(false);
+  loadRoute(broadcastWin, "/broadcast");
+  // The page sets its own title; keep ours, which is how the capture finds it.
+  broadcastWin.on("page-title-updated", (e) => e.preventDefault());
+  broadcastWin.on("closed", () => { broadcastWin = null; });
+  await new Promise<void>((resolve) => {
+    const done = () => resolve();
+    // Longer than the recording surface: the camera has to open as well.
+    broadcastWin?.webContents.once("did-finish-load", () => setTimeout(done, 1500));
+    setTimeout(done, 4000);
+  });
+  return { title: BROADCAST_WINDOW_TITLE, temporary: true };
+});
+
+ipcMain.handle("broadcast:release", () => {
+  if (broadcastWin && !broadcastWin.isDestroyed()) broadcastWin.close();
+  broadcastWin = null;
+  return { ok: true };
+});
+
 // ---- Live streaming (RTMP via ffmpeg, see stream.ts) ----
 onStreamState((state) => {
   for (const w of BrowserWindow.getAllWindows()) {

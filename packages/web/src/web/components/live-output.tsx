@@ -10,6 +10,7 @@ import { useFullscreen } from "../hooks/use-fullscreen";
 import { useWakeLock } from "../hooks/use-wake-lock";
 import { canvasScale, parseOutputCanvas } from "../lib/output-canvas";
 import { MAIN_SCREEN } from "../lib/screens";
+import { useScreenTheme } from "../hooks/use-screen-theme";
 
 /**
  * The live output itself: words, background, announcement bar, nothing else.
@@ -38,10 +39,16 @@ export function LiveOutput({
   onExit?: () => void;
   exitLabel?: string;
 }) {
-  const state = useLiveState(screenId);
+  const sent = useLiveState(screenId);
   // Polls (rather than a new push channel) so the announcement bar picks up
   // operator edits within a few seconds without extra plumbing.
   const settings = useSettings({ refetchInterval: 4000 }).data;
+  // An extra screen can be given its own theme (Settings > Lyrics > Theme for
+  // each screen); the main screen always shows the operator's.
+  const state = useScreenTheme(
+    sent,
+    screenId === MAIN_SCREEN ? null : settings?.screens?.find((sc) => sc.id === screenId)?.themeId,
+  );
   const announcement = settings?.announcement;
   // Sound from this surface goes to the operator's chosen speakers. Published
   // here as well as on the operator screen because the projector is often its

@@ -1007,7 +1007,7 @@ export default function OperatorPage() {
   // shortcut always calls the current toggle without re-registering the
   // listener every tick of the elapsed-time counter.
   const recorder = useRecorder();
-  const streamer = useStreamer(settings?.audio?.inputDeviceId ?? null);
+  const streamer = useStreamer(settings?.audio?.inputDeviceId ?? null, settings?.online?.mode === "lower_third");
   const streamConfig = useStreamConfig();
   const streamTargets = readyDestinations(streamConfig).length;
   const recorderRef = useRef(recorder);

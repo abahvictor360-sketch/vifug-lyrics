@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Monitor, Search, Type } from "lucide-react";
+import { Check, ChevronDown, Monitor, Search, Type, Upload, Trash2 } from "lucide-react";
+import { useAddFont, useCustomFonts, useDeleteFont, customFontValue } from "../hooks/use-fonts";
 
 /**
  * Searchable font picker.
@@ -129,6 +130,14 @@ export function FontPicker({
     setQ("");
   };
 
+  // The operator's own font files.
+  const custom = useCustomFonts().data ?? [];
+  const addFont = useAddFont();
+  const deleteFont = useDeleteFont();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const needle = q.trim().toLowerCase();
+  const customMatches = custom.filter((f) => !needle || f.name.toLowerCase().includes(needle));
+
   const curatedMatches = filtered.filter((f) => !f.system);
   const systemMatches = filtered.filter((f) => f.system);
 
@@ -156,6 +165,55 @@ export function FontPicker({
             />
           </div>
           <div className="v-scroll max-h-64 overflow-y-auto p-1">
+            <p className="flex items-center gap-1.5 px-2 pb-1 pt-1.5 text-[11px] uppercase tracking-wider text-[var(--v-text-faint)]">
+              <Upload className="h-3 w-3" /> Your own fonts
+            </p>
+            {customMatches.map((f) => {
+              const v = customFontValue(f.name);
+              return (
+                <div key={f.id} className="flex items-center">
+                  <div className="min-w-0 flex-1">
+                    <FontRow font={{ label: f.name, value: v }} selected={v === (value ?? "")} onPick={pick} />
+                  </div>
+                  <button
+                    type="button"
+                    title={`Remove ${f.name}`}
+                    aria-label={`Remove the font ${f.name}`}
+                    onClick={() => {
+                      if (v === (value ?? "")) onChange(null);
+                      deleteFont.mutate(f.id);
+                    }}
+                    className="shrink-0 rounded p-1.5 text-[var(--v-text-faint)] hover:text-[var(--v-live)]"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={addFont.isPending}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--v-accent)] hover:bg-[var(--v-surface-3)] disabled:opacity-50"
+            >
+              <Upload className="h-3.5 w-3.5" /> {addFont.isPending ? "Adding…" : "Add a font file… (.ttf, .otf, .woff, .woff2)"}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                // Chosen straight away: adding a font is nearly always in order to use it.
+                addFont.mutate(file, { onSuccess: (f) => onChange(customFontValue(f.name)) });
+              }}
+            />
+            {addFont.error && (
+              <p className="px-2 py-1 text-[11px] text-amber-500">{addFont.error instanceof Error ? addFont.error.message : "The font could not be added."}</p>
+            )}
             {curatedMatches.length > 0 && (
               <p className="flex items-center gap-1.5 px-2 pb-1 pt-1.5 text-[11px] uppercase tracking-wider text-[var(--v-text-faint)]">
                 <Type className="h-3 w-3" /> App fonts

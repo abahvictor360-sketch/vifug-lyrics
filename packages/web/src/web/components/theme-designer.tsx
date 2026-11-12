@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X, RotateCcw } from "lucide-react";
+import {
+  X, RotateCcw, Image as ImageIcon, Film, Camera, Trash2,
+  AlignStartVertical, AlignCenterVertical, AlignEndVertical,
+  AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
+  ArrowDownToLine, ArrowDown, ArrowUp, ArrowUpToLine, Play,
+} from "lucide-react";
 import { SlideRender } from "./slide-render";
 import { FontPicker } from "./font-picker";
 import { MediaPicker } from "./media-picker";
 import { useDialog } from "../hooks/use-dialog";
 import type { Theme as ThemeRow, ThemeDraft } from "../hooks/use-songs";
-import { themeToLive, parseTextFrame, type LiveState, type LiveTheme, type TextFrame } from "../lib/live-bus";
+import { themeToLive, parseTextFrame, parseLayers, TEXT_MOTIONS, LAYER_MOTIONS, type LiveState, type LiveTheme, type TextFrame, type ThemeLayer, type LayerMotion } from "../lib/live-bus";
+import { useMedia } from "../hooks/use-media";
 
 /**
  * A visual theme designer: the slide, big, with the box the words sit in drawn
@@ -25,11 +31,17 @@ const PRESETS: { label: string; frame: TextFrame | null }[] = [
   { label: "Centre card", frame: { x: 18, y: 24, w: 64, h: 52 } },
 ];
 
-const SAMPLES: { label: string; lines: string[]; caption: string }[] = [
+const SAMPLES: { label: string; lines: string[]; caption: string; sub?: string }[] = [
   { label: "2 lines", lines: ["Amazing grace, how sweet the sound", "That saved a wretch like me"], caption: "Verse 1" },
   { label: "4 lines", lines: ["Amazing grace, how sweet the sound", "That saved a wretch like me", "I once was lost, but now am found", "Was blind, but now I see"], caption: "Verse 1" },
   { label: "Scripture", lines: ["For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."], caption: "John 3:16 · KJV" },
+  // A speaker's name bar: the name, with the title under it in smaller type.
+  { label: "Speaker", lines: ["Pastor John Adeyemi"], caption: "", sub: "Senior Pastor" },
+  // A presentation slide: a heading and a few short points.
+  { label: "Slide", lines: ["Three ways to pray", "Ask  ·  Seek  ·  Knock"], caption: "" },
 ];
+const sampleFor = (purpose: string | null | undefined) =>
+  purpose === "scripture" ? 2 : purpose === "speaker" ? 3 : purpose === "presentation" ? 4 : 0;
 
 type Handle = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 const HANDLES: { id: Exclude<Handle, "move">; style: React.CSSProperties; cursor: string }[] = [
@@ -112,7 +124,12 @@ export function ThemeDesigner({
   );
   useEffect(() => setDraft({}), [theme.id]);
 
-  const [sample, setSample] = useState(0);
+  const [sample, setSample] = useState(sampleFor(theme.purpose));
+  // A Scripture theme is judged on a verse, a lyric theme on lines of a song,
+  // a speaker's name bar on a name.
+  useEffect(() => setSample(sampleFor(theme.purpose)), [theme.id, theme.purpose]);
+  // Bumped by the Play button so the entrance and layer motion run again.
+  const [replay, setReplay] = useState(0);
   const frame = parseTextFrame(row.textFrame);
   const shown: TextFrame = frame ?? { x: 8, y: 8, w: 84, h: 84 };
   // While dragging, the box follows the pointer without saving every pixel.
@@ -123,9 +140,77 @@ export function ThemeDesigner({
   const canvasRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ h: Handle; sx: number; sy: number; start: TextFrame } | null>(null);
 
+  /* ---- Layers: pictures, videos and cameras placed on the slide ---- */
+  const media = useMedia().data ?? [];
+  const layers = parseLayers(row.layers);
+  // While one is being dragged it follows the pointer without saving each pixel.
+  const [liveLayer, setLiveLayer] = useState<ThemeLayer | null>(null);
+  const shownLayers = layers.map((l) => (liveLayer && liveLayer.id === l.id ? liveLayer : l));
+  const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
+  const [cameras, setCameras] = useState<{ id: string; name: string }[] | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const layerDrag = useRef<{ mode: "move" | "size"; sx: number; sy: number; start: ThemeLayer } | null>(null);
+
+  const saveLayers = (next: ThemeLayer[]) => change({ layers: next.length ? JSON.stringify(next) : null });
+  const patchLayer = (id: string, p: Partial<ThemeLayer>) => saveLayers(layers.map((l) => (l.id === id ? { ...l, ...p } : l)));
+  const addLayer = (kind: ThemeLayer["kind"], src: string, name: string) => {
+    const id = `${Date.now()}-${Math.round(Math.random() * 1e5)}`;
+    // A new one lands bottom-right at a modest size, clear of centred words.
+    const box = kind === "image" ? { x: 78, y: 6, w: 16, h: 16 } : { x: 60, y: 54, w: 34, h: 38 };
+    saveLayers([...layers, { id, kind, src, name, fit: kind === "image" ? "contain" : "cover", ...box }]);
+    setSelectedLayer(id);
+  };
+  const findCameras = async () => {
+    setCameraError(null);
+    try {
+      const probe = await navigator.mediaDevices.getUserMedia({ video: true });
+      probe.getTracks().forEach((t) => t.stop());
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const found = devices
+        .filter((d) => d.kind === "videoinput")
+        .map((d, i) => ({ id: `camera:${d.deviceId}`, name: d.label || `Camera ${i + 1}` }));
+      setCameras(found);
+      if (!found.length) setCameraError("No camera or capture card was found on this computer.");
+    } catch {
+      setCameras([]);
+      setCameraError("The camera could not be opened. Allow camera access and try again.");
+    }
+  };
+
+  function layerBegin(e: React.PointerEvent, l: ThemeLayer, mode: "move" | "size") {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    layerDrag.current = { mode, sx: e.clientX, sy: e.clientY, start: { ...l } };
+    setSelectedLayer(l.id);
+  }
+  function layerMove(e: React.PointerEvent) {
+    const d = layerDrag.current;
+    const el = canvasRef.current;
+    if (!d || !el) return;
+    e.stopPropagation();
+    const r = el.getBoundingClientRect();
+    const dx = ((e.clientX - d.sx) / r.width) * 100;
+    const dy = ((e.clientY - d.sy) / r.height) * 100;
+    const st = d.start;
+    if (d.mode === "move") {
+      setLiveLayer({ ...st, x: round(Math.min(100 - st.w, Math.max(0, st.x + dx))), y: round(Math.min(100 - st.h, Math.max(0, st.y + dy))) });
+    } else {
+      setLiveLayer({ ...st, w: round(Math.min(100 - st.x, Math.max(4, st.w + dx))), h: round(Math.min(100 - st.y, Math.max(4, st.h + dy))) });
+    }
+  }
+  function layerEnd(e: React.PointerEvent) {
+    if (!layerDrag.current) return;
+    e.stopPropagation();
+    layerDrag.current = null;
+    if (liveLayer) patchLayer(liveLayer.id, { x: liveLayer.x, y: liveLayer.y, w: liveLayer.w, h: liveLayer.h });
+    setLiveLayer(null);
+  }
+
   function begin(e: React.PointerEvent, h: Handle) {
     e.preventDefault();
     e.stopPropagation();
+    setSelectedLayer(null);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     drag.current = { h, sx: e.clientX, sy: e.clientY, start: { ...box } };
   }
@@ -202,14 +287,78 @@ export function ThemeDesigner({
     setGuides({ x: null, y: null });
   }
 
-  const setNum = (k: keyof TextFrame, v: number) => {
-    if (!Number.isFinite(v)) return;
-    const f = { ...shown, [k]: v };
-    f.w = Math.min(100, Math.max(MIN_W, f.w));
-    f.h = Math.min(100, Math.max(MIN_H, f.h));
-    f.x = Math.min(100 - f.w, Math.max(0, f.x));
-    f.y = Math.min(100 - f.h, Math.max(0, f.y));
-    change({ textFrame: JSON.stringify(f) });
+  /*
+   * Align & position. Works on whatever is selected: the words' box, or one
+   * of the layers. Aligning moves it to an edge or the centre of the slide
+   * without changing its size, which is the thing dragging is worst at -
+   * "exactly centred" and "flush with the bottom" are a click, not a nudge.
+   */
+  const selected = selectedLayer ? layers.find((l) => l.id === selectedLayer) ?? null : null;
+  const selBox: TextFrame = selected ? { x: selected.x, y: selected.y, w: selected.w, h: selected.h } : shown;
+  const placeSelected = (p: Partial<TextFrame>) => {
+    const f = { ...selBox, ...p };
+    const minW = selected ? 4 : MIN_W;
+    const minH = selected ? 4 : MIN_H;
+    f.w = round(Math.min(100, Math.max(minW, f.w)));
+    f.h = round(Math.min(100, Math.max(minH, f.h)));
+    f.x = round(Math.min(100 - f.w, Math.max(0, f.x)));
+    f.y = round(Math.min(100 - f.h, Math.max(0, f.y)));
+    if (selected) patchLayer(selected.id, f);
+    else change({ textFrame: JSON.stringify(f) });
+  };
+  /*
+   * Stacking order. Everything on the slide sits in one pile, back to front:
+   * the layers behind the words, the words, then the layers in front of them.
+   * Moving something forward or backward swaps it with its neighbour in that
+   * pile - and the words are in the pile too, so "send the words backward" is
+   * the same as bringing the layer behind them forward.
+   */
+  const WORDS = "__words__";
+  const stack: string[] = [
+    ...layers.filter((l) => !l.front).map((l) => l.id),
+    WORDS,
+    ...layers.filter((l) => !!l.front).map((l) => l.id),
+  ];
+  const selId = selected ? selected.id : WORDS;
+  const stackPos = stack.indexOf(selId);
+  const restack = (to: number) => {
+    const next = stack.filter((id) => id !== selId);
+    next.splice(Math.min(next.length, Math.max(0, to)), 0, selId);
+    const wordsAt = next.indexOf(WORDS);
+    saveLayers(
+      next
+        .filter((id) => id !== WORDS)
+        .map((id) => ({ ...layers.find((l) => l.id === id)!, front: next.indexOf(id) > wordsAt })),
+    );
+  };
+  const ORDER: { title: string; icon: typeof ArrowUp; to: number; off: boolean }[] = [
+    { title: "Send to the back", icon: ArrowDownToLine, to: 0, off: stackPos === 0 },
+    { title: "Send backward", icon: ArrowDown, to: stackPos - 1, off: stackPos === 0 },
+    { title: "Bring forward", icon: ArrowUp, to: stackPos + 1, off: stackPos === stack.length - 1 },
+    { title: "Bring to the front", icon: ArrowUpToLine, to: stack.length - 1, off: stackPos === stack.length - 1 },
+  ];
+
+  const ALIGN: { id: string; title: string; icon: typeof AlignStartVertical; to: () => Partial<TextFrame> }[] = [
+    { id: "l", title: "Align to the left edge", icon: AlignStartVertical, to: () => ({ x: 0 }) },
+    { id: "ch", title: "Centre left to right", icon: AlignCenterVertical, to: () => ({ x: (100 - selBox.w) / 2 }) },
+    { id: "r", title: "Align to the right edge", icon: AlignEndVertical, to: () => ({ x: 100 - selBox.w }) },
+    { id: "t", title: "Align to the top", icon: AlignStartHorizontal, to: () => ({ y: 0 }) },
+    { id: "cv", title: "Centre top to bottom", icon: AlignCenterHorizontal, to: () => ({ y: (100 - selBox.h) / 2 }) },
+    { id: "b", title: "Align to the bottom", icon: AlignEndHorizontal, to: () => ({ y: 100 - selBox.h }) },
+  ];
+  /** Arrow keys nudge the selection half a percent; with Shift, five. */
+  const nudge = (e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? 5 : 0.5;
+    const d: Record<string, Partial<TextFrame>> = {
+      ArrowLeft: { x: selBox.x - step },
+      ArrowRight: { x: selBox.x + step },
+      ArrowUp: { y: selBox.y - step },
+      ArrowDown: { y: selBox.y + step },
+    };
+    const move = d[e.key];
+    if (!move) return;
+    e.preventDefault();
+    placeSelected(move);
   };
 
   const outline = parseOutline(row.textOutline);
@@ -218,18 +367,20 @@ export function ThemeDesigner({
     ...themeToLive(row as unknown as Record<string, unknown>),
     background: previewBackground ?? null,
     textFrame: live ? live : frame,
+    layers: shownLayers,
   };
   const s = SAMPLES[sample]!;
+  const bar = liveTheme.textBar ?? null;
   const state: LiveState = {
     status: "live",
     sourceLines: s.lines,
-    translationLines: [],
+    translationLines: s.sub ? [s.sub] : [],
     sectionLabel: s.caption,
     songTitle: "",
-    slideId: null,
+    slideId: `sample-${sample}-${replay}`,
     slideIndex: 0,
     slideCount: 1,
-    theme: { ...liveTheme, showCaption: true },
+    theme: { ...liveTheme, showCaption: !!s.caption },
     rev: 0,
   };
 
@@ -246,13 +397,16 @@ export function ThemeDesigner({
           <div className={embedded ? "min-w-0 self-start xl:sticky xl:top-0" : "min-w-0"}>
             <div
               ref={canvasRef}
-              className="relative aspect-video w-full select-none overflow-hidden rounded-lg border border-[var(--v-border)] bg-black"
+              className="relative aspect-video w-full select-none overflow-hidden rounded-lg border border-[var(--v-border)] bg-black outline-none focus-visible:border-[var(--v-accent)]"
               style={{ containerType: "size", touchAction: "none" }}
+              tabIndex={0}
+              onKeyDown={nudge}
+              aria-label="Slide canvas. Arrow keys move the selected item."
               onPointerMove={move}
               onPointerUp={end}
               onPointerCancel={end}
             >
-              <SlideRender state={state} scale />
+              <SlideRender key={replay} state={state} scale />
               {/* Guides appear while a box edge is on the middle or an edge. */}
               {guides.x !== null && <span className="pointer-events-none absolute inset-y-0 w-px bg-[var(--v-accent)]" style={{ left: `${guides.x}%` }} />}
               {guides.y !== null && <span className="pointer-events-none absolute inset-x-0 h-px bg-[var(--v-accent)]" style={{ top: `${guides.y}%` }} />}
@@ -273,6 +427,32 @@ export function ThemeDesigner({
                   />
                 ))}
               </div>
+              {/* One handle box per layer, over the picture the slide draws. */}
+              {shownLayers.map((l) => (
+                <div
+                  key={l.id}
+                  role="group"
+                  aria-label={`Layer: ${l.name}`}
+                  onPointerDown={(e) => layerBegin(e, l, "move")}
+                  onPointerMove={layerMove}
+                  onPointerUp={layerEnd}
+                  onPointerCancel={layerEnd}
+                  className={`absolute cursor-move border-2 ${selectedLayer === l.id ? "border-sky-400" : "border-sky-400/40 hover:border-sky-400"}`}
+                  style={{ left: `${l.x}%`, top: `${l.y}%`, width: `${l.w}%`, height: `${l.h}%`, touchAction: "none" }}
+                >
+                  <span className="pointer-events-none absolute left-0 top-0 max-w-full truncate bg-sky-400 px-1 text-[10px] font-semibold text-black">
+                    {l.name}
+                  </span>
+                  <span
+                    onPointerDown={(e) => layerBegin(e, l, "size")}
+                    onPointerMove={layerMove}
+                    onPointerUp={layerEnd}
+                    onPointerCancel={layerEnd}
+                    title="Drag to resize"
+                    className="absolute bottom-0 right-0 h-3.5 w-3.5 translate-x-1/2 translate-y-1/2 cursor-nwse-resize rounded-sm border border-black bg-sky-400"
+                  />
+                </div>
+              ))}
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Sample</span>
@@ -292,6 +472,115 @@ export function ThemeDesigner({
           {/* Everything else about the look. */}
           <div className="space-y-4">
             <section>
+              <p className={label}>Align &amp; position</p>
+              <div className="mb-2 flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLayer(null)}
+                  className={`rounded-md border px-2 py-1 text-[11px] ${!selected ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]" : "border-[var(--v-border)]"}`}
+                >
+                  Words
+                </button>
+                {layers.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => setSelectedLayer(l.id)}
+                    className={`max-w-[130px] truncate rounded-md border px-2 py-1 text-[11px] ${selected?.id === l.id ? "border-sky-400 bg-sky-400/10 text-sky-300" : "border-[var(--v-border)]"}`}
+                  >
+                    {l.name}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-6 gap-1">
+                {ALIGN.map((a) => {
+                  const Icon = a.icon;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      title={a.title}
+                      aria-label={a.title}
+                      onClick={() => placeSelected(a.to())}
+                      className="grid h-8 place-items-center rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] hover:border-[var(--v-accent)]"
+                    >
+                      <Icon className="h-4 w-4" />
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-2 grid grid-cols-4 gap-1.5">
+                {(["x", "y", "w", "h"] as const).map((k) => (
+                  <label key={k} className="text-[11px] text-[var(--v-text-faint)]">
+                    {k === "x" ? "Left" : k === "y" ? "Top" : k === "w" ? "Width" : "Height"}
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={Math.round(selBox[k] * 2) / 2}
+                      onChange={(e) => Number.isFinite(Number(e.target.value)) && placeSelected({ [k]: Number(e.target.value) })}
+                      className={field}
+                    />
+                  </label>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                <button type="button" onClick={() => placeSelected({ x: (100 - selBox.w) / 2, y: (100 - selBox.h) / 2 })} className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-[11px] hover:border-[var(--v-accent)]">
+                  Centre on the slide
+                </button>
+                <button type="button" onClick={() => placeSelected({ x: 0, y: 0, w: 100, h: 100 })} className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-[11px] hover:border-[var(--v-accent)]">
+                  Fill the slide
+                </button>
+              </div>
+              {layers.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-1">
+                    <span className="mr-1 text-[11px] text-[var(--v-text-faint)]">Order</span>
+                    {ORDER.map((o) => {
+                      const Icon = o.icon;
+                      return (
+                        <button
+                          key={o.title}
+                          type="button"
+                          title={o.title}
+                          aria-label={o.title}
+                          disabled={o.off}
+                          onClick={() => restack(o.to)}
+                          className="grid h-8 flex-1 place-items-center rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] hover:border-[var(--v-accent)] disabled:opacity-35 disabled:hover:border-[var(--v-border)]"
+                        >
+                          <Icon className="h-4 w-4" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* The pile itself, front first, so the order is something to read rather than guess. */}
+                  <ol className="mt-1.5 space-y-0.5 text-[11px]">
+                    {[...stack].reverse().map((id, i) => {
+                      const l = layers.find((x) => x.id === id);
+                      const isSel = id === selId;
+                      return (
+                        <li key={id}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLayer(l ? l.id : null)}
+                            className={`flex w-full items-center gap-1.5 rounded px-1.5 py-0.5 text-left ${isSel ? "bg-[var(--v-surface-3)] text-[var(--v-text)]" : "text-[var(--v-text-faint)] hover:text-[var(--v-text)]"}`}
+                          >
+                            <span className="w-8 shrink-0 text-[10px] uppercase tracking-wide">{i === 0 ? "Front" : i === stack.length - 1 ? "Back" : ""}</span>
+                            <span className="min-w-0 truncate">{l ? l.name : "Words"}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              )}
+              <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+                Acts on {selected ? <b className="text-sky-300">{selected.name}</b> : <b className="text-[var(--v-accent)]">the words</b>}. Numbers are percent of the slide. Click the slide and use the arrow keys to nudge; hold Shift for bigger steps.
+              </p>
+            </section>
+
+            <section>
               <p className={label}>Text box</p>
               <div className="mb-2 grid grid-cols-3 gap-1">
                 {PRESETS.map((p) => (
@@ -302,14 +591,6 @@ export function ThemeDesigner({
                   >
                     {p.label}
                   </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {(["x", "y", "w", "h"] as const).map((k) => (
-                  <label key={k} className="text-[11px] text-[var(--v-text-faint)]">
-                    {k === "x" ? "Left" : k === "y" ? "Top" : k === "w" ? "Width" : "Height"}
-                    <input type="number" min={0} max={100} step={0.5} value={Math.round(box[k] * 2) / 2} onChange={(e) => setNum(k, Number(e.target.value))} className={field} />
-                  </label>
                 ))}
               </div>
               <div className="mt-2 flex gap-1.5">
@@ -401,6 +682,29 @@ export function ThemeDesigner({
                   <input type="color" value={row.bgColor ?? "#000000"} onChange={(e) => change({ bgColor: e.target.value })} className="h-8 w-full cursor-pointer rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)]" />
                 </label>
               </div>
+              <div className="mt-2 rounded-md border border-[var(--v-border)] p-2">
+                <label className="flex items-center gap-2 text-[12px]">
+                  <input
+                    type="checkbox"
+                    checked={!!bar}
+                    onChange={(e) => change({ textBar: e.target.checked ? JSON.stringify({ color: "#1d4ed8", radius: 15 }) : null })}
+                  />
+                  Bar behind the words
+                </label>
+                {bar && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <label className="text-[11px] text-[var(--v-text-faint)]">
+                      Bar colour
+                      <input type="color" value={bar.color.startsWith("#") ? bar.color.slice(0, 7) : "#1d4ed8"} onChange={(e) => change({ textBar: JSON.stringify({ ...bar, color: e.target.value }) })} className="h-8 w-full cursor-pointer rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)]" />
+                    </label>
+                    <label className="text-[11px] text-[var(--v-text-faint)]">
+                      Rounded corners
+                      <input type="range" min={0} max={100} value={bar.radius} onChange={(e) => change({ textBar: JSON.stringify({ ...bar, radius: Number(e.target.value) }) })} className="w-full" />
+                    </label>
+                  </div>
+                )}
+                <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">A solid bar the width of the text box, for a lower third or a name bar.</p>
+              </div>
               <label className="mt-2 block text-[11px] text-[var(--v-text-faint)]">
                 Dim the background picture {row.overlayScrim ?? 0}%
                 <input type="range" min={0} max={90} value={row.overlayScrim ?? 0} onChange={(e) => change({ overlayScrim: Number(e.target.value) })} className="w-full" />
@@ -420,6 +724,160 @@ export function ThemeDesigner({
               />
               <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
                 Upload an image or video, paste a link, or pick a colour. It is saved with this theme and shows on the canvas straight away.
+              </p>
+            </section>
+
+            <section>
+              <p className={label}>Pictures, video &amp; camera on the slide</p>
+              <p className="mb-2 text-[11px] text-[var(--v-text-faint)]">
+                Add a logo, a looping video or a live camera to this theme. Drag each one on the slide to place it and
+                its corner to resize it.
+              </p>
+              <div className="grid grid-cols-3 gap-1">
+                <label className="relative flex cursor-pointer items-center justify-center gap-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-1 py-1.5 text-[11px] hover:border-[var(--v-accent)]">
+                  <ImageIcon className="h-3.5 w-3.5" /> Picture
+                  <select
+                    aria-label="Add a picture from the media library"
+                    value=""
+                    onChange={(e) => {
+                      const m = media.find((x) => x.id === e.target.value);
+                      if (m) addLayer("image", m.url, m.name || "Picture");
+                    }}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  >
+                    <option value="">Choose a picture…</option>
+                    {media.filter((m) => m.type === "image").map((m) => (
+                      <option key={m.id} value={m.id}>{m.name || "Picture"}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="relative flex cursor-pointer items-center justify-center gap-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-1 py-1.5 text-[11px] hover:border-[var(--v-accent)]">
+                  <Film className="h-3.5 w-3.5" /> Video
+                  <select
+                    aria-label="Add a video from the media library"
+                    value=""
+                    onChange={(e) => {
+                      const m = media.find((x) => x.id === e.target.value);
+                      if (m) addLayer("video", m.url, m.name || "Video");
+                    }}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  >
+                    <option value="">Choose a video…</option>
+                    {media.filter((m) => m.type === "video").map((m) => (
+                      <option key={m.id} value={m.id}>{m.name || "Video"}</option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void findCameras()}
+                  className="flex items-center justify-center gap-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-1 py-1.5 text-[11px] hover:border-[var(--v-accent)]"
+                >
+                  <Camera className="h-3.5 w-3.5" /> Camera
+                </button>
+              </div>
+              {cameras && cameras.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {cameras.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        addLayer("camera", c.id, c.name);
+                        setCameras(null);
+                      }}
+                      className="max-w-full truncate rounded-md border border-sky-400/50 px-2 py-1 text-[11px] hover:bg-sky-400/10"
+                    >
+                      + {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {cameraError && <p className="mt-1 text-[11px] text-amber-500">{cameraError}</p>}
+              {media.filter((m) => m.type === "image" || m.type === "video").length === 0 && (
+                <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+                  Your media library is empty. Add pictures and videos in the Media tab first.
+                </p>
+              )}
+
+              {layers.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {layers.map((l) => (
+                    <li
+                      key={l.id}
+                      onClick={() => setSelectedLayer(l.id)}
+                      className={`rounded-md border p-2 ${selectedLayer === l.id ? "border-sky-400" : "border-[var(--v-border)]"}`}
+                    >
+                      <div className="flex items-center gap-1.5 text-[12px]">
+                        {l.kind === "image" ? <ImageIcon className="h-3.5 w-3.5 shrink-0" /> : l.kind === "video" ? <Film className="h-3.5 w-3.5 shrink-0" /> : <Camera className="h-3.5 w-3.5 shrink-0" />}
+                        <span className="min-w-0 flex-1 truncate">{l.name}</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${l.name}`}
+                          title="Remove"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveLayers(layers.filter((x) => x.id !== l.id));
+                          }}
+                          className="rounded p-0.5 text-[var(--v-text-faint)] hover:text-[var(--v-live)]"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--v-text-faint)]">
+                        <label className="flex items-center gap-1">
+                          <input type="checkbox" checked={l.fit === "cover"} onChange={(e) => patchLayer(l.id, { fit: e.target.checked ? "cover" : "contain" })} />
+                          Fill the box
+                        </label>
+                        <label className="flex min-w-[120px] flex-1 items-center gap-1">
+                          Round
+                          <input type="range" min={0} max={50} value={l.radius ?? 0} onChange={(e) => patchLayer(l.id, { radius: Number(e.target.value) })} className="min-w-0 flex-1" />
+                        </label>
+                        <label className="flex w-full items-center gap-1">
+                          Motion
+                          <select
+                            value={l.motion ?? ""}
+                            onChange={(e) => {
+                              patchLayer(l.id, { motion: (e.target.value || undefined) as LayerMotion | undefined });
+                              setReplay((n) => n + 1);
+                            }}
+                            className="min-w-0 flex-1 rounded border border-[var(--v-border)] bg-[var(--v-surface-3)] px-1 py-0.5 text-[11px] outline-none"
+                          >
+                            {LAYER_MOTIONS.map((m) => (
+                              <option key={m.id} value={m.id}>{m.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section>
+              <p className={label}>Motion</p>
+              <label className="block text-[11px] text-[var(--v-text-faint)]">
+                The words come in with
+                <select value={row.transition ?? "fade"} onChange={(e) => { change({ transition: e.target.value }); setReplay((n) => n + 1); }} className={field}>
+                  {TEXT_MOTIONS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="mt-2 block text-[11px] text-[var(--v-text-faint)]">
+                Speed {((row.transitionMs ?? 300) / 1000).toFixed(1)}s
+                <input type="range" min={100} max={2000} step={100} value={row.transitionMs ?? 300} onChange={(e) => change({ transitionMs: Number(e.target.value) })} className="w-full" />
+              </label>
+              <button
+                type="button"
+                onClick={() => setReplay((n) => n + 1)}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2.5 py-1 text-[11px] hover:border-[var(--v-accent)]"
+              >
+                <Play className="h-3 w-3" /> Play it on the slide
+              </button>
+              <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+                Plays each time the slide changes. Pictures, videos and cameras have their own motion, set on each one in the list above.
               </p>
             </section>
 

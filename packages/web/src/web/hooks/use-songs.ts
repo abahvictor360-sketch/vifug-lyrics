@@ -86,8 +86,9 @@ export function useFullSong(id: string | null) {
   });
 }
 
-export function useThemes() {
+export function useThemes(opts?: { refetchInterval?: number }) {
   return useQuery({
+    refetchInterval: opts?.refetchInterval,
     queryKey: ["themes"],
     queryFn: async () => {
       const res = await api.themes.$get();
@@ -127,7 +128,18 @@ export type ThemeDraft = {
   fontFamily?: string | null;
   /** {color,blur,x,y} as JSON. */
   textShadow?: string | null;
+  /** ThemeLayer[] as JSON: pictures, videos and cameras placed on the slide. */
+  layers?: string | null;
+  /** "lyrics", "scripture", "presentation" or "speaker"; null = suits everything. Decides which pickers offer it. */
+  purpose?: string | null;
+  /** {color,radius} as JSON: a backdrop bar behind the words. */
+  textBar?: string | null;
 };
+
+/** Whether a theme belongs in a picker for this kind of content. */
+export function themeSuits(t: { purpose?: string | null }, kind: "lyrics" | "scripture" | "presentation"): boolean {
+  return !t.purpose || t.purpose === kind;
+}
 
 export function useCreateTheme() {
   const qc = useQueryClient();

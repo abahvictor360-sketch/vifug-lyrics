@@ -81,7 +81,7 @@ import type { LiveState, LiveTheme } from "../lib/live-bus";
 import { themeToLive } from "../lib/live-bus";
 import { MAIN_SCREEN, screenIdFrom, screenUrl } from "../lib/screens";
 import type { useDesktop } from "../hooks/use-desktop";
-import { useCreateTheme, useUpdateTheme, useDeleteTheme, type ThemeDraft, type Theme as ThemeRow } from "../hooks/use-songs";
+import { useCreateTheme, useUpdateTheme, useDeleteTheme, useThemes, themeSuits, type ThemeDraft, type Theme as ThemeRow } from "../hooks/use-songs";
 import { DOWNLOAD_PAGE } from "../hooks/use-update-check";
 import { useNetworkOrigin } from "../hooks/use-network-origin";
 import type { DisplayInfo, FirewallState } from "../lib/desktop";
@@ -626,7 +626,7 @@ function ThemeEditor({
             onChange={(e) => onActivate(e.target.value)}
             className="min-w-[180px] flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
           >
-            {themes.map((t) => (
+            {themes.filter((t) => t.id === theme.id || themeSuits(t, "lyrics")).map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
               </option>
@@ -1356,6 +1356,131 @@ export function ColorField({
   );
 }
 
+/* ---------------- What the online audience sees ---------------- */
+
+/**
+ * In-house full screen, online lower third.
+ *
+ * One switch for the commonest split there is: the room reads words that fill
+ * the screen, while people watching the stream see the speaker with the same
+ * words along the bottom. It changes the built-in stream and the OBS overlay;
+ * the projector and every screen in the building are left alone.
+ */
+function OnlineAudienceGroup({
+  settings,
+  patchSettings,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+}) {
+  const online = settings?.online ?? { mode: "same" as const };
+  const themes = useThemes().data ?? [];
+  const [cameras, setCameras] = useState<{ id: string; name: string }[] | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const set = (p: Partial<NonNullable<AppSettings["online"]>>) => patchSettings({ online: { ...online, ...p } });
+  const findCameras = async () => {
+    setCameraError(null);
+    try {
+      const probe = await navigator.mediaDevices.getUserMedia({ video: true });
+      probe.getTracks().forEach((t) => t.stop());
+      const found = (await navigator.mediaDevices.enumerateDevices())
+        .filter((d) => d.kind === "videoinput")
+        .map((d, i) => ({ id: `camera:${d.deviceId}`, name: d.label || `Camera ${i + 1}` }));
+      setCameras(found);
+      if (!found.length) setCameraError("No camera or capture card was found on this computer.");
+    } catch {
+      setCameras([]);
+      setCameraError("The camera could not be opened. Allow camera access and try again.");
+    }
+  };
+  const choice = (mode: "same" | "lower_third", title: string, body: string) => (
+    <button
+      type="button"
+      onClick={() => set({ mode })}
+      className={`flex-1 rounded-lg border p-3 text-left transition-colors ${
+        online.mode === mode
+          ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)]"
+          : "border-[var(--v-border)] bg-[var(--v-surface-3)] hover:border-[var(--v-text-faint)]"
+      }`}
+    >
+      <span className={`block text-sm font-semibold ${online.mode === mode ? "text-[var(--v-accent)]" : ""}`}>{title}</span>
+      <span className="mt-0.5 block text-[12px] text-[var(--v-text-faint)]">{body}</span>
+    </button>
+  );
+  const input = "w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]";
+
+  return (
+    <Group title="What the online audience sees" icon={MonitorPlay}>
+      <p className="mb-2 text-[13px] text-[var(--v-text-dim)]">
+        The room always gets the full display. Choose what goes to people watching the stream.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {choice("same", "Same as the room", "The stream shows exactly what is on the main screen.")}
+        {choice("lower_third", "Lower third over the camera", "Online viewers see the camera, with the words along the bottom. The room is unchanged.")}
+      </div>
+
+      {online.mode === "lower_third" && (
+        <div className="mt-3 space-y-3">
+          <div>
+            <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Camera behind the words</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 flex-1 truncate rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm">
+                {online.cameraId ? online.cameraName || "Camera" : "None chosen"}
+              </span>
+              <VButton variant="subtle" size="sm" onClick={() => void findCameras()}>
+                {online.cameraId ? "Change" : "Choose a camera"}
+              </VButton>
+              {online.cameraId && (
+                <VButton variant="subtle" size="sm" onClick={() => set({ cameraId: null, cameraName: null })}>
+                  Remove
+                </VButton>
+              )}
+            </div>
+            {cameras && cameras.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {cameras.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      set({ cameraId: c.id, cameraName: c.name });
+                      setCameras(null);
+                    }}
+                    className="max-w-full truncate rounded-md border border-[var(--v-accent)]/50 px-2.5 py-1 text-[12px] hover:bg-[var(--v-accent-soft)]"
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {cameraError && <p className="mt-1 text-[12px] text-amber-500">{cameraError}</p>}
+            <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+              Used by the Go live button. It must be plugged into this computer. With OBS or vMix you add the camera
+              there instead, and the overlay supplies only the words.
+            </p>
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Lower third design</span>
+            <select value={online.themeId ?? ""} onChange={(e) => set({ themeId: e.target.value || null })} className={input}>
+              <option value="">Automatic - the room's font and colours on a dark bar</option>
+              {themes.filter((t) => t.id === online.themeId || t.purpose !== "speaker").map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[11px] text-[var(--v-text-faint)]">
+              Or design your own in the Theme designer (start from the Lower third preset) and pick it here.
+            </span>
+          </label>
+          <p className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-[12px] text-[var(--v-text-dim)]">
+            Applies to the <b>Go live</b> button (desktop app) and to the <b>OBS / vMix overlay</b>. A theme set for
+            "Stream overlay" under Lyrics → Theme for each screen takes priority on the overlay.
+          </p>
+        </div>
+      )}
+    </Group>
+  );
+}
+
 /* ---------------- Go live (RTMP destinations) ---------------- */
 
 /**
@@ -1571,8 +1696,42 @@ function DesignerSection({
             className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)] sm:w-64"
           >
             {themes.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={t.id}>
+                {t.name}
+                {t.purpose === "scripture" ? " (Scripture)" : t.purpose === "lyrics" ? " (Lyrics)" : t.purpose === "speaker" ? " (Speaker name)" : t.purpose === "presentation" ? " (Presentations)" : ""}
+              </option>
             ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="shrink-0 text-[var(--v-text-dim)]">For</span>
+          <select
+            value={theme.purpose ?? ""}
+            title="What this theme is designed for. It decides which theme lists offer it."
+            onChange={(e) => {
+              const purpose = e.target.value || null;
+              // A theme with no text box yet, turned into a speaker's name bar,
+              // starts as one: bottom-left, left-aligned, on a bar. Anything
+              // already designed is left exactly as it is.
+              const starter =
+                purpose === "speaker" && !theme.textFrame && !theme.textBar
+                  ? {
+                      textFrame: JSON.stringify({ x: 5, y: 74, w: 46, h: 18 }),
+                      textAlign: "left",
+                      textBar: JSON.stringify({ color: "#1d4ed8", radius: 15 }),
+                      transition: "slide-right",
+                      transitionMs: 500,
+                    }
+                  : {};
+              update.mutate({ id: theme.id, patch: { purpose, ...starter } });
+            }}
+            className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+          >
+            <option value="">Everything</option>
+            <option value="lyrics">Lyrics only</option>
+            <option value="scripture">Scripture only</option>
+            <option value="presentation">Presentations only</option>
+            <option value="speaker">Speaker name (lower third)</option>
           </select>
         </label>
         <VButton
@@ -1583,7 +1742,34 @@ function DesignerSection({
         >
           <Plus className="h-4 w-4" /> New
         </VButton>
-        {!isLyricTheme && (
+        {(!theme.purpose || theme.purpose === "presentation") &&
+          settings?.presentationThemeId !== theme.id &&
+          !(isLyricTheme && !settings?.presentationThemeId) && (
+            <VButton
+              variant="subtle"
+              size="sm"
+              title="Use this theme whenever a presentation slide is on screen"
+              onClick={() => patchSettings({ presentationThemeId: theme.id, presentationBackgroundId: undefined })}
+            >
+              <Check className="h-4 w-4" /> Use for presentations
+            </VButton>
+          )}
+        {(!theme.purpose || theme.purpose === "scripture") && settings?.bibleThemeId !== theme.id && !(isLyricTheme && !settings?.bibleThemeId) && (
+          <VButton
+            variant="subtle"
+            size="sm"
+            title="Use this theme whenever Scripture is on screen"
+            onClick={() => patchSettings({ bibleThemeId: theme.id, bibleBackgroundId: undefined })}
+          >
+            <Check className="h-4 w-4" /> Use for Scripture
+          </VButton>
+        )}
+        {theme.purpose === "speaker" && (
+          <span className="text-[12px] text-[var(--v-text-faint)]">
+            Use it from Media → Capture → Preacher nameplate → My design.
+          </span>
+        )}
+        {!isLyricTheme && (!theme.purpose || theme.purpose === "lyrics") && (
           <VButton
             variant="subtle"
             size="sm"
@@ -1699,12 +1885,55 @@ function LyricsSection({
               className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
             >
               {row.own && <option value="">Same as lyrics</option>}
-              {themes.map((t) => (
+              {themes
+                // Lyrics and Bible offer the themes made for them (and the one
+                // already chosen, whatever it is, so it never vanishes).
+                .filter(
+                  (t) =>
+                    t.id === row.value ||
+                    themeSuits(t, row.label === "Bible" ? "scripture" : row.label === "Presentations" ? "presentation" : "lyrics"),
+                )
+                .map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
           </label>
         ))}
+        <p className="mb-2 mt-3 text-[11px] text-[var(--v-text-faint)]">
+          Each audience can see its own look. The stream overlay and every extra screen show what you send unless you
+          give them a theme here - a lower third for viewers at home, plain large type for the stage, your brand
+          colours in the lobby.
+        </p>
+        {[
+          { key: "stream", label: "Stream overlay", value: settings?.streamThemeId ?? "" },
+          ...(settings?.screens ?? []).map((sc) => ({ key: sc.id, label: sc.name, value: sc.themeId ?? "" })),
+        ].map((row) => (
+          <label key={row.key} className="mb-1.5 flex items-center gap-2 text-sm">
+            <span className="w-28 shrink-0 truncate text-[var(--v-text-dim)]" title={row.label}>{row.label}</span>
+            <select
+              value={row.value}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                if (row.key === "stream") patchSettings({ streamThemeId: id ?? undefined });
+                else
+                  patchSettings({
+                    screens: (settings?.screens ?? []).map((sc) => (sc.id === row.key ? { ...sc, themeId: id } : sc)),
+                  });
+              }}
+              className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
+            >
+              <option value="">Same as what is sent</option>
+              {themes.filter((t) => t.id === row.value || t.purpose !== "speaker").map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </label>
+        ))}
+        {(settings?.screens ?? []).length === 0 && (
+          <p className="mb-2 text-[11px] text-[var(--v-text-faint)]">
+            Add more screens (stage, lobby, overflow) under Streaming &amp; output, and each gets a row here.
+          </p>
+        )}
         <VButton
           variant="subtle"
           size="sm"
@@ -2888,6 +3117,7 @@ function StreamingSection({
   return (
     <div>
       <GoLiveGroup desktop={desktop} />
+      <OnlineAudienceGroup settings={settings} patchSettings={patchSettings} />
       <Group title="Stream canvas" icon={MonitorPlay}>
         <label className="flex items-center justify-between gap-3">
           <span className="min-w-0">

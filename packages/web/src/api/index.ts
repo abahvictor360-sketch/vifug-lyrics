@@ -938,6 +938,43 @@ const app = new Hono()
     }
     return c.json({ themes: rows }, 200);
   })
+  // ---------- FONTS (the operator's own font files) ----------
+  // Kept in the database, base64, rather than on disk: a font is small, and
+  // this way it is in every backup and reaches the hosted app and every
+  // companion screen without a file store.
+  .get("/fonts", async (c) => {
+    const rows = await db
+      .select({ id: schema.fonts.id, name: schema.fonts.name })
+      .from(schema.fonts)
+      .where(eq(schema.fonts.source, "uploaded"));
+    return c.json({ fonts: rows }, 200);
+  })
+  .post("/fonts", async (c) => {
+    const body = await c.req.json<{ name?: string; mime?: string; data?: string }>();
+    const name = (body.name ?? "").replace(/["\\<>]/g, "").trim().slice(0, 60);
+    const data = body.data ?? "";
+    if (!name || !data) return c.json({ error: "A font needs a name and a file." }, 400);
+    // ~6 MB of file. Bigger than any ordinary font; small enough for one row.
+    if (data.length > 8_500_000) return c.json({ error: "That font file is too large (the limit is about 6 MB)." }, 413);
+    if (!/^[A-Za-z0-9+/=]+$/.test(data)) return c.json({ error: "The font file could not be read." }, 400);
+    const mime = /^font\/(ttf|otf|woff2?)$/.test(body.mime ?? "") ? body.mime! : "font/ttf";
+    const id = uuid();
+    await db.insert(schema.fonts).values({ id, name, source: "uploaded", data, mime });
+    return c.json({ id, name }, 201);
+  })
+  .get("/fonts/:id/file", async (c) => {
+    const [row] = await db.select().from(schema.fonts).where(eq(schema.fonts.id, c.req.param("id")));
+    if (!row?.data) return c.json({ error: "not found" }, 404);
+    const bytes = Uint8Array.from(atob(row.data), (ch) => ch.charCodeAt(0));
+    return new Response(bytes, {
+      status: 200,
+      headers: { "content-type": row.mime || "font/ttf", "cache-control": "public, max-age=31536000, immutable" },
+    });
+  })
+  .delete("/fonts/:id", async (c) => {
+    await db.delete(schema.fonts).where(eq(schema.fonts.id, c.req.param("id")));
+    return c.json({ ok: true }, 200);
+  })
   .post("/themes", async (c) => {
     const body = await c.req.json<Partial<typeof schema.themes.$inferInsert>>();
     const id = uuid();
