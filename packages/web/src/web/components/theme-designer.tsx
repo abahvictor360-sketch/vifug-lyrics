@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X, RotateCcw, Image as ImageIcon, Film, Camera, Trash2 } from "lucide-react";
+import {
+  X, RotateCcw, Image as ImageIcon, Film, Camera, Trash2,
+  AlignStartVertical, AlignCenterVertical, AlignEndVertical,
+  AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
+} from "lucide-react";
 import { SlideRender } from "./slide-render";
 import { FontPicker } from "./font-picker";
 import { MediaPicker } from "./media-picker";
@@ -194,6 +198,7 @@ export function ThemeDesigner({
   function begin(e: React.PointerEvent, h: Handle) {
     e.preventDefault();
     e.stopPropagation();
+    setSelectedLayer(null);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     drag.current = { h, sx: e.clientX, sy: e.clientY, start: { ...box } };
   }
@@ -280,6 +285,48 @@ export function ThemeDesigner({
     change({ textFrame: JSON.stringify(f) });
   };
 
+  /*
+   * Align & position. Works on whatever is selected: the words' box, or one
+   * of the layers. Aligning moves it to an edge or the centre of the slide
+   * without changing its size, which is the thing dragging is worst at -
+   * "exactly centred" and "flush with the bottom" are a click, not a nudge.
+   */
+  const selected = selectedLayer ? layers.find((l) => l.id === selectedLayer) ?? null : null;
+  const selBox: TextFrame = selected ? { x: selected.x, y: selected.y, w: selected.w, h: selected.h } : shown;
+  const placeSelected = (p: Partial<TextFrame>) => {
+    const f = { ...selBox, ...p };
+    const minW = selected ? 4 : MIN_W;
+    const minH = selected ? 4 : MIN_H;
+    f.w = round(Math.min(100, Math.max(minW, f.w)));
+    f.h = round(Math.min(100, Math.max(minH, f.h)));
+    f.x = round(Math.min(100 - f.w, Math.max(0, f.x)));
+    f.y = round(Math.min(100 - f.h, Math.max(0, f.y)));
+    if (selected) patchLayer(selected.id, f);
+    else change({ textFrame: JSON.stringify(f) });
+  };
+  const ALIGN: { id: string; title: string; icon: typeof AlignStartVertical; to: () => Partial<TextFrame> }[] = [
+    { id: "l", title: "Align to the left edge", icon: AlignStartVertical, to: () => ({ x: 0 }) },
+    { id: "ch", title: "Centre left to right", icon: AlignCenterVertical, to: () => ({ x: (100 - selBox.w) / 2 }) },
+    { id: "r", title: "Align to the right edge", icon: AlignEndVertical, to: () => ({ x: 100 - selBox.w }) },
+    { id: "t", title: "Align to the top", icon: AlignStartHorizontal, to: () => ({ y: 0 }) },
+    { id: "cv", title: "Centre top to bottom", icon: AlignCenterHorizontal, to: () => ({ y: (100 - selBox.h) / 2 }) },
+    { id: "b", title: "Align to the bottom", icon: AlignEndHorizontal, to: () => ({ y: 100 - selBox.h }) },
+  ];
+  /** Arrow keys nudge the selection half a percent; with Shift, five. */
+  const nudge = (e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? 5 : 0.5;
+    const d: Record<string, Partial<TextFrame>> = {
+      ArrowLeft: { x: selBox.x - step },
+      ArrowRight: { x: selBox.x + step },
+      ArrowUp: { y: selBox.y - step },
+      ArrowDown: { y: selBox.y + step },
+    };
+    const move = d[e.key];
+    if (!move) return;
+    e.preventDefault();
+    placeSelected(move);
+  };
+
   const outline = parseOutline(row.textOutline);
   const shadow = parseShadow(row.textShadow);
   const liveTheme: LiveTheme = {
@@ -315,8 +362,11 @@ export function ThemeDesigner({
           <div className={embedded ? "min-w-0 self-start xl:sticky xl:top-0" : "min-w-0"}>
             <div
               ref={canvasRef}
-              className="relative aspect-video w-full select-none overflow-hidden rounded-lg border border-[var(--v-border)] bg-black"
+              className="relative aspect-video w-full select-none overflow-hidden rounded-lg border border-[var(--v-border)] bg-black outline-none focus-visible:border-[var(--v-accent)]"
               style={{ containerType: "size", touchAction: "none" }}
+              tabIndex={0}
+              onKeyDown={nudge}
+              aria-label="Slide canvas. Arrow keys move the selected item."
               onPointerMove={move}
               onPointerUp={end}
               onPointerCancel={end}
@@ -387,6 +437,73 @@ export function ThemeDesigner({
           {/* Everything else about the look. */}
           <div className="space-y-4">
             <section>
+              <p className={label}>Align &amp; position</p>
+              <div className="mb-2 flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLayer(null)}
+                  className={`rounded-md border px-2 py-1 text-[11px] ${!selected ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]" : "border-[var(--v-border)]"}`}
+                >
+                  Words
+                </button>
+                {layers.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => setSelectedLayer(l.id)}
+                    className={`max-w-[130px] truncate rounded-md border px-2 py-1 text-[11px] ${selected?.id === l.id ? "border-sky-400 bg-sky-400/10 text-sky-300" : "border-[var(--v-border)]"}`}
+                  >
+                    {l.name}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-6 gap-1">
+                {ALIGN.map((a) => {
+                  const Icon = a.icon;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      title={a.title}
+                      aria-label={a.title}
+                      onClick={() => placeSelected(a.to())}
+                      className="grid h-8 place-items-center rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] hover:border-[var(--v-accent)]"
+                    >
+                      <Icon className="h-4 w-4" />
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-2 grid grid-cols-4 gap-1.5">
+                {(["x", "y", "w", "h"] as const).map((k) => (
+                  <label key={k} className="text-[11px] text-[var(--v-text-faint)]">
+                    {k === "x" ? "Left" : k === "y" ? "Top" : k === "w" ? "Width" : "Height"}
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={Math.round(selBox[k] * 2) / 2}
+                      onChange={(e) => Number.isFinite(Number(e.target.value)) && placeSelected({ [k]: Number(e.target.value) })}
+                      className={field}
+                    />
+                  </label>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                <button type="button" onClick={() => placeSelected({ x: (100 - selBox.w) / 2, y: (100 - selBox.h) / 2 })} className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-[11px] hover:border-[var(--v-accent)]">
+                  Centre on the slide
+                </button>
+                <button type="button" onClick={() => placeSelected({ x: 0, y: 0, w: 100, h: 100 })} className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1 text-[11px] hover:border-[var(--v-accent)]">
+                  Fill the slide
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
+                Acts on {selected ? <b className="text-sky-300">{selected.name}</b> : <b className="text-[var(--v-accent)]">the words</b>}. Numbers are percent of the slide. Click the slide and use the arrow keys to nudge; hold Shift for bigger steps.
+              </p>
+            </section>
+
+            <section>
               <p className={label}>Text box</p>
               <div className="mb-2 grid grid-cols-3 gap-1">
                 {PRESETS.map((p) => (
@@ -397,14 +514,6 @@ export function ThemeDesigner({
                   >
                     {p.label}
                   </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {(["x", "y", "w", "h"] as const).map((k) => (
-                  <label key={k} className="text-[11px] text-[var(--v-text-faint)]">
-                    {k === "x" ? "Left" : k === "y" ? "Top" : k === "w" ? "Width" : "Height"}
-                    <input type="number" min={0} max={100} step={0.5} value={Math.round(box[k] * 2) / 2} onChange={(e) => setNum(k, Number(e.target.value))} className={field} />
-                  </label>
                 ))}
               </div>
               <div className="mt-2 flex gap-1.5">
