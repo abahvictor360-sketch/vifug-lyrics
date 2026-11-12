@@ -36,7 +36,7 @@ export function useStreamConfig(): StreamConfig {
   return config;
 }
 
-export function useStreamer(micDeviceId?: string | null) {
+export function useStreamer(micDeviceId?: string | null, onlineLowerThird = false) {
   const [status, setStatus] = useState<StreamerStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
@@ -46,6 +46,8 @@ export function useStreamer(micDeviceId?: string | null) {
   const streamsRef = useRef<MediaStream[]>([]);
   const timerRef = useRef<number | null>(null);
   const temporarySurfaceRef = useRef(false);
+  /** This stream is capturing the broadcast surface, not the room's picture. */
+  const broadcastRef = useRef(false);
   /** Chunks must reach ffmpeg in the order they were recorded. */
   const queueRef = useRef<Promise<void>>(Promise.resolve());
 
@@ -65,10 +67,13 @@ export function useStreamer(micDeviceId?: string | null) {
     }
     streamsRef.current.forEach((s) => s.getTracks().forEach((t) => t.stop()));
     streamsRef.current = [];
-    if (temporarySurfaceRef.current) {
+    if (broadcastRef.current) {
+      void getDesktopAPI()?.broadcastRelease?.();
+      broadcastRef.current = false;
+    } else if (temporarySurfaceRef.current) {
       void getDesktopAPI()?.recorderRelease?.();
-      temporarySurfaceRef.current = false;
     }
+    temporarySurfaceRef.current = false;
   }, []);
 
   // ffmpeg ending on its own (a wrong key, the network dropping) must show.
@@ -106,9 +111,16 @@ export function useStreamer(micDeviceId?: string | null) {
     const quality = STREAM_QUALITIES.find((q) => q.id === config.quality) ?? STREAM_QUALITIES[0]!;
     setStatus("starting");
     try {
-      const surface = desktop.recorderSurface
-        ? await desktop.recorderSurface({ width: quality.width, height: quality.height })
-        : { title: PROJECTOR_WINDOW_TITLE, temporary: false };
+      // The online audience's own picture (camera + lower third) when that is
+      // what Settings asks for; otherwise the room's picture, as recording uses.
+      const useBroadcast = onlineLowerThird && !!desktop.broadcastSurface;
+      broadcastRef.current = useBroadcast;
+      const size = { width: quality.width, height: quality.height };
+      const surface = useBroadcast
+        ? await desktop.broadcastSurface!(size)
+        : desktop.recorderSurface
+          ? await desktop.recorderSurface(size)
+          : { title: PROJECTOR_WINDOW_TITLE, temporary: false };
       temporarySurfaceRef.current = surface.temporary;
       const sources = await desktop.listCaptureSources();
       const target = sources.find((s) => s.kind === "window" && s.name === surface.title);
@@ -190,7 +202,7 @@ export function useStreamer(micDeviceId?: string | null) {
       setStatus("error");
       setError(e instanceof Error ? e.message : "Could not start the stream.");
     }
-  }, [cleanup, micDeviceId]);
+  }, [cleanup, micDeviceId, onlineLowerThird]);
 
   const stop = useCallback(() => {
     cleanup();

@@ -2,6 +2,7 @@ import { Route, Switch } from "wouter";
 import Index from "./pages/index";
 import ProjectorPage from "./pages/projector";
 import StreamPage from "./pages/stream";
+import BroadcastPage from "./pages/broadcast";
 import StagePage from "./pages/stage";
 import RemotePage from "./pages/remote";
 import CastPage from "./pages/cast";
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" component={Index} />
         <Route path="/projector" component={ProjectorPage} />
         <Route path="/stream" component={StreamPage} />
+        <Route path="/broadcast" component={BroadcastPage} />
         <Route path="/stage" component={StagePage} />
         <Route path="/remote" component={RemotePage} />
         <Route path="/cast" component={CastPage} />

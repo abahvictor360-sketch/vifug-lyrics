@@ -77,6 +77,9 @@ export interface ElectronAPI {
   recorderSurface?: (size?: { width?: number; height?: number }) => Promise<{ title: string; temporary: boolean }>;
   /** Tear down a surface created by recorderSurface(). */
   recorderRelease?: () => Promise<{ ok: boolean }>;
+  /** A surface showing the online audience's picture (/broadcast), for the stream. */
+  broadcastSurface?: (size?: { width?: number; height?: number }) => Promise<{ title: string; temporary: boolean }>;
+  broadcastRelease?: () => Promise<{ ok: boolean }>;
 
   /** Live streaming to RTMP servers. Absent on older desktop builds. */
   streamStatus?: () => Promise<{ running: boolean; error: string | null; available: boolean; encoders?: string[] }>;

@@ -164,6 +164,19 @@ export type AppSettings = {
   /** The stream overlay (OBS / vMix browser source) can wear a theme of its own. */
   streamThemeId?: string | null;
   /**
+   * What the online audience sees. "same" (or absent) = the room's picture.
+   * "lower_third" = the words as a lower third over a camera, while the room
+   * keeps its full-screen display.
+   */
+  online?: {
+    mode: "same" | "lower_third";
+    /** Capture source id of the camera behind the lower third (built-in stream). */
+    cameraId?: string | null;
+    cameraName?: string | null;
+    /** A theme for the lower third; null = an automatic one made from the room's look. */
+    themeId?: string | null;
+  } | null;
+  /**
    * Scripture-only background. undefined = same background as lyrics,
    * null = explicitly plain (theme color only), string = a media id.
    */

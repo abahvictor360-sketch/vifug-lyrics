@@ -52,6 +52,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   listCaptureSources: () => ipcRenderer.invoke("capture:sources"),
   recorderSurface: (size?: { width?: number; height?: number }) => ipcRenderer.invoke("recorder:surface", size),
   recorderRelease: () => ipcRenderer.invoke("recorder:release"),
+  broadcastSurface: (size?: { width?: number; height?: number }) => ipcRenderer.invoke("broadcast:surface", size),
+  broadcastRelease: () => ipcRenderer.invoke("broadcast:release"),
 
   // Live streaming to RTMP servers (YouTube, Facebook, Twitch ...)
   streamStatus: () => ipcRenderer.invoke("stream:status"),
