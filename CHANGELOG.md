@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- NEW: **import another Vifug library - songs and media from one computer to another.** Settings → General → Backup has a new "Import from another Vifug…" button (desktop app). Back up on the first computer, carry the folder across, and import it on the second: its songs (with sections, order and translations), presentations, media files, themes and added fonts are added to what is already there. Nothing is replaced, and nothing is added twice - a song or presentation with the same title, a theme with the same name or a media file already present is left alone, including the songs both computers were installed with - so importing the same folder again adds nothing. Songs keep their theme and background. Settings, service plans and history are not imported. The app does not restart; "Restore from backup" is still there for making an exact copy.
+
 ## [1.32.0] — 2026-11-12
 
 - NEW: **full screen in the room, lower third online.** Settings → Streaming & output has a new "What the online audience sees" choice. "Same as the room" streams the main screen as before. "Lower third over the camera" leaves every screen in the building showing the full display, while the stream shows a camera you choose with the same words along the bottom - in an automatic design that keeps the room's font and colours on a dark bar, or in a theme of your own. It applies to the Go live button (desktop app), which now streams that picture instead of the projector's, and to the OBS / vMix overlay, where the words become the lower third and you add the camera in OBS. The same picture can be opened full screen at /#/broadcast.

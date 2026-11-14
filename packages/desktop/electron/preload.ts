@@ -68,6 +68,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   backupCreate: () => ipcRenderer.invoke("backup:create"),
   backupRestore: () => ipcRenderer.invoke("backup:restore"),
+  libraryImport: () => ipcRenderer.invoke("library:import"),
 
   // NDI output (native, optional)
   ndiStatus: () => ipcRenderer.invoke("ndi:status"),

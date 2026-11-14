@@ -1727,6 +1727,26 @@ const app = new Hono()
     return c.json({ ok: true }, 200);
   })
 
+  // ---------- IMPORT ANOTHER LIBRARY (desktop app only) ----------
+  // Takes a path on this machine, so it answers only to the desktop app's own
+  // main process: it sets a one-time token in the environment the embedded
+  // server shares with it, and nothing on the network can know that token.
+  // On a hosted server the variable is never set and this always refuses.
+  .post("/library/merge", async (c) => {
+    const token = process.env.VIFUG_IMPORT_TOKEN;
+    if (!token || c.req.header("x-vifug-import-token") !== token) {
+      return c.json({ error: "Importing a library is done from the desktop app." }, 403);
+    }
+    const body = await c.req.json<{ path?: string }>();
+    if (!body.path) return c.json({ error: "No library was chosen." }, 400);
+    try {
+      const { mergeLibrary } = await import("./lib/library-merge");
+      return c.json({ ok: true, result: await mergeLibrary(body.path) }, 200);
+    } catch (e) {
+      return c.json({ error: e instanceof Error ? e.message : "The library could not be read." }, 500);
+    }
+  })
+
   // ---------- PLAYLISTS ----------
   .get("/playlists", async (c) => {
     const rows = await db.select().from(schema.playlists).orderBy(desc(schema.playlists.createdAt));

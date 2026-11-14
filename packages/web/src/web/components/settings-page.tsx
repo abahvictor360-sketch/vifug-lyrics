@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   Film,
   Palette,
+  Upload,
   Link2,
   Monitor,
   MonitorX,
@@ -2558,8 +2559,41 @@ function SoundOutputGroup({
  * directory, nothing packed.
  */
 function BackupGroup({ desktop }: { desktop: NonNullable<ReturnType<typeof useDesktop>> }) {
-  const [busy, setBusy] = useState<"backup" | "restore" | null>(null);
+  const [busy, setBusy] = useState<"backup" | "restore" | "import" | null>(null);
   const [note, setNote] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const qc = useQueryClient();
+
+  const runImport = async () => {
+    setBusy("import");
+    setNote(null);
+    try {
+      const res = await desktop.libraryImport?.();
+      if (!res) setNote({ kind: "err", text: "This build can't do that yet - update the app." });
+      else if (res.canceled) setNote(null);
+      else if (res.ok && res.result) {
+        const r = res.result;
+        const part = (n: number, one: string, many: string) => (n ? `${n} ${n === 1 ? one : many}` : null);
+        const added = [
+          part(r.songs.added, "song", "songs"),
+          part(r.presentations.added, "presentation", "presentations"),
+          part(r.media.added, "media item", "media items"),
+          part(r.themes.added, "theme", "themes"),
+          part(r.fonts.added, "font", "fonts"),
+        ].filter(Boolean);
+        const here = r.songs.skipped + r.presentations.skipped + r.media.skipped + r.themes.skipped + r.fonts.skipped;
+        setNote({
+          kind: "ok",
+          text:
+            (added.length ? `Added ${added.join(", ")}.` : "Nothing new to add - everything in that library is already here.") +
+            (added.length && here ? ` ${here} ${here === 1 ? "item was" : "items were"} already here and left as they were.` : ""),
+        });
+        // Show the new songs, media and themes without a restart.
+        void qc.invalidateQueries();
+      } else setNote({ kind: "err", text: res.error ?? "That didn't work." });
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const run = async (which: "backup" | "restore") => {
     setBusy(which);
@@ -2589,7 +2623,13 @@ function BackupGroup({ desktop }: { desktop: NonNullable<ReturnType<typeof useDe
         Copies every song, deck and setting, plus your media files, into a dated folder - put it on
         a USB stick or a synced drive. Restoring replaces the current library with the backup's.
       </p>
-      <div className="flex gap-2">
+      <p className="mb-3 text-[12px] text-[var(--v-text-faint)]">
+        To move songs and media to another computer: <b className="text-[var(--v-text-dim)]">Back up now</b> on the
+        first one, carry the folder across, and <b className="text-[var(--v-text-dim)]">Import from another Vifug</b>{" "}
+        on the second. Import adds what is missing - songs, presentations, media, themes and fonts - and replaces
+        nothing that is already there.
+      </p>
+      <div className="flex flex-wrap gap-2">
         <VButton variant="subtle" onClick={() => run("backup")} disabled={busy !== null}>
           {busy === "backup" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           Back up now
@@ -2597,6 +2637,10 @@ function BackupGroup({ desktop }: { desktop: NonNullable<ReturnType<typeof useDe
         <VButton variant="ghost" onClick={() => run("restore")} disabled={busy !== null}>
           {busy === "restore" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Restore from backup…
+        </VButton>
+        <VButton variant="subtle" onClick={() => void runImport()} disabled={busy !== null}>
+          {busy === "import" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          Import from another Vifug…
         </VButton>
       </div>
       {note && (

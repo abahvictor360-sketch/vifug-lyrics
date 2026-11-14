@@ -234,3 +234,5 @@ async function ensureSchema() {
 void ensureSchema();
 
 export const db = drizzle(client, { schema });
+/** The raw client, for the few jobs that are plain SQL across tables (see lib/library-merge.ts). */
+export const rawClient = client;
