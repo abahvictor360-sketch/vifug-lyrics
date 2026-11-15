@@ -99,6 +99,14 @@ export interface ElectronAPI {
   backupCreate?: () => Promise<{ ok: boolean; folder?: string; error?: string; canceled?: boolean }>;
   /** Replace the library from a backup folder, then relaunch. */
   backupRestore?: () => Promise<{ ok: boolean; error?: string; canceled?: boolean }>;
+  /** Add another Vifug library (a backup folder) to this one, replacing nothing. */
+  libraryImport?: () => Promise<{
+    ok: boolean;
+    error?: string;
+    canceled?: boolean;
+    filesCopied?: number;
+    result?: Record<"songs" | "presentations" | "media" | "themes" | "fonts", { added: number; skipped: number }>;
+  }>;
 
   // Events
   onDeepLink: (cb: (url: string) => void) => () => void;

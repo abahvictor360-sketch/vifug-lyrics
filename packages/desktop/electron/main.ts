@@ -7,6 +7,7 @@ import {
 } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import { startEmbeddedServer } from "./server";
@@ -767,6 +768,68 @@ ipcMain.handle("backup:create", async () => {
     return { ok: true, folder: dest };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Backup failed." };
+  }
+});
+
+/**
+ * Import: add another Vifug library to this one.
+ *
+ * Takes the same folder a backup makes - so moving songs and media from one
+ * computer to another is "Back up now" there, carry the folder across, and
+ * "Import" here. Unlike restore, nothing already in this library is replaced
+ * or removed, and the app does not restart: media files that are not already
+ * here are copied in, then the embedded server merges the database rows
+ * (see web/src/api/lib/library-merge.ts).
+ */
+ipcMain.handle("library:import", async () => {
+  const picked = await dialog.showOpenDialog({
+    title: "Choose the Vifug backup folder to import from",
+    properties: ["openDirectory"],
+  });
+  if (picked.canceled || !picked.filePaths[0]) return { ok: false, canceled: true };
+  const src = picked.filePaths[0];
+  const srcDb = path.join(src, BACKUP_DB);
+  if (!fsSync.existsSync(srcDb)) {
+    return {
+      ok: false,
+      error: `That folder has no ${BACKUP_DB} in it. Choose the "Vifug-Backup-…" folder made by Back up now on the other computer.`,
+    };
+  }
+  try {
+    let filesCopied = 0;
+    const srcMedia = path.join(src, BACKUP_MEDIA);
+    if (fsSync.existsSync(srcMedia)) {
+      const media = mediaFolder();
+      await fs.mkdir(media, { recursive: true });
+      for (const name of await fs.readdir(srcMedia)) {
+        const to = path.join(media, name);
+        if (!fsSync.existsSync(to)) {
+          await fs.cp(path.join(srcMedia, name), to, { recursive: true });
+          filesCopied++;
+        }
+      }
+    }
+    // Read a copy, never the folder's own file: opening a database can write
+    // beside it, and a backup on a USB stick should stay exactly as it was.
+    const tmp = path.join(app.getPath("temp"), `vifug-import-${Date.now()}.db`);
+    await fs.copyFile(srcDb, tmp);
+    const token = randomUUID();
+    process.env.VIFUG_IMPORT_TOKEN = token;
+    try {
+      const res = await fetch(`${baseUrl}/api/library/merge`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-vifug-import-token": token },
+        body: JSON.stringify({ path: tmp }),
+      });
+      const data = (await res.json()) as { ok?: boolean; result?: unknown; error?: string };
+      if (!res.ok || !data.ok) return { ok: false, error: data.error ?? "The library could not be imported." };
+      return { ok: true, result: data.result, filesCopied };
+    } finally {
+      delete process.env.VIFUG_IMPORT_TOKEN;
+      await fs.rm(tmp, { force: true }).catch(() => {});
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Import failed." };
   }
 });
 
