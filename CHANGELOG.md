@@ -7,6 +7,8 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
+- DOCS: **three short videos in the guide.** "Your first song on screen" (49 seconds), "Put a Bible verse on screen" (37 seconds) and "Design the look of your slides" (53 seconds) are recordings of the app doing each step, with a visible pointer and a caption for every step. They have no sound. The first one is also on the landing page under "Watch it work".
+- DOCS: **the site says more plainly what Vifug is, for search engines and AI assistants.** Page titles, descriptions and social cards now describe it as free church presentation software for lyrics, Bible, slides and live streaming. The landing page's structured data lists what it does, and five new questions were added to the FAQ, on the page and in its structured data: what Vifug is, streaming to YouTube and Facebook, a lower third online with full-screen words in the room, how it relates to ProPresenter and EasyWorship, and moving a library to another computer. The guide gained video and how-to structured data. llms.txt was rewritten to match the current app, and no longer says Vifug is open source, which contradicted the FAQ.
 - DOCS: **a guide chapter on backing up, restoring and moving a library.** Chapter 23 explains which of the three Backup buttons to use, how to back up, how to move songs and media to another computer with Import step by step, exactly what Import brings across and what it leaves alone, how Restore differs, and what to do when something goes wrong. The Library chapter's Import card points to it.
 
 ## [1.33.0] — 2026-11-15
