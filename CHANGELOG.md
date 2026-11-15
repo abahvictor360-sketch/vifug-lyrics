@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- DOCS: **a guide chapter on backing up, restoring and moving a library.** Chapter 23 explains which of the three Backup buttons to use, how to back up, how to move songs and media to another computer with Import step by step, exactly what Import brings across and what it leaves alone, how Restore differs, and what to do when something goes wrong. The Library chapter's Import card points to it.
+
 ## [1.33.0] — 2026-11-15
 
 - NEW: **import another Vifug library - songs and media from one computer to another.** Settings → General → Backup has a new "Import from another Vifug…" button (desktop app). Back up on the first computer, carry the folder across, and import it on the second: its songs (with sections, order and translations), presentations, media files, themes and added fonts are added to what is already there. Nothing is replaced, and nothing is added twice - a song or presentation with the same title, a theme with the same name or a media file already present is left alone, including the songs both computers were installed with - so importing the same folder again adds nothing. Songs keep their theme and background. Settings, service plans and history are not imported. The app does not restart; "Restore from backup" is still there for making an exact copy.
