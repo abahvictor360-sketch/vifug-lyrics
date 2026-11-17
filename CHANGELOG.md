@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [Unreleased]
+## [1.34.0] — 2026-11-17
 
 - DOCS: **seven more videos in the guide**, bringing it to ten: add a song, change the background for lyrics, Bible and presentations, add sound, show a camera on screen, control Vifug from a phone, go live to YouTube and Facebook, and AI auto-follow. Each sits at the top of its chapter. They have no sound and a caption for every step. The streaming and auto-follow videos show the set-up only, because they were recorded in the browser version (streaming needs the desktop app; auto-follow had no speech key or internet), and say so.
 - FIX: the AI auto-follow panel said to "set DEEPGRAM_API_KEY in the server env" when there was no speech key, which a volunteer cannot do. It now says to add the Deepgram key in Settings → AI auto-follow, or switch to the on-this-machine engine there.
