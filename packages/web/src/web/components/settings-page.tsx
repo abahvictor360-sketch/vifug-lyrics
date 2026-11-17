@@ -390,15 +390,15 @@ export function SettingsPage({
  * Two people run the same service out of the same app and want opposite
  * things from it. Someone who has only ever used Vifug wants the words in
  * front of them, with the two small screens off to one side to glance at.
- * Someone who spends their week in OBS wants the reverse: Preview and
- * Program enormous across the top, and everything that feeds them docked
- * underneath. Neither is more correct, so the app does both.
+ * Someone who spends their week at a streaming desk wants the reverse:
+ * preview and live enormous across the top, and everything that feeds them
+ * docked underneath. Neither is more correct, so the app does both.
  *
  * The choice is a property of this machine rather than of the church, which
  * is why it is not in the settings the server keeps: the operator's laptop
- * can run the OBS shape while the phone someone holds at the back stays on
- * the simple one, and a volunteer changing it on the desk does not rearrange
- * the stage monitor halfway through a song.
+ * can run the broadcast shape while the phone someone holds at the back stays
+ * on the simple one, and a volunteer changing it on the desk does not
+ * rearrange the stage monitor halfway through a song.
  */
 function LayoutSection() {
   const layout = useLayoutMode();
@@ -417,10 +417,10 @@ function LayoutSection() {
           blurb="The words fill the middle of the screen. Preview and live sit in a rail down the right with the controls under them."
         />
         <LayoutChoice
-          mode="obs"
+          mode="broadcast"
           current={layout}
-          title="OBS"
-          blurb="Preview and Program across the top at full size, the way a streaming desk is laid out. The list, the slides and the controls become docks below them."
+          title="Broadcast"
+          blurb="Preview and live across the top at full size, the way a streaming desk is laid out. The list, the slides and the controls become docks below them."
         />
       </div>
     </Group>

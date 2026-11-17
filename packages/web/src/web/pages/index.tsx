@@ -1231,9 +1231,9 @@ export default function OperatorPage() {
    * the return is what makes that possible: each one closes over the state it
    * needs, so neither layout has to thread forty props through a wrapper.
    *
-   *   vifug - library | slides | live rail, three columns across.
-   *   obs   - Preview and Program across the top at full size, then the same
-   *           three panes as docks underneath.
+   *   vifug     - library | slides | live rail, three columns across.
+   *   broadcast - Preview and Live across the top at full size, then the same
+   *               three panes as docks underneath.
    */
 
   /* LEFT: the song library, which belongs to Lyrics only. Every other mode
@@ -1243,7 +1243,7 @@ export default function OperatorPage() {
   const libraryPane = mode !== "lyrics" ? null : (
     <aside
       className={`flex w-full shrink-0 flex-col bg-[var(--v-surface)] ${
-        layout === "obs"
+        layout === "broadcast"
           ? "min-h-0 flex-1"
           : "max-h-[45vh] border-b border-[var(--v-border)] lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r"
       }`}
@@ -1332,7 +1332,7 @@ export default function OperatorPage() {
   const centerPanel = (
     <main
       className={`flex min-w-0 flex-1 flex-col ${
-        layout === "obs" ? "min-h-0" : "min-h-[60vh] lg:min-h-0"
+        layout === "broadcast" ? "min-h-0" : "min-h-[60vh] lg:min-h-0"
       }`}
     >
       {mode === "history" ? (
@@ -1425,8 +1425,8 @@ export default function OperatorPage() {
   );
 
   /* The two screens an operator actually watches. In the vifug shape they sit
-     at the top of the right rail; in the OBS shape they ARE the top of the
-     screen, which is the whole point of that shape. */
+     at the top of the right rail; in the broadcast shape they ARE the top of
+     the screen, which is the whole point of that shape. */
   const stageScreens = (
     <>
     <div className="grid grid-cols-2 gap-3">
@@ -1839,11 +1839,12 @@ export default function OperatorPage() {
         plansLabel={appMode.plansLabel}
       />
 
-      {layout === "obs" ? (
+      {layout === "broadcast" ? (
         /*
-         * OBS shape. Preview and Program go across the top at the size
-         * someone who lives in OBS expects them, and everything that feeds
-         * them becomes a dock underneath: the list, the slides, the controls.
+         * Broadcast shape. Preview and Live go across the top at the size
+         * someone who works at a streaming desk expects them, and everything
+         * that feeds them becomes a dock underneath: the list, the slides,
+         * the controls.
          *
          * The top half is capped by viewport HEIGHT rather than given a
          * width, because the screens keep a 16:9 ratio - left to fill a
@@ -2847,10 +2848,11 @@ function SlideGrid({
  * since otherwise nothing short of unplugging the cable would bring it back.
  */
 /**
- * The thin label above each dock in the OBS shape.
+ * The thin label above each dock in the broadcast shape.
  *
- * OBS names every dock - Scenes, Sources, Audio Mixer, Controls - and that
- * naming is most of what makes the layout readable at a glance: three panes
+ * A streaming desk names every dock - Scenes, Sources, Audio Mixer, Controls
+ * - and that naming is most of what makes such a layout readable at a glance:
+ * three panes
  * of dense content in a row need to say which is which. It is deliberately
  * quiet, 28px of small caps, so it orients without competing with the content
  * underneath it.
