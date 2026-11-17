@@ -7,6 +7,9 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [1.35.0] — 2026-11-17
 
+- DOCS: **the guide now covers the two operator screen layouts** (new chapter 4), and the landing page shows both with a screenshot of each - the same song live, once in the Vifug layout and once in the Broadcast one. The site's structured data, its FAQ and llms.txt mention the Broadcast layout too, so search engines and AI assistants describing Vifug have it to work from. The hero screenshot was also retaken on the current version.
+- FIX: the song library's footer said "1 songs in library" after a search that matched one song - wrong number as well as wrong grammar, since it was counting what the search had left on screen, not the library. It now says "1 song found" while searching and "325 songs in library" when not.
+
 - DOCS: **seven more videos in the guide**, bringing it to ten: add a song, change the background for lyrics, Bible and presentations, add sound, show a camera on screen, control Vifug from a phone, go live to YouTube and Facebook, and AI auto-follow. Each sits at the top of its chapter. They have no sound and a caption for every step. The streaming and auto-follow videos show the set-up only, because they were recorded in the browser version (streaming needs the desktop app; auto-follow had no speech key or internet), and say so.
 - FIX: the AI auto-follow panel said to "set DEEPGRAM_API_KEY in the server env" when there was no speech key, which a volunteer cannot do. It now says to add the Deepgram key in Settings → AI auto-follow, or switch to the on-this-machine engine there.
 - NEW: **a "Support Vifug" section on the About page** (Settings → About). It lists the same six ways to help as the website - give once, give monthly, sponsor as a church or business, give your time or skills, spread the word, or something else - with a button that opens the support form on vifug.com and the contact address. Nothing is charged from inside the app.

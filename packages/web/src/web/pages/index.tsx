@@ -1321,8 +1321,16 @@ export default function OperatorPage() {
           ))}
         </ul>
       </div>
+      {/* This counts what is ON SCREEN, which is the whole library only when
+          nothing is typed in the search box. Saying "3 songs in library" to
+          someone who has just searched for "grace" is simply false - and it
+          said "1 songs" either way. */}
       <div className="border-t border-[var(--v-border)] px-3 py-2 text-[12px] text-[var(--v-text-faint)]">
-        {songs.data?.length ?? 0} songs in library
+        {(() => {
+          const n = songs.data?.length ?? 0;
+          const word = n === 1 ? "song" : "songs";
+          return search.trim() ? `${n} ${word} found` : `${n} ${word} in library`;
+        })()}
       </div>
     </aside>
   );
