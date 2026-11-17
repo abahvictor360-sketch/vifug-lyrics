@@ -5,6 +5,11 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.34.0] — 2026-11-17
+
+- NEW: **an OBS-style operator screen, for anyone who already runs a stream.** Settings → Layout now has its own entry in the side menu with two shapes to pick from. The one Vifug has always had puts the words in the middle of the screen, with preview and live in a rail down the right. The new one lays the screen out the way a streaming desk does: Preview and Live across the top at full size, and the list, the slides and the controls become docks underneath them - the same arrangement OBS uses. It works the same on Lyrics, Bible, Presentations, Media, Plans and History, and on a phone the docks stack and scroll like everything else does.
+- Nothing is missing from either shape - the same library, the same slides, the same transport, mixer, timer and auto-follow - and the switch takes effect as you click it, with no restart. It is remembered per device rather than saved with the rest of the settings, so the operator's laptop can run the OBS shape while a phone at the back stays on the simple one, and one person changing it does not rearrange anybody else's screen mid-service.
+
 ## [1.33.0] — 2026-11-15
 
 - NEW: **import another Vifug library - songs and media from one computer to another.** Settings → General → Backup has a new "Import from another Vifug…" button (desktop app). Back up on the first computer, carry the folder across, and import it on the second: its songs (with sections, order and translations), presentations, media files, themes and added fonts are added to what is already there. Nothing is replaced, and nothing is added twice - a song or presentation with the same title, a theme with the same name or a media file already present is left alone, including the songs both computers were installed with - so importing the same folder again adds nothing. Songs keep their theme and background. Settings, service plans and history are not imported. The app does not restart; "Restore from backup" is still there for making an exact copy.

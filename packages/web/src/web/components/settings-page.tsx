@@ -39,11 +39,14 @@ import {
   Check,
   Pencil,
   Volume2,
+  Columns3,
 } from "lucide-react";
 import {
   SHORTCUT_ACTIONS, comboFromEvent, conflictsFor, formatCombo, resolveShortcuts,
   type ShortcutAction,
 } from "../lib/shortcuts";
+import { useLayoutMode } from "../hooks/use-layout-mode";
+import { setLayoutMode, type LayoutMode } from "../lib/layout-mode";
 import { MicPicker } from "./mic-picker";
 import { SpeakerPicker } from "./speaker-picker";
 import { useBibleManifest } from "../hooks/use-bible";
@@ -111,7 +114,7 @@ export type ProjectorApi = {
 };
 
 export type SectionId =
-  | "lyrics" | "designer" | "bible" | "presentations" | "streaming" | "ai" | "shortcuts" | "general" | "about";
+  | "lyrics" | "designer" | "bible" | "presentations" | "streaming" | "ai" | "shortcuts" | "layout" | "general" | "about";
 
 /**
  * Streaming, AI and Shortcuts used to live inside General, which had grown
@@ -126,6 +129,7 @@ const SECTIONS: { id: SectionId; label: string; icon: typeof Music4; hint: strin
   { id: "streaming", label: "Streaming & output", icon: Radio, hint: "NDI, OBS & screens" },
   { id: "ai", label: "AI auto-follow", icon: Ear, hint: "Mic & speech engine" },
   { id: "shortcuts", label: "Shortcuts", icon: Keyboard, hint: "Keys for the live controls" },
+  { id: "layout", label: "Layout", icon: Columns3, hint: "How the operator screen is arranged" },
   { id: "general", label: "General", icon: Settings2, hint: "Projector & live behavior" },
   { id: "about", label: "About", icon: Info, hint: "What Vifug is & who made it" },
 ];
@@ -139,6 +143,7 @@ const SECTION_TITLES: Record<SectionId, string> = {
   streaming: "Streaming & output",
   ai: "AI auto-follow",
   shortcuts: "Shortcuts",
+  layout: "Layout",
   general: "General",
   about: "About Vifug",
 };
@@ -354,6 +359,7 @@ export function SettingsPage({
             {section === "shortcuts" && (
               <ShortcutsSection settings={settings} patchSettings={patchSettings} />
             )}
+            {section === "layout" && <LayoutSection />}
             {section === "general" && (
               <GeneralSection
                 settings={settings}
@@ -378,6 +384,148 @@ export function SettingsPage({
 
 // Grouped panel styled after classic presentation-software settings: a titled
 // header bar sitting on top of a bordered content panel.
+/**
+ * Which shape the operator screen takes.
+ *
+ * Two people run the same service out of the same app and want opposite
+ * things from it. Someone who has only ever used Vifug wants the words in
+ * front of them, with the two small screens off to one side to glance at.
+ * Someone who spends their week in OBS wants the reverse: Preview and
+ * Program enormous across the top, and everything that feeds them docked
+ * underneath. Neither is more correct, so the app does both.
+ *
+ * The choice is a property of this machine rather than of the church, which
+ * is why it is not in the settings the server keeps: the operator's laptop
+ * can run the OBS shape while the phone someone holds at the back stays on
+ * the simple one, and a volunteer changing it on the desk does not rearrange
+ * the stage monitor halfway through a song.
+ */
+function LayoutSection() {
+  const layout = useLayoutMode();
+  return (
+    <Group title="Operator screen" icon={Columns3}>
+      <p className="mb-3 text-[12px] text-[var(--v-text-faint)]">
+        Changes straight away, and only on this device. Everything is in both
+        shapes - the same library, the same slides, the same controls - they
+        are arranged differently.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <LayoutChoice
+          mode="vifug"
+          current={layout}
+          title="Vifug"
+          blurb="The words fill the middle of the screen. Preview and live sit in a rail down the right with the controls under them."
+        />
+        <LayoutChoice
+          mode="obs"
+          current={layout}
+          title="OBS"
+          blurb="Preview and Program across the top at full size, the way a streaming desk is laid out. The list, the slides and the controls become docks below them."
+        />
+      </div>
+    </Group>
+  );
+}
+
+/**
+ * One of the two shapes, drawn rather than described.
+ *
+ * A layout is a thing you recognise by its shape, so the card shows the
+ * arrangement as blocks: a paragraph saying "three columns" takes longer to
+ * read and still leaves you guessing.
+ *
+ * The whole card is the control rather than a label with a radio beside it,
+ * which would give a target the size of a full stop - but it is a real radio
+ * underneath, visually hidden, so the pair behaves like the radio group it is:
+ * arrow keys move between the two shapes, and a screen reader says which of
+ * two is chosen instead of reading out two unrelated buttons.
+ */
+function LayoutChoice({
+  mode,
+  current,
+  title,
+  blurb,
+}: {
+  mode: LayoutMode;
+  current: LayoutMode;
+  title: string;
+  blurb: string;
+}) {
+  const active = current === mode;
+  return (
+    <label
+      className={`flex cursor-pointer flex-col gap-2.5 rounded-lg border-2 p-3 transition-colors focus-within:ring-2 focus-within:ring-[var(--v-accent)] ${
+        active
+          ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)]"
+          : "border-[var(--v-border)] bg-[var(--v-surface-3)] hover:border-[var(--v-text-faint)]"
+      }`}
+    >
+      <input
+        type="radio"
+        name="vifug-operator-layout"
+        aria-label={`${title} layout`}
+        className="sr-only"
+        checked={active}
+        onChange={() => setLayoutMode(mode)}
+      />
+      <LayoutThumb mode={mode} />
+      <div>
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
+          {title}
+          {active && <Check className="h-4 w-4 text-[var(--v-accent)]" />}
+        </span>
+        <span className="mt-0.5 block text-[12px] leading-snug text-[var(--v-text-faint)]">{blurb}</span>
+      </div>
+    </label>
+  );
+}
+
+/**
+ * A 16:9 sketch of the arrangement.
+ *
+ * The diagram says what the layout IS, so it does not change colour with
+ * selection - the border and the tick already carry that, and recolouring the
+ * blocks as well flattened the selected card into one green rectangle with no
+ * structure left to read. Accent blocks are always the two screens, grey ones
+ * always the panes, in both cards.
+ */
+function LayoutThumb({ mode }: { mode: LayoutMode }) {
+  const screen = "rounded-[2px] bg-[var(--v-accent)]";
+  const pane = "rounded-[2px] border border-[var(--v-border)] bg-[var(--v-surface-3)]";
+  return (
+    <div
+      aria-hidden
+      className="flex aspect-video w-full gap-1 rounded-md border border-[var(--v-border)] bg-[var(--v-bg)] p-1.5"
+    >
+      {mode === "vifug" ? (
+        <>
+          <div className={`w-[18%] ${pane}`} />
+          <div className={`flex-1 ${pane}`} />
+          <div className="flex w-[34%] flex-col gap-1">
+            <div className="flex gap-1">
+              <div className={`aspect-video flex-1 ${screen}`} />
+              <div className={`aspect-video flex-1 ${screen}`} />
+            </div>
+            <div className={`flex-1 ${pane}`} />
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-1 flex-col gap-1">
+          <div className="flex gap-1">
+            <div className={`aspect-video flex-1 ${screen}`} />
+            <div className={`aspect-video flex-1 ${screen}`} />
+          </div>
+          <div className="flex flex-1 gap-1">
+            <div className={`w-[18%] ${pane}`} />
+            <div className={`flex-1 ${pane}`} />
+            <div className={`w-[24%] ${pane}`} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Group({ title, icon: Icon, children }: { title: string; icon?: typeof Music4; children: React.ReactNode }) {
   return (
     <section className="mb-5 overflow-hidden rounded-xl border border-[var(--v-border)] bg-[var(--v-surface-2)] shadow-sm">
