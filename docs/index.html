@@ -58,12 +58,13 @@
     "@type": "CreativeWork",
     "url": "https://vifug.com/guide.html"
   },
-  "softwareVersion": "latest",
+  "softwareVersion": "1.35.0",
   "image": "https://vifug.com/og-image.png",
   "screenshot": "https://vifug.com/img/app-slide-grid.png",
   "keywords": "church presentation software, worship lyrics projection, song lyrics projector software, Bible verse projection, lower thirds, live streaming software for churches, free ProPresenter alternative, free EasyWorship alternative, NDI lyrics output, OBS lyrics overlay",
   "featureList": [
     "Song lyrics library with a Preview to Live workflow",
+    "Two operator screen layouts: a classic three-column one and a Broadcast one laid out like a streaming desk",
     "Offline Bible in 31 English versions plus Yoruba, Hausa, Igbo, Twi and Swahili",
     "Presentations: build slides or import PowerPoint and PDF",
     "Theme designer with text box, fonts, motion, pictures, video and camera layers",
@@ -113,6 +114,11 @@
       "@type": "Question",
       "name": "What is Vifug?",
       "acceptedAnswer": { "@type": "Answer", "text": "Vifug is free presentation software for churches, events, schools and studios. It puts song lyrics, Bible verses, slides, pictures and video on your projector or TV, with a Preview to Live workflow so nothing appears until you send it. It also handles cameras, lower thirds and speaker name bars, and can stream the result to YouTube, Facebook and Twitch. It runs on Windows, macOS and Linux and works without internet." }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I lay the operator screen out like OBS?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. Settings, Layout offers two shapes for the operator's own screen. Vifug, the original, puts the words in the middle with preview and live in a rail down the right. Broadcast puts preview and live across the top at full size and turns the list, the slides and the controls into docks underneath, the way OBS and other streaming desks are laid out. Nothing is missing from either one and the screen changes as you click, with no restart. The choice is remembered per device, so the laptop at the desk and a phone at the back can differ. This is about the operator's screen only - it changes nothing the congregation or the stream sees." }
     },
     {
       "@type": "Question",
@@ -584,6 +590,8 @@
   .shot-bar span { margin-left: 10px; font-size: 12px; color: var(--faint); }
   .shot img { display: block; width: 100%; height: auto; }
   .tour-shot { margin-top: 44px; }
+  .shot-cap { margin-top: 10px; font-size: 13.5px; color: var(--faint); text-align: center; }
+  .shot-cap b { color: var(--dim); font-weight: 600; }
   .tour-points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
   .tour-points div { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--raise); }
   .tour-points b { display: block; font-family: var(--font-display); font-size: 15px; margin-bottom: 5px; color: var(--paper); }
@@ -737,13 +745,20 @@
     <div class="band-head center">
       <span class="eyebrow" data-aos="fade-up">See it in action</span>
       <h2 data-aos="fade-up" data-aos-delay="60">Your whole service in one window</h2>
-      <p data-aos="fade-up" data-aos-delay="120">Songs on the left, slides in the middle, Preview and Live on the right. Click a slide to cue it, press Enter to send it to the room.</p>
+      <p data-aos="fade-up" data-aos-delay="120">Click a slide to cue it, press Enter to send it to the room. Lay the screen out whichever way suits you - the classic three columns, or a broadcast desk with the two screens across the top.</p>
     </div>
     <div class="tour-shot">
       <div class="shot" data-aos="fade-up">
         <div class="shot-bar"><i></i><i></i><i></i><span>Vifug - Amazing Grace</span></div>
         <img src="img/app-slide-grid.png" width="2880" height="1800" alt="The Vifug operator window: song library, slide thumbnails with coloured label bars, Preview and Live pictures, and a status bar along the bottom" loading="lazy" />
       </div>
+      <p class="shot-cap"><b>The Vifug layout.</b> Words in the middle, Preview and Live down the right.</p>
+
+      <div class="shot" data-aos="fade-up" data-aos-delay="80" style="margin-top:36px">
+        <div class="shot-bar"><i></i><i></i><i></i><span>Vifug - Broadcast layout</span></div>
+        <img src="img/app-layout-broadcast.png" width="2880" height="1800" alt="The same song in the Broadcast layout: Preview and Live across the top at full size, with Library, Slides and Controls docks underneath" loading="lazy" />
+      </div>
+      <p class="shot-cap"><b>The Broadcast layout.</b> Preview and Live across the top at full size, the way a streaming desk is laid out - the list, the slides and the controls become docks below. Same service, same controls; switch in Settings, no restart.</p>
     </div>
     <div class="tour-video" data-aos="fade-up">
       <p class="tour-video-title">Watch it work <span>49 seconds · no sound, captions on screen</span></p>
@@ -861,6 +876,7 @@
     <div class="features collapsed" id="feature-grid">
       <div class="feat" data-aos="fade-up"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></div><h3>Go live from the app</h3><p>Stream the live output to YouTube, Facebook, Twitch or any RTMP server - several at once - with one button. No OBS needed. Desktop app.</p></div>
       <div class="feat" data-aos="fade-up"><div class="ic"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><h3>Preview → Live stage</h3><p>Cue the next slide privately, then send it live with Enter. Arrows to move, Space to blank, Esc to clear.</p></div>
+      <div class="feat" data-aos="fade-up" data-aos-delay="70"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg></div><h3>Two operator layouts</h3><p>Arrange your own screen the way you work. <b>Vifug</b> puts the words in the middle with preview and live down the side; <b>Broadcast</b> puts preview and live across the top at full size, the way a streaming desk is laid out, with the list, the slides and the controls as docks below. Switch in Settings, no restart, and it is remembered on that device.</p></div>
       <div class="feat" data-aos="fade-up" data-aos-delay="70"><div class="ic"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><h3>Offline Bible engine</h3><p>31 English versions (KJV, NIV, ESV, NLT, NASB, The Message and more) plus Yoruba, Hausa, Igbo, Twi and Swahili - reference jump (“John 3:16”) and full-text search, with every book held on the machine.</p></div>
       <div class="feat" data-aos="fade-up" data-aos-delay="140"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Slides &amp; PowerPoint import</h3><p>Build decks in the app with a live preview beside each slide, size individual words for emphasis, or import a .pptx or PDF - it keeps the deck's own backgrounds and text colours instead of flattening everything to plain text.</p></div>
       <div class="feat" data-aos="fade-up"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 11H3v9h6v-9ZM21 6h-6v14h6V6ZM15 3H9v18h6V3Z"/></svg></div><h3>Service plans</h3><p>Line up the whole morning ahead of time - songs, scripture, section headers and blanks in the order you will actually use them, ready to run down on Sunday.</p></div>
@@ -970,6 +986,7 @@
     </div>
     <div class="faq" data-aos="fade-up" data-aos-delay="120">
       <details open><summary>What is Vifug?</summary><div class="a">Vifug is free presentation software for churches, events, schools and studios. It puts song lyrics, Bible verses, slides, pictures and video on your projector or TV, with a Preview to Live workflow so nothing appears until you send it. It also handles cameras, lower thirds and speaker name bars, and can stream the result to YouTube, Facebook and Twitch. It runs on Windows, macOS and Linux and works without internet.</div></details>
+      <details><summary>Can I lay the operator screen out like OBS?</summary><div class="a">Yes. Settings, Layout offers two shapes for the operator's own screen. Vifug, the original, puts the words in the middle with preview and live in a rail down the right. Broadcast puts preview and live across the top at full size and turns the list, the slides and the controls into docks underneath, the way OBS and other streaming desks are laid out. Nothing is missing from either one and the screen changes as you click, with no restart. The choice is remembered per device, so the laptop at the desk and a phone at the back can differ. This is about the operator's screen only - it changes nothing the congregation or the stream sees.</div></details>
       <details><summary>Is Vifug really free?</summary><div class="a">Yes - free to download, install and use on as many machines as your church needs. No licence fee, no per-seat cost, no watermark and no subscription. Anything you make with it - your songs, slides and recordings - is entirely yours, including for services you stream or charge admission to.</div></details>
       <details><summary>Can I modify it or build my own version?</summary><div class="a">Vifug is free to <em>use</em>, but it is not open source - the software remains the property of its author, and copying, modifying or redistributing it needs written permission. That permission is often given freely for reasonable requests, so <a href="#contact">just ask</a>.</div></details>
       <details><summary>Can I use Vifug outside church?</summary><div class="a">Yes. On first launch you choose what it is for: Church, Media &amp; entertainment, or Presentations only. Outside church the Bible and the hymn library are hidden and you start with a few public-domain songs, with the same projector, screens, capture and streaming tools. Nothing is deleted, so you can switch back to Church in Settings any time.</div></details>

@@ -1,6 +1,6 @@
 # llms.txt - Vifug
 # For more information, see: https://llmstxt.org/
-# Last updated: 2026-11-15
+# Last updated: 2026-11-17
 
 User-agent: *
 Allow: /
@@ -27,6 +27,10 @@ Allow: /
 
 # -- WHAT IT DOES ----------------------------------
 # - Song lyrics library (325 songs included) with a Preview -> Live workflow
+# - Two layouts for the operator's own screen: the classic three-column one, and a
+#   Broadcast one with preview and live across the top at full size and the list,
+#   slides and controls as docks below, the way a streaming desk is laid out.
+#   Chosen in Settings, applied instantly, remembered per device.
 # - Offline Bible: 31 English versions plus Yoruba, Hausa, Igbo, Twi and Swahili; add your own
 # - Presentations: build slides in the app or import PowerPoint (.pptx) and PDF
 # - Theme designer: drag the text box, fonts (including your own font files), colours,
@@ -55,6 +59,7 @@ Allow: /
 #   Short videos (no sound, captions on screen): first song, Bible verse, add a song, change the background,
 #     add sound, show a camera, phone remote, live streaming, AI auto-follow, theme designer
 #   Quick start                   https://vifug.com/guide.html#quickstart
+#   Two operator screen layouts   https://vifug.com/guide.html#layout
 #   Bible                         https://vifug.com/guide.html#bible
 #   Streaming and OBS / NDI       https://vifug.com/guide.html#streaming
 #   What's new                    https://vifug.com/guide.html#new

@@ -25,7 +25,7 @@
     },
     "packages/desktop": {
       "name": "vifug-lyrics-desktop",
-      "version": "1.28.0",
+      "version": "1.35.0",
       "dependencies": {
         "@libsql/win32-x64-msvc": "0.5.29",
         "@neon-rs/load": "^0.0.4",
