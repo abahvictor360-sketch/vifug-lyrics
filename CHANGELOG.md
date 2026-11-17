@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [1.34.0] — 2026-11-17
+## [1.35.0] — 2026-11-17
 
 - DOCS: **seven more videos in the guide**, bringing it to ten: add a song, change the background for lyrics, Bible and presentations, add sound, show a camera on screen, control Vifug from a phone, go live to YouTube and Facebook, and AI auto-follow. Each sits at the top of its chapter. They have no sound and a caption for every step. The streaming and auto-follow videos show the set-up only, because they were recorded in the browser version (streaming needs the desktop app; auto-follow had no speech key or internet), and say so.
 - FIX: the AI auto-follow panel said to "set DEEPGRAM_API_KEY in the server env" when there was no speech key, which a volunteer cannot do. It now says to add the Deepgram key in Settings → AI auto-follow, or switch to the on-this-machine engine there.
@@ -13,6 +13,11 @@ GitHub Release with Windows, macOS and Linux artifacts.
 - DOCS: **three short videos in the guide.** "Your first song on screen" (49 seconds), "Put a Bible verse on screen" (37 seconds) and "Design the look of your slides" (53 seconds) are recordings of the app doing each step, with a visible pointer and a caption for every step. They have no sound. The first one is also on the landing page under "Watch it work".
 - DOCS: **the site says more plainly what Vifug is, for search engines and AI assistants.** Page titles, descriptions and social cards now describe it as free church presentation software for lyrics, Bible, slides and live streaming. The landing page's structured data lists what it does, and five new questions were added to the FAQ, on the page and in its structured data: what Vifug is, streaming to YouTube and Facebook, a lower third online with full-screen words in the room, how it relates to ProPresenter and EasyWorship, and moving a library to another computer. The guide gained video and how-to structured data. llms.txt was rewritten to match the current app, and no longer says Vifug is open source, which contradicted the FAQ.
 - DOCS: **a guide chapter on backing up, restoring and moving a library.** Chapter 23 explains which of the three Backup buttons to use, how to back up, how to move songs and media to another computer with Import step by step, exactly what Import brings across and what it leaves alone, how Restore differs, and what to do when something goes wrong. The Library chapter's Import card points to it.
+
+## [1.34.0] — 2026-11-17
+
+- NEW: **a Broadcast layout for the operator screen, for anyone who already runs a stream.** Settings → Layout now has its own entry in the side menu with two shapes to pick from. **Vifug** is the one the app has always had: the words fill the middle of the screen, with preview and live in a rail down the right. **Broadcast** lays the screen out the way a streaming desk does - preview and live across the top at full size, with the list, the slides and the controls as docks underneath them. It works the same on Lyrics, Bible, Presentations, Media, Plans and History, and on a phone the docks stack and scroll like everything else does.
+- Nothing is missing from either shape - the same library, the same slides, the same transport, mixer, timer and auto-follow - and the switch takes effect as you click it, with no restart. It is remembered per device rather than saved with the rest of the settings, so the operator's laptop can run the Broadcast shape while a phone at the back stays on the simple one, and one person changing it does not rearrange anybody else's screen mid-service.
 
 ## [1.33.0] — 2026-11-15
 

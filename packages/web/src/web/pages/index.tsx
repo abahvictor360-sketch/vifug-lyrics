@@ -15,6 +15,7 @@ import { VButton, SectionChip, Spinner, VuMeter, dbLabel } from "../components/b
 import { PresentationsPanel } from "../components/presentation-panel";
 import { SlideRender } from "../components/slide-render";
 import { usePublishAudioOutput } from "../hooks/use-audio-output";
+import { useLayoutMode } from "../hooks/use-layout-mode";
 import { createPortal } from "react-dom";
 import { LiveOutput } from "../components/live-output";
 import { usePictureInPicture } from "../hooks/use-pip";
@@ -425,6 +426,8 @@ function useProjector(
 export default function OperatorPage() {
   const qc = useQueryClient();
   const desktop = useDesktop();
+  /* Which shape this machine runs the operator screen in - see lib/layout-mode. */
+  const layout = useLayoutMode();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState<false | "new" | "edit">(false);
@@ -1222,6 +1225,603 @@ export default function OperatorPage() {
     });
   };
 
+  /*
+   * The operator screen comes in two shapes, and the pieces below are the
+   * same JSX in both - only their arrangement differs. Hoisting them out of
+   * the return is what makes that possible: each one closes over the state it
+   * needs, so neither layout has to thread forty props through a wrapper.
+   *
+   *   vifug     - library | slides | live rail, three columns across.
+   *   broadcast - Preview and Live across the top at full size, then the same
+   *               three panes as docks underneath.
+   */
+
+  /* LEFT: the song library, which belongs to Lyrics only. Every other mode
+     carries its own list (decks, media, plans, history), so leaving this
+     mounted showed songs you cannot use and stole 288px from the panel that
+     actually needed the room. */
+  const libraryPane = mode !== "lyrics" ? null : (
+    <aside
+      className={`flex w-full shrink-0 flex-col bg-[var(--v-surface)] ${
+        layout === "broadcast"
+          ? "min-h-0 flex-1"
+          : "max-h-[45vh] border-b border-[var(--v-border)] lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r"
+      }`}
+    >
+      <div className="border-b border-[var(--v-border)] p-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--v-text-faint)]" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search library…"
+            className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] py-2 pl-8 pr-3 text-sm outline-none focus:border-[var(--v-accent)]"
+          />
+        </div>
+        <div className="mt-2 flex gap-2">
+          <VButton variant="subtle" size="sm" className="flex-1" onClick={() => setEditorOpen("new")}>
+            <Plus className="h-4 w-4" /> New
+          </VButton>
+          <VButton variant="subtle" size="sm" className="flex-1" onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4" /> Import
+          </VButton>
+        </div>
+      </div>
+
+      <div className="v-scroll min-h-0 flex-1 overflow-y-auto p-2">
+        {songs.isLoading && (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-[var(--v-text-faint)]">
+            <Spinner /> Loading…
+          </div>
+        )}
+        {songs.isError && (
+          /**
+           * An unreachable API used to render as an empty library: no
+           * songs, no error, nothing to distinguish a broken deployment
+           * from a church that has not added any yet. Every other panel
+           * fails the same way, so this says it once, where the operator
+           * is already looking.
+           */
+          <div
+            role="alert"
+            className="m-2 rounded-md border border-[var(--v-live)]/40 bg-[var(--v-live-soft)] px-3 py-2.5 text-[12px] text-[var(--v-live)]"
+          >
+            <p className="font-semibold">Can&apos;t reach the server</p>
+            <p className="mt-1 text-[var(--v-text-dim)]">
+              {(songs.error as Error)?.message ?? "The request failed."} The library, media
+              and settings all need it, so they will stay empty until it responds.
+            </p>
+            <button
+              onClick={() => void songs.refetch()}
+              className="mt-2 rounded border border-[var(--v-border)] px-2 py-1 text-[11px] text-[var(--v-text)] hover:bg-[var(--v-surface-3)]"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+        {!songs.isError && songs.data?.length === 0 && (
+          <div className="px-3 py-8 text-center">
+            <p className="text-sm text-[var(--v-text-dim)]">
+              {search.trim() ? `No songs match "${search.trim()}".` : "Your library is empty."}
+            </p>
+            <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
+              {search.trim() ? "Try fewer words, or part of the first line." : "Use New to type a song in, or Import to bring songs over."}
+            </p>
+          </div>
+        )}
+        <ul className="space-y-0.5">
+          {songs.data?.map((s) => (
+            <SongRow
+              key={s.id}
+              song={s}
+              active={s.id === selectedId}
+              onSelect={() => setSelectedId(s.id)}
+              onDelete={() => deleteSong(s.id)}
+            />
+          ))}
+        </ul>
+      </div>
+      <div className="border-t border-[var(--v-border)] px-3 py-2 text-[12px] text-[var(--v-text-faint)]">
+        {songs.data?.length ?? 0} songs in library
+      </div>
+    </aside>
+  );
+
+  /* CENTRE: arrangement / slide grid, or whichever panel the active tab owns
+     - the tabs themselves live in the top bar. */
+  const centerPanel = (
+    <main
+      className={`flex min-w-0 flex-1 flex-col ${
+        layout === "broadcast" ? "min-h-0" : "min-h-[60vh] lg:min-h-0"
+      }`}
+    >
+      {mode === "history" ? (
+        <HistoryPanel entries={history} onRecall={recallHistory} onClear={() => setHistory(clearHistory())} />
+      ) : mode === "plans" ? (
+        <PlansPanel onCueSong={cueSong} onCueScripture={cueScripture} />
+      ) : mode === "bible" ? (
+        <BiblePanel
+          onSlidesChange={setBibleSlides}
+          onPreview={(i, id) => stage.preview(i, id)}
+          onSendLive={(i, id) => stage.goLive(i, id)}
+          previewId={stage.previewSlide?.slideId ?? null}
+          liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
+          langs={settings?.bibleLangs ?? {}}
+          cue={bibleCue}
+        />
+      ) : mode === "presentation" ? (
+        <PresentationsPanel
+          onSlidesChange={setPresentationSlides}
+          onPreview={(i) => stage.preview(i)}
+          onSendLive={(i) => stage.goLive(i)}
+          previewId={stage.previewSlide?.slideId ?? null}
+          liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
+          cue={presentationCue}
+          screens={settings?.screens ?? []}
+          onSendToScreen={(i, screenId) => stage.sendToScreen(screenId, i)}
+          onClearScreen={(screenId) => stage.setScreenStatus(screenId, "clear")}
+        />
+      ) : mode === "media" ? (
+        <MediaPanel
+          onSlidesChange={setMediaSlides}
+          onPreview={(i) => stage.preview(i)}
+          onSendLive={(i) => stage.goLive(i)}
+          previewId={stage.previewSlide?.slideId ?? null}
+          liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
+          pendingCapture={pendingCapture}
+          onCueCapture={setPendingCapture}
+          cue={mediaCue}
+          screens={settings?.screens ?? []}
+          onSendToScreen={(i, screenId) => stage.sendToScreen(screenId, i)}
+          onClearScreen={(screenId) => stage.setScreenStatus(screenId, "clear")}
+        />
+      ) : (
+        <>
+          {!selectedId && <EmptyState />}
+          {selectedId && full.isLoading && (
+            <div className="flex flex-1 items-center justify-center gap-2 text-[var(--v-text-faint)]">
+              <Spinner /> Loading song…
+            </div>
+          )}
+          {selectedId && full.data && (
+            <>
+              {/* The title keeps at least 10rem; below that the buttons drop to a
+                  second line instead of squeezing the song name to one letter. */}
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--v-border)] px-5 py-3">
+                <div className="min-w-0 flex-1 basis-40">
+                  <h1 className="truncate font-display text-lg font-semibold">{full.data.song.title}</h1>
+                  <p className="truncate text-xs text-[var(--v-text-faint)]">
+                    {full.data.song.authors ? (JSON.parse(full.data.song.authors) as string[]).join(", ") : "-"}
+                    {full.data.song.ccliNumber ? ` · CCLI ${full.data.song.ccliNumber}` : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <VButton variant="subtle" size="sm" onClick={() => setTranslateOpen(true)}>
+                    <Languages className="h-4 w-4" /> Translate
+                  </VButton>
+                  <VButton variant="subtle" size="sm" onClick={() => setEditorOpen("edit")}>
+                    <Pencil className="h-4 w-4" /> Edit
+                  </VButton>
+                </div>
+              </div>
+
+              <div className="v-scroll min-h-0 flex-1 overflow-y-auto p-5">
+                <SlideGrid
+                  slides={lyricStageSlides}
+                  stage={stage}
+                  order={order}
+                  onRepeat={repeatSection}
+                  onRemove={removeFromArrangement}
+                  onMove={moveInArrangement}
+                  song={full.data}
+                  rawSlides={ctrl.slides}
+                />
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </main>
+  );
+
+  /* The two screens an operator actually watches. In the vifug shape they sit
+     at the top of the right rail; in the broadcast shape they ARE the top of
+     the screen, which is the whole point of that shape. */
+  const stageScreens = (
+    <>
+    <div className="grid grid-cols-2 gap-3">
+      {/* PREVIEW (cue next) */}
+      <div className="flex flex-col">
+        <div className="flex h-7 items-center justify-between rounded-t-lg border-2 border-b-0 border-[var(--v-accent)]/50 bg-[var(--v-accent-soft)] px-2">
+          <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--v-accent)]">
+            <Eye className="h-3.5 w-3.5" /> Preview
+          </span>
+          <span className="text-[11px] text-[var(--v-text-faint)]">
+            {mode === "bible" ? "Scripture" : mode === "presentation" ? "Slides" : mode === "media" ? "Media" : "Lyrics"}
+          </span>
+        </div>
+        <div
+          className="relative aspect-video w-full overflow-hidden rounded-b-lg border-2 border-[var(--v-accent)]/50"
+          style={{ background: "#000" }}
+          onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
+        >
+          <CaptureStage state={previewState} scale />
+          {pendingCapture && (
+            /* Un-cueing lived only in Media -> Capture, three clicks
+               away from the pane the operator is staring at, so a
+               source picked by mistake read as stuck in Preview with
+               no way out. The control belongs on the thing it acts on. */
+            <button
+              onClick={() => setPendingCapture(null)}
+              title={`Remove ${pendingCapture.name} from preview`}
+              aria-label={`Remove ${pendingCapture.name} from preview`}
+              className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-md border border-white/25 bg-black/65 text-white backdrop-blur transition-colors hover:bg-black/85"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* LIVE (on air) */}
+      <div className="flex flex-col">
+        {/* The LIVE label used to be the faintest thing in this row,
+            which read as less important than the Preview beside it -
+            backwards, for the one column a congregation can see. It
+            now goes red with a lit dot while something is actually
+            on screen, and stays quiet when nothing is. */}
+        <div
+          className={`flex h-7 items-center justify-between rounded-t-lg border-2 border-b-0 px-2 ${
+            liveState.status === "live"
+              ? "border-[var(--v-live)] bg-[var(--v-live)] [&_span]:!text-white"
+              : "border-[var(--v-border)] bg-[var(--v-surface-3)]"
+          }`}
+        >
+          <span
+            className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${
+              liveState.status === "live" ? "text-[var(--v-live)]" : "text-[var(--v-text-faint)]"
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                liveState.status === "live"
+                  ? "bg-[var(--v-live)] shadow-[0_0_6px_var(--v-live)]"
+                  : "bg-[var(--v-border)]"
+              }`}
+            />
+            Live
+          </span>
+          {/* Only when it is NOT live.
+              The label to the left of this already goes red with a lit
+              dot the moment something is on air, and the thumbnail
+              below it pulses red too - so a pill that also read LIVE
+              was the same fact stated twice, side by side, in the one
+              place an operator glances at under pressure. Blank and
+              Idle are worth a pill because the label cannot say them:
+              grey "Live" does not distinguish "nothing cued" from
+              "deliberately blanked mid-sermon". */}
+          {liveState.status !== "live" && <StatusPill status={liveState.status} />}
+        </div>
+        <div
+          className={`relative aspect-video w-full overflow-hidden rounded-b-lg border-2 ${
+            liveState.status === "live"
+              ? "v-live-pulse border-[var(--v-live)]"
+              : "border-[var(--v-border)]"
+          }`}
+          style={{ background: "#000" }}
+          onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
+        >
+          {/*
+            * The live thumbnail is a real output, not a preview: with
+            * no projector window and no full-screen output open, it is
+            * the only thing playing, so a video cued with sound has to
+            * be heard from here. When one of those IS open, that
+            * surface has the sound and this one stays quiet - the same
+            * clip out of two windows a few frames apart is an echo.
+            */}
+          <CaptureStage
+            state={liveState}
+            scale
+            playAudio={!projector.open && !fullScreenOutput}
+          />
+          {/* The timer as the projector draws it. Without this the
+              operator ticks "Main screen" and nothing here changes,
+              which reads as a setting that did not take - and the only
+              way to check was to walk round to the projector. */}
+          <div style={{ position: "absolute", inset: 0, containerType: "size", pointerEvents: "none" }}>
+            <TimerOverlay timer={settings?.timer} screen="live" scale />
+          </div>
+          {liveState.capture && (
+            /* Same reasoning on air, where it matters more: Clear and
+               Blank deliberately leave a capture running - a slide
+               going live must not knock the camera off - so without
+               this the only stop button was inside the Media panel. */
+            <button
+              onClick={() => liveBus().setCapture(null)}
+              title={`Stop ${liveState.capture.name}`}
+              aria-label={`Stop ${liveState.capture.name}`}
+              className="absolute right-1.5 top-1.5 flex h-7 items-center gap-1 rounded-md border border-white/25 bg-black/65 px-2 text-[11px] font-semibold text-white backdrop-blur transition-colors hover:bg-black/85"
+            >
+              <Square className="h-3 w-3" /> Stop
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* One line, not a panel: an operator needs to know at a glance
+        whether anything is reaching the projector, but no longer has
+        to do anything to put it there. */}
+    <ProjectorStatusLine desktop={desktop} projector={projector} />
+    </>
+  );
+
+  /* Fixed-position popup, so it does not care which layout is on screen. */
+  const screenContextMenu = (
+    <>
+    {screenMenu && (
+      <ScreenContextMenu
+        x={screenMenu.x}
+        y={screenMenu.y}
+        projectorOpen={projector.open}
+        displays={projector.displays}
+        activeDisplayId={projector.targetDisplay?.id ?? null}
+        streamUrl={streamUrl}
+        obsConfigured={!!settings?.stream}
+        extraScreens={settings?.screens ?? []}
+        canSendPreview={stage.previewIndex >= 0}
+        canFindScreens={projector.multiScreenCapable && projector.displays.length === 0}
+        onFindScreens={() => {
+          // The permission prompt only appears in response to a click,
+          // so this is the click. It does not also open the window:
+          // that would be a second step after an await, which the
+          // popup blocker refuses. The monitors appear in this menu by
+          // name instead, and clicking one opens from that click.
+          void projector.findScreens();
+        }}
+        onSendToScreen={(id) => {
+          stage.sendToScreen(id);
+          setScreenMenu(null);
+        }}
+        onSendToDisplay={(id) => {
+          // Sending from here also remembers the screen, so the next
+          // service opens on the one that was actually used.
+          patchSettings({
+            output: {
+              resolution: settings?.output.resolution ?? "auto",
+              autoProjector: settings?.output.autoProjector ?? true,
+              displayId: id,
+            },
+          });
+          projector.openProjector(id);
+          setScreenMenu(null);
+        }}
+        pipSupported={pip.supported}
+        pipActive={pip.active}
+        onTogglePip={() => {
+          // Straight from the click: the API needs a user gesture.
+          void pip.toggle();
+          setScreenMenu(null);
+        }}
+        onFullScreenHere={() => {
+          // Requested straight from the click, because the Fullscreen
+          // API only grants it during a user gesture - opening the
+          // overlay first and asking afterwards is refused.
+          setFullScreenOutput(true);
+          void document.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
+          setScreenMenu(null);
+        }}
+        onCloseProjection={() => { projector.closeProjector(); setScreenMenu(null); }}
+        onSendToObs={() => {
+          setSettingsSection("streaming");
+          setSettingsOpen(true);
+          setScreenMenu(null);
+        }}
+        onCopyStreamUrl={() => {
+          navigator.clipboard?.writeText(streamUrl);
+          setScreenMenu(null);
+        }}
+        liveFit={liveMedia ? liveState.theme.background?.fit ?? null : null}
+        onSetFit={(fit) => {
+          if (liveMedia) updateMedia.mutate({ id: liveMedia.id, fit });
+          setScreenMenu(null);
+        }}
+        onBlank={() => { stage.blank(); setScreenMenu(null); }}
+        onClear={() => { stage.clear(); setScreenMenu(null); }}
+        onClose={() => setScreenMenu(null)}
+      />
+    )}
+    </>
+  );
+
+  /* Send, stream, record: the three things done TO whatever is on the two
+     screens, so they stay inside the screens' own padded block rather than
+     becoming another section with another border above it. */
+  const stageActions = (
+    <>
+    <VButton
+      variant="ok"
+      size="lg"
+      className="mt-3 w-full text-base font-bold tracking-wide"
+      onClick={sendLive}
+      // A cued capture is something to send, so requiring a slide as
+      // well left the camera stranded in Preview with the only button
+      // that could move it greyed out - "it will not leave the preview
+      // screen", exactly.
+      disabled={!stage.previewSlide && !pendingCapture}
+    >
+      <SendHorizontal className="h-5 w-5" /> GO LIVE <kbd className="ml-1 rounded-md bg-black/20 px-1.5 text-[12px] font-medium">↵</kbd>
+    </VButton>
+    <p className="mt-1.5 text-center text-[12px] text-[var(--v-text-faint)]">
+      {liveState.status === "live"
+        ? `Live: ${liveState.sectionLabel} · ${liveState.slideCount ? `slide ${liveState.slideIndex + 1}/${liveState.slideCount}` : liveState.songTitle}`
+        : liveState.status === "blank"
+          ? "Live: blanked (black)"
+          : liveState.capture
+            ? // A capture is orthogonal to slide status, so status stays
+              // "idle" while the camera is on air. Reporting "nothing
+              // live" to an operator whose congregation is watching a
+              // video feed is the one thing this line must never do.
+              `Live: ${liveState.capture.name}`
+            : "Nothing live yet"}
+    </p>
+
+    {/* Stream the live output to YouTube, Facebook, Twitch or any RTMP
+        server. Same surface the recorder captures, so the two can run
+        together. With nothing set up yet, the button is the way in. */}
+    <div className="mt-2 border-t border-[var(--v-border)] pt-2">
+      <VButton
+        variant={streamer.status === "live" ? "danger" : "subtle"}
+        className="w-full"
+        disabled={streamer.status === "starting"}
+        onClick={() => {
+          if (streamer.status === "live") return streamer.stop();
+          if (!streamer.supported || streamTargets === 0) {
+            setSettingsSection("streaming");
+            setSettingsOpen(true);
+            return;
+          }
+          void streamer.start();
+        }}
+      >
+        {streamer.status === "live" ? (
+          <>
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" /> End stream
+            <span className="tabular-nums">
+              {String(Math.floor(streamer.seconds / 60)).padStart(2, "0")}:
+              {String(streamer.seconds % 60).padStart(2, "0")}
+            </span>
+          </>
+        ) : streamer.status === "starting" ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" /> Connecting…
+          </>
+        ) : (
+          <>
+            <Radio className="h-4 w-4" /> {streamTargets > 0 ? "Go live to " + (streamTargets === 1 ? "1 platform" : `${streamTargets} platforms`) : "Stream to YouTube, Facebook…"}
+          </>
+        )}
+      </VButton>
+      {streamer.error && <p className="mt-1 text-[12px] text-amber-500">{streamer.error}</p>}
+    </div>
+
+    {/* Record the live output. Sits directly under the live preview
+        because that is the thing being recorded - and what it saves
+        is that exact surface, not the operator's screen. */}
+    <div className="mt-2 border-t border-[var(--v-border)] pt-2">
+      <VButton
+        variant={recorder.status === "recording" ? "danger" : "subtle"}
+        className="w-full"
+        onClick={recorder.toggle}
+        disabled={recorder.status === "saving"}
+      >
+        {recorder.status === "recording" ? (
+          <>
+            <Square className="h-4 w-4" /> Stop recording
+            <span className="ml-1 tabular-nums">
+              {String(Math.floor(recorder.seconds / 60)).padStart(2, "0")}:
+              {String(recorder.seconds % 60).padStart(2, "0")}
+            </span>
+          </>
+        ) : recorder.status === "saving" ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+          </>
+        ) : (
+          <>
+            <Circle className="h-4 w-4 fill-current" /> Record
+            {shortcutMap.record?.[0] && (
+              <kbd className="ml-1 rounded-md bg-black/20 px-1.5 text-[12px] font-medium">
+                {formatCombo(shortcutMap.record[0])}
+              </kbd>
+            )}
+          </>
+        )}
+      </VButton>
+      {recorder.error && <p className="mt-1 text-[12px] text-amber-500">{recorder.error}</p>}
+      {recorder.savedTo && (
+        <p className="mt-1 text-[12px] text-[var(--v-ok)]">
+          Saved {recorder.savedTo.name} to {recorder.savedTo.folder}
+        </p>
+      )}
+    </div>
+    </>
+  );
+
+  /* The sections under the screens: step through the slides, blank, clear,
+     then the panels that feed what goes out. Each draws its own border and
+     padding, so these are full-bleed siblings in both shapes rather than
+     something nested inside the screens' block. */
+  const controlPanels = (
+    <>
+    {/* Transport */}
+    <div className="border-b border-[var(--v-border)] p-3">
+      <div className="grid grid-cols-2 gap-2">
+        <VButton variant="subtle" onClick={advancePrev} disabled={!stage.slides.length}>
+          <ChevronLeft className="h-4 w-4" /> Prev
+        </VButton>
+        <VButton variant="subtle" onClick={advanceNext} disabled={!stage.slides.length}>
+          Next <ChevronRight className="h-4 w-4" />
+        </VButton>
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <VButton size="lg" variant={liveState.status === "blank" ? "primary" : "subtle"} onClick={stage.blank}>
+          <Square className="h-5 w-5" /> Blank
+        </VButton>
+        <VButton size="lg" variant="danger" onClick={stage.clear}>
+          <Ban className="h-5 w-5" /> Clear
+        </VButton>
+      </div>
+      <p className="mt-2 text-center text-[12px] text-[var(--v-text-faint)]">
+        {advanceGoesLive
+          ? "← → go live · Space blank · Esc clear"
+          : "← → cue · Enter send live · Space blank · Esc clear"}
+      </p>
+    </div>
+
+    {/* The projector panel used to sit here. The output now opens by
+        itself the moment a second screen is connected, so a permanent
+        "Open projector" button was a control for something that no
+        longer needs asking. What remains lives where it is actually
+        wanted: a status line under the live preview, the right-click
+        menu on either preview, the View menu, and the shortcut. */}
+
+    {/* AI auto-follow */}
+    <AutoFollowPanel
+      enabled={autoFollowOn}
+      status={autoFollow.status}
+      heard={autoFollow.heard}
+      events={autoFollow.events}
+      live={ctrl.status === "live"}
+      onToggle={(v) => patchSettings({ autoFollow: v })}
+      // No Bible outside church: the saved switches are left alone (so going
+      // back to Church finds them as they were) but nothing here acts on or
+      // shows them.
+      scriptureOn={followScripture}
+      quotesOn={followScripture && (settings?.autoFollowQuotes ?? false)}
+      referenceLive={settings?.autoFollowScriptureLive ?? false}
+      quoteLive={settings?.autoFollowQuoteLive ?? false}
+      paraphraseLive={settings?.autoFollowParaphraseLive ?? false}
+      onPolicy={(kind, live) =>
+        patchSettings(
+          kind === "reference"
+            ? { autoFollowScriptureLive: live }
+            : kind === "quoted"
+              ? { autoFollowQuoteLive: live }
+              : { autoFollowParaphraseLive: live },
+        )
+      }
+      onPresent={(e) => {
+        if (e.query) cueScriptureRef.current(e.query, e.versionId, true);
+      }}
+    />
+
+    {/* Stream / OBS browser source */}
+    <TimerPanel settings={settings} patchSettings={patchSettings} />
+    <StreamPanel settings={settings} patchSettings={patchSettings} />
+    </>
+  );
+
   return (
     <div className="flex h-screen flex-col overflow-x-hidden bg-[var(--v-bg)] text-[var(--v-text)]">
       <TopBar
@@ -1239,576 +1839,98 @@ export default function OperatorPage() {
         plansLabel={appMode.plansLabel}
       />
 
-      {/*
-       * Three columns side by side is the desktop shape and the wrong one on a
-       * phone: the library and the live rail alone are wider than the screen,
-       * so the middle panel - and the top bar's own tabs - were pushed off the
-       * right edge with no way to reach them. Below `lg` the same three panes
-       * stack and this row scrolls; from `lg` up nothing about the desktop
-       * layout changes.
-       */}
-      <div className="v-scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-y-hidden">
-        {/* LEFT: the song library, which belongs to Lyrics only. Every other
-            mode carries its own list (decks, media, plans, history), so
-            leaving this mounted showed songs you cannot use and stole 288px
-            from the panel that actually needed the room. */}
-        {mode === "lyrics" && (
-        <aside className="flex max-h-[45vh] w-full shrink-0 flex-col border-b border-[var(--v-border)] bg-[var(--v-surface)] lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r">
-          <div className="border-b border-[var(--v-border)] p-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--v-text-faint)]" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search library…"
-                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] py-2 pl-8 pr-3 text-sm outline-none focus:border-[var(--v-accent)]"
-              />
-            </div>
-            <div className="mt-2 flex gap-2">
-              <VButton variant="subtle" size="sm" className="flex-1" onClick={() => setEditorOpen("new")}>
-                <Plus className="h-4 w-4" /> New
-              </VButton>
-              <VButton variant="subtle" size="sm" className="flex-1" onClick={() => setImportOpen(true)}>
-                <Upload className="h-4 w-4" /> Import
-              </VButton>
-            </div>
-          </div>
-
-          <div className="v-scroll min-h-0 flex-1 overflow-y-auto p-2">
-            {songs.isLoading && (
-              <div className="flex items-center justify-center gap-2 py-8 text-sm text-[var(--v-text-faint)]">
-                <Spinner /> Loading…
-              </div>
-            )}
-            {songs.isError && (
-              /**
-               * An unreachable API used to render as an empty library: no
-               * songs, no error, nothing to distinguish a broken deployment
-               * from a church that has not added any yet. Every other panel
-               * fails the same way, so this says it once, where the operator
-               * is already looking.
-               */
-              <div
-                role="alert"
-                className="m-2 rounded-md border border-[var(--v-live)]/40 bg-[var(--v-live-soft)] px-3 py-2.5 text-[12px] text-[var(--v-live)]"
-              >
-                <p className="font-semibold">Can&apos;t reach the server</p>
-                <p className="mt-1 text-[var(--v-text-dim)]">
-                  {(songs.error as Error)?.message ?? "The request failed."} The library, media
-                  and settings all need it, so they will stay empty until it responds.
-                </p>
-                <button
-                  onClick={() => void songs.refetch()}
-                  className="mt-2 rounded border border-[var(--v-border)] px-2 py-1 text-[11px] text-[var(--v-text)] hover:bg-[var(--v-surface-3)]"
-                >
-                  Try again
-                </button>
-              </div>
-            )}
-            {!songs.isError && songs.data?.length === 0 && (
-              <div className="px-3 py-8 text-center">
-                <p className="text-sm text-[var(--v-text-dim)]">
-                  {search.trim() ? `No songs match "${search.trim()}".` : "Your library is empty."}
-                </p>
-                <p className="mt-1 text-[12px] text-[var(--v-text-faint)]">
-                  {search.trim() ? "Try fewer words, or part of the first line." : "Use New to type a song in, or Import to bring songs over."}
-                </p>
-              </div>
-            )}
-            <ul className="space-y-0.5">
-              {songs.data?.map((s) => (
-                <SongRow
-                  key={s.id}
-                  song={s}
-                  active={s.id === selectedId}
-                  onSelect={() => setSelectedId(s.id)}
-                  onDelete={() => deleteSong(s.id)}
-                />
-              ))}
-            </ul>
-          </div>
-          <div className="border-t border-[var(--v-border)] px-3 py-2 text-[12px] text-[var(--v-text-faint)]">
-            {songs.data?.length ?? 0} songs in library
-          </div>
-        </aside>
-        )}
-
-        {/* CENTER: arrangement / slide grid OR Bible browser - mode tabs now live in the top bar */}
-        <main className="flex min-h-[60vh] min-w-0 flex-1 flex-col lg:min-h-0">
-          {mode === "history" ? (
-            <HistoryPanel entries={history} onRecall={recallHistory} onClear={() => setHistory(clearHistory())} />
-          ) : mode === "plans" ? (
-            <PlansPanel onCueSong={cueSong} onCueScripture={cueScripture} />
-          ) : mode === "bible" ? (
-            <BiblePanel
-              onSlidesChange={setBibleSlides}
-              onPreview={(i, id) => stage.preview(i, id)}
-              onSendLive={(i, id) => stage.goLive(i, id)}
-              previewId={stage.previewSlide?.slideId ?? null}
-              liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
-              langs={settings?.bibleLangs ?? {}}
-              cue={bibleCue}
-            />
-          ) : mode === "presentation" ? (
-            <PresentationsPanel
-              onSlidesChange={setPresentationSlides}
-              onPreview={(i) => stage.preview(i)}
-              onSendLive={(i) => stage.goLive(i)}
-              previewId={stage.previewSlide?.slideId ?? null}
-              liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
-              cue={presentationCue}
-              screens={settings?.screens ?? []}
-              onSendToScreen={(i, screenId) => stage.sendToScreen(screenId, i)}
-              onClearScreen={(screenId) => stage.setScreenStatus(screenId, "clear")}
-            />
-          ) : mode === "media" ? (
-            <MediaPanel
-              onSlidesChange={setMediaSlides}
-              onPreview={(i) => stage.preview(i)}
-              onSendLive={(i) => stage.goLive(i)}
-              previewId={stage.previewSlide?.slideId ?? null}
-              liveId={stage.status === "live" && stage.liveIndex >= 0 ? stage.slides[stage.liveIndex]?.slideId ?? null : null}
-              pendingCapture={pendingCapture}
-              onCueCapture={setPendingCapture}
-              cue={mediaCue}
-              screens={settings?.screens ?? []}
-              onSendToScreen={(i, screenId) => stage.sendToScreen(screenId, i)}
-              onClearScreen={(screenId) => stage.setScreenStatus(screenId, "clear")}
-            />
-          ) : (
-            <>
-              {!selectedId && <EmptyState />}
-              {selectedId && full.isLoading && (
-                <div className="flex flex-1 items-center justify-center gap-2 text-[var(--v-text-faint)]">
-                  <Spinner /> Loading song…
-                </div>
-              )}
-              {selectedId && full.data && (
-                <>
-                  {/* The title keeps at least 10rem; below that the buttons drop to a
-                      second line instead of squeezing the song name to one letter. */}
-                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--v-border)] px-5 py-3">
-                    <div className="min-w-0 flex-1 basis-40">
-                      <h1 className="truncate font-display text-lg font-semibold">{full.data.song.title}</h1>
-                      <p className="truncate text-xs text-[var(--v-text-faint)]">
-                        {full.data.song.authors ? (JSON.parse(full.data.song.authors) as string[]).join(", ") : "-"}
-                        {full.data.song.ccliNumber ? ` · CCLI ${full.data.song.ccliNumber}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <VButton variant="subtle" size="sm" onClick={() => setTranslateOpen(true)}>
-                        <Languages className="h-4 w-4" /> Translate
-                      </VButton>
-                      <VButton variant="subtle" size="sm" onClick={() => setEditorOpen("edit")}>
-                        <Pencil className="h-4 w-4" /> Edit
-                      </VButton>
-                    </div>
-                  </div>
-
-                  <div className="v-scroll min-h-0 flex-1 overflow-y-auto p-5">
-                    <SlideGrid
-                      slides={lyricStageSlides}
-                      stage={stage}
-                      order={order}
-                      onRepeat={repeatSection}
-                      onRemove={removeFromArrangement}
-                      onMove={moveInArrangement}
-                      song={full.data}
-                      rawSlides={ctrl.slides}
-                    />
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </main>
-
-        {/* RIGHT: Preview → Live stage + transport */}
-        {/* Preview and live are the two things an operator actually watches,
-            so the rail is sized for them rather than for the panels beneath.
-            It widens on roomier displays instead of taking a fixed share,
-            which would squeeze the library on a 1366-wide laptop. */}
-        <aside className="v-scroll flex w-full shrink-0 flex-col border-t border-[var(--v-border)] bg-[var(--v-surface)] lg:w-[32rem] lg:overflow-y-auto lg:border-t-0 lg:border-l 2xl:w-[40rem]">
-          {/* PREVIEW | LIVE - side by side (ProPresenter-style) */}
-          <div className="border-b border-[var(--v-border)] p-3">
-            <div className="grid grid-cols-2 gap-3">
-              {/* PREVIEW (cue next) */}
-              <div className="flex flex-col">
-                <div className="flex h-7 items-center justify-between rounded-t-lg border-2 border-b-0 border-[var(--v-accent)]/50 bg-[var(--v-accent-soft)] px-2">
-                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--v-accent)]">
-                    <Eye className="h-3.5 w-3.5" /> Preview
-                  </span>
-                  <span className="text-[11px] text-[var(--v-text-faint)]">
-                    {mode === "bible" ? "Scripture" : mode === "presentation" ? "Slides" : mode === "media" ? "Media" : "Lyrics"}
-                  </span>
-                </div>
-                <div
-                  className="relative aspect-video w-full overflow-hidden rounded-b-lg border-2 border-[var(--v-accent)]/50"
-                  style={{ background: "#000" }}
-                  onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
-                >
-                  <CaptureStage state={previewState} scale />
-                  {pendingCapture && (
-                    /* Un-cueing lived only in Media -> Capture, three clicks
-                       away from the pane the operator is staring at, so a
-                       source picked by mistake read as stuck in Preview with
-                       no way out. The control belongs on the thing it acts on. */
-                    <button
-                      onClick={() => setPendingCapture(null)}
-                      title={`Remove ${pendingCapture.name} from preview`}
-                      aria-label={`Remove ${pendingCapture.name} from preview`}
-                      className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-md border border-white/25 bg-black/65 text-white backdrop-blur transition-colors hover:bg-black/85"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* LIVE (on air) */}
-              <div className="flex flex-col">
-                {/* The LIVE label used to be the faintest thing in this row,
-                    which read as less important than the Preview beside it -
-                    backwards, for the one column a congregation can see. It
-                    now goes red with a lit dot while something is actually
-                    on screen, and stays quiet when nothing is. */}
-                <div
-                  className={`flex h-7 items-center justify-between rounded-t-lg border-2 border-b-0 px-2 ${
-                    liveState.status === "live"
-                      ? "border-[var(--v-live)] bg-[var(--v-live)] [&_span]:!text-white"
-                      : "border-[var(--v-border)] bg-[var(--v-surface-3)]"
-                  }`}
-                >
-                  <span
-                    className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${
-                      liveState.status === "live" ? "text-[var(--v-live)]" : "text-[var(--v-text-faint)]"
-                    }`}
-                  >
-                    <span
-                      className={`h-2 w-2 rounded-full ${
-                        liveState.status === "live"
-                          ? "bg-[var(--v-live)] shadow-[0_0_6px_var(--v-live)]"
-                          : "bg-[var(--v-border)]"
-                      }`}
-                    />
-                    Live
-                  </span>
-                  {/* Only when it is NOT live.
-                      The label to the left of this already goes red with a lit
-                      dot the moment something is on air, and the thumbnail
-                      below it pulses red too - so a pill that also read LIVE
-                      was the same fact stated twice, side by side, in the one
-                      place an operator glances at under pressure. Blank and
-                      Idle are worth a pill because the label cannot say them:
-                      grey "Live" does not distinguish "nothing cued" from
-                      "deliberately blanked mid-sermon". */}
-                  {liveState.status !== "live" && <StatusPill status={liveState.status} />}
-                </div>
-                <div
-                  className={`relative aspect-video w-full overflow-hidden rounded-b-lg border-2 ${
-                    liveState.status === "live"
-                      ? "v-live-pulse border-[var(--v-live)]"
-                      : "border-[var(--v-border)]"
-                  }`}
-                  style={{ background: "#000" }}
-                  onContextMenu={(e) => { e.preventDefault(); setScreenMenu({ x: e.clientX, y: e.clientY }); }}
-                >
-                  {/*
-                    * The live thumbnail is a real output, not a preview: with
-                    * no projector window and no full-screen output open, it is
-                    * the only thing playing, so a video cued with sound has to
-                    * be heard from here. When one of those IS open, that
-                    * surface has the sound and this one stays quiet - the same
-                    * clip out of two windows a few frames apart is an echo.
-                    */}
-                  <CaptureStage
-                    state={liveState}
-                    scale
-                    playAudio={!projector.open && !fullScreenOutput}
-                  />
-                  {/* The timer as the projector draws it. Without this the
-                      operator ticks "Main screen" and nothing here changes,
-                      which reads as a setting that did not take - and the only
-                      way to check was to walk round to the projector. */}
-                  <div style={{ position: "absolute", inset: 0, containerType: "size", pointerEvents: "none" }}>
-                    <TimerOverlay timer={settings?.timer} screen="live" scale />
-                  </div>
-                  {liveState.capture && (
-                    /* Same reasoning on air, where it matters more: Clear and
-                       Blank deliberately leave a capture running - a slide
-                       going live must not knock the camera off - so without
-                       this the only stop button was inside the Media panel. */
-                    <button
-                      onClick={() => liveBus().setCapture(null)}
-                      title={`Stop ${liveState.capture.name}`}
-                      aria-label={`Stop ${liveState.capture.name}`}
-                      className="absolute right-1.5 top-1.5 flex h-7 items-center gap-1 rounded-md border border-white/25 bg-black/65 px-2 text-[11px] font-semibold text-white backdrop-blur transition-colors hover:bg-black/85"
-                    >
-                      <Square className="h-3 w-3" /> Stop
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* One line, not a panel: an operator needs to know at a glance
-                whether anything is reaching the projector, but no longer has
-                to do anything to put it there. */}
-            <ProjectorStatusLine desktop={desktop} projector={projector} />
-
-            {screenMenu && (
-              <ScreenContextMenu
-                x={screenMenu.x}
-                y={screenMenu.y}
-                projectorOpen={projector.open}
-                displays={projector.displays}
-                activeDisplayId={projector.targetDisplay?.id ?? null}
-                streamUrl={streamUrl}
-                obsConfigured={!!settings?.stream}
-                extraScreens={settings?.screens ?? []}
-                canSendPreview={stage.previewIndex >= 0}
-                canFindScreens={projector.multiScreenCapable && projector.displays.length === 0}
-                onFindScreens={() => {
-                  // The permission prompt only appears in response to a click,
-                  // so this is the click. It does not also open the window:
-                  // that would be a second step after an await, which the
-                  // popup blocker refuses. The monitors appear in this menu by
-                  // name instead, and clicking one opens from that click.
-                  void projector.findScreens();
-                }}
-                onSendToScreen={(id) => {
-                  stage.sendToScreen(id);
-                  setScreenMenu(null);
-                }}
-                onSendToDisplay={(id) => {
-                  // Sending from here also remembers the screen, so the next
-                  // service opens on the one that was actually used.
-                  patchSettings({
-                    output: {
-                      resolution: settings?.output.resolution ?? "auto",
-                      autoProjector: settings?.output.autoProjector ?? true,
-                      displayId: id,
-                    },
-                  });
-                  projector.openProjector(id);
-                  setScreenMenu(null);
-                }}
-                pipSupported={pip.supported}
-                pipActive={pip.active}
-                onTogglePip={() => {
-                  // Straight from the click: the API needs a user gesture.
-                  void pip.toggle();
-                  setScreenMenu(null);
-                }}
-                onFullScreenHere={() => {
-                  // Requested straight from the click, because the Fullscreen
-                  // API only grants it during a user gesture - opening the
-                  // overlay first and asking afterwards is refused.
-                  setFullScreenOutput(true);
-                  void document.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
-                  setScreenMenu(null);
-                }}
-                onCloseProjection={() => { projector.closeProjector(); setScreenMenu(null); }}
-                onSendToObs={() => {
-                  setSettingsSection("streaming");
-                  setSettingsOpen(true);
-                  setScreenMenu(null);
-                }}
-                onCopyStreamUrl={() => {
-                  navigator.clipboard?.writeText(streamUrl);
-                  setScreenMenu(null);
-                }}
-                liveFit={liveMedia ? liveState.theme.background?.fit ?? null : null}
-                onSetFit={(fit) => {
-                  if (liveMedia) updateMedia.mutate({ id: liveMedia.id, fit });
-                  setScreenMenu(null);
-                }}
-                onBlank={() => { stage.blank(); setScreenMenu(null); }}
-                onClear={() => { stage.clear(); setScreenMenu(null); }}
-                onClose={() => setScreenMenu(null)}
-              />
-            )}
-
-            <VButton
-              variant="ok"
-              size="lg"
-              className="mt-3 w-full text-base font-bold tracking-wide"
-              onClick={sendLive}
-              // A cued capture is something to send, so requiring a slide as
-              // well left the camera stranded in Preview with the only button
-              // that could move it greyed out - "it will not leave the preview
-              // screen", exactly.
-              disabled={!stage.previewSlide && !pendingCapture}
+      {layout === "broadcast" ? (
+        /*
+         * Broadcast shape. Preview and Live go across the top at the size
+         * someone who works at a streaming desk expects them, and everything
+         * that feeds them becomes a dock underneath: the list, the slides,
+         * the controls.
+         *
+         * The top half is capped by viewport HEIGHT rather than given a
+         * width, because the screens keep a 16:9 ratio - left to fill a
+         * 1900px row they would be 534px tall each and push every dock off
+         * the bottom of the screen. The max-width below is that height budget
+         * converted back into the width that produces it, so the pair grows
+         * with the window up to the point where the docks start to suffer.
+         */
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="shrink-0 border-b border-[var(--v-border)] bg-[var(--v-surface)] px-3 py-2.5">
+            <div
+              className="mx-auto w-full"
+              style={{ maxWidth: "calc((40vh - 2.75rem) * 32 / 9 + 0.75rem)" }}
             >
-              <SendHorizontal className="h-5 w-5" /> GO LIVE <kbd className="ml-1 rounded-md bg-black/20 px-1.5 text-[12px] font-medium">↵</kbd>
-            </VButton>
-            <p className="mt-1.5 text-center text-[12px] text-[var(--v-text-faint)]">
-              {liveState.status === "live"
-                ? `Live: ${liveState.sectionLabel} · ${liveState.slideCount ? `slide ${liveState.slideIndex + 1}/${liveState.slideCount}` : liveState.songTitle}`
-                : liveState.status === "blank"
-                  ? "Live: blanked (black)"
-                  : liveState.capture
-                    ? // A capture is orthogonal to slide status, so status stays
-                      // "idle" while the camera is on air. Reporting "nothing
-                      // live" to an operator whose congregation is watching a
-                      // video feed is the one thing this line must never do.
-                      `Live: ${liveState.capture.name}`
-                    : "Nothing live yet"}
-            </p>
-
-            {/* Stream the live output to YouTube, Facebook, Twitch or any RTMP
-                server. Same surface the recorder captures, so the two can run
-                together. With nothing set up yet, the button is the way in. */}
-            <div className="mt-2 border-t border-[var(--v-border)] pt-2">
-              <VButton
-                variant={streamer.status === "live" ? "danger" : "subtle"}
-                className="w-full"
-                disabled={streamer.status === "starting"}
-                onClick={() => {
-                  if (streamer.status === "live") return streamer.stop();
-                  if (!streamer.supported || streamTargets === 0) {
-                    setSettingsSection("streaming");
-                    setSettingsOpen(true);
-                    return;
-                  }
-                  void streamer.start();
-                }}
-              >
-                {streamer.status === "live" ? (
-                  <>
-                    <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" /> End stream
-                    <span className="tabular-nums">
-                      {String(Math.floor(streamer.seconds / 60)).padStart(2, "0")}:
-                      {String(streamer.seconds % 60).padStart(2, "0")}
-                    </span>
-                  </>
-                ) : streamer.status === "starting" ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Connecting…
-                  </>
-                ) : (
-                  <>
-                    <Radio className="h-4 w-4" /> {streamTargets > 0 ? "Go live to " + (streamTargets === 1 ? "1 platform" : `${streamTargets} platforms`) : "Stream to YouTube, Facebook…"}
-                  </>
-                )}
-              </VButton>
-              {streamer.error && <p className="mt-1 text-[12px] text-amber-500">{streamer.error}</p>}
-            </div>
-
-            {/* Record the live output. Sits directly under the live preview
-                because that is the thing being recorded - and what it saves
-                is that exact surface, not the operator's screen. */}
-            <div className="mt-2 border-t border-[var(--v-border)] pt-2">
-              <VButton
-                variant={recorder.status === "recording" ? "danger" : "subtle"}
-                className="w-full"
-                onClick={recorder.toggle}
-                disabled={recorder.status === "saving"}
-              >
-                {recorder.status === "recording" ? (
-                  <>
-                    <Square className="h-4 w-4" /> Stop recording
-                    <span className="ml-1 tabular-nums">
-                      {String(Math.floor(recorder.seconds / 60)).padStart(2, "0")}:
-                      {String(recorder.seconds % 60).padStart(2, "0")}
-                    </span>
-                  </>
-                ) : recorder.status === "saving" ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Saving…
-                  </>
-                ) : (
-                  <>
-                    <Circle className="h-4 w-4 fill-current" /> Record
-                    {shortcutMap.record?.[0] && (
-                      <kbd className="ml-1 rounded-md bg-black/20 px-1.5 text-[12px] font-medium">
-                        {formatCombo(shortcutMap.record[0])}
-                      </kbd>
-                    )}
-                  </>
-                )}
-              </VButton>
-              {recorder.error && <p className="mt-1 text-[12px] text-amber-500">{recorder.error}</p>}
-              {recorder.savedTo && (
-                <p className="mt-1 text-[12px] text-[var(--v-ok)]">
-                  Saved {recorder.savedTo.name} to {recorder.savedTo.folder}
-                </p>
-              )}
+              {stageScreens}
             </div>
           </div>
 
-          {/* Transport */}
-          <div className="border-b border-[var(--v-border)] p-3">
-            <div className="grid grid-cols-2 gap-2">
-              <VButton variant="subtle" onClick={advancePrev} disabled={!stage.slides.length}>
-                <ChevronLeft className="h-4 w-4" /> Prev
-              </VButton>
-              <VButton variant="subtle" onClick={advanceNext} disabled={!stage.slides.length}>
-                Next <ChevronRight className="h-4 w-4" />
-              </VButton>
+          {/* The docks. Same stacking rule as the other shape: three columns
+              is a desktop idea, so below `lg` they stack and this row
+              scrolls rather than running off the side of a phone. */}
+          <div className="v-scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-y-hidden">
+            {libraryPane && (
+              <div className="flex max-h-[38vh] w-full shrink-0 flex-col border-b border-[var(--v-border)] lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r">
+                <DockTitle>Library</DockTitle>
+                {libraryPane}
+              </div>
+            )}
+
+            <div className="flex min-h-[40vh] min-w-0 flex-1 flex-col lg:min-h-0">
+              <DockTitle>
+                {mode === "bible"
+                  ? "Scripture"
+                  : mode === "presentation"
+                    ? "Presentations"
+                    : mode === "media"
+                      ? "Media"
+                      : mode === "plans"
+                        ? "Plans"
+                        : mode === "history"
+                          ? "History"
+                          : "Slides"}
+              </DockTitle>
+              {centerPanel}
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <VButton size="lg" variant={liveState.status === "blank" ? "primary" : "subtle"} onClick={stage.blank}>
-                <Square className="h-5 w-5" /> Blank
-              </VButton>
-              <VButton size="lg" variant="danger" onClick={stage.clear}>
-                <Ban className="h-5 w-5" /> Clear
-              </VButton>
-            </div>
-            <p className="mt-2 text-center text-[12px] text-[var(--v-text-faint)]">
-              {advanceGoesLive
-                ? "← → go live · Space blank · Esc clear"
-                : "← → cue · Enter send live · Space blank · Esc clear"}
-            </p>
+
+            <aside className="flex w-full shrink-0 flex-col border-t border-[var(--v-border)] bg-[var(--v-surface)] lg:w-[21rem] lg:border-t-0 lg:border-l 2xl:w-[24rem]">
+              <DockTitle>Controls</DockTitle>
+              <div className="v-scroll min-h-0 flex-1 overflow-y-auto">
+                <div className="border-b border-[var(--v-border)] p-3">{stageActions}</div>
+                {controlPanels}
+              </div>
+            </aside>
           </div>
+        </div>
+      ) : (
+        /*
+         * Vifug shape. Three columns side by side is the desktop form and the
+         * wrong one on a phone: the library and the live rail alone are wider
+         * than the screen, so the middle panel - and the top bar's own tabs -
+         * were pushed off the right edge with no way to reach them. Below
+         * `lg` the same three panes stack and this row scrolls; from `lg` up
+         * nothing about the desktop layout changes.
+         */
+        <div className="v-scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-y-hidden">
+          {libraryPane}
 
-          {/* The projector panel used to sit here. The output now opens by
-              itself the moment a second screen is connected, so a permanent
-              "Open projector" button was a control for something that no
-              longer needs asking. What remains lives where it is actually
-              wanted: a status line under the live preview, the right-click
-              menu on either preview, the View menu, and the shortcut. */}
+          {centerPanel}
 
-          {/* AI auto-follow */}
-          <AutoFollowPanel
-            enabled={autoFollowOn}
-            status={autoFollow.status}
-            heard={autoFollow.heard}
-            events={autoFollow.events}
-            live={ctrl.status === "live"}
-            onToggle={(v) => patchSettings({ autoFollow: v })}
-            // No Bible outside church: the saved switches are left alone (so going
-            // back to Church finds them as they were) but nothing here acts on or
-            // shows them.
-            scriptureOn={followScripture}
-            quotesOn={followScripture && (settings?.autoFollowQuotes ?? false)}
-            referenceLive={settings?.autoFollowScriptureLive ?? false}
-            quoteLive={settings?.autoFollowQuoteLive ?? false}
-            paraphraseLive={settings?.autoFollowParaphraseLive ?? false}
-            onPolicy={(kind, live) =>
-              patchSettings(
-                kind === "reference"
-                  ? { autoFollowScriptureLive: live }
-                  : kind === "quoted"
-                    ? { autoFollowQuoteLive: live }
-                    : { autoFollowParaphraseLive: live },
-              )
-            }
-            onPresent={(e) => {
-              if (e.query) cueScriptureRef.current(e.query, e.versionId, true);
-            }}
-          />
+          {/* RIGHT: Preview -> Live stage + transport.
+              Preview and live are the two things an operator actually
+              watches, so the rail is sized for them rather than for the
+              panels beneath. It widens on roomier displays instead of taking
+              a fixed share, which would squeeze the library on a 1366-wide
+              laptop. */}
+          <aside className="v-scroll flex w-full shrink-0 flex-col border-t border-[var(--v-border)] bg-[var(--v-surface)] lg:w-[32rem] lg:overflow-y-auto lg:border-t-0 lg:border-l 2xl:w-[40rem]">
+            <div className="border-b border-[var(--v-border)] p-3">
+              {stageScreens}
+              {stageActions}
+            </div>
+            {controlPanels}
+          </aside>
+        </div>
+      )}
 
-          {/* Stream / OBS browser source */}
-          <TimerPanel settings={settings} patchSettings={patchSettings} />
-          <StreamPanel settings={settings} patchSettings={patchSettings} />
-
-          {/* Stage display and phone remote live in Settings > Streaming &
-              output now: they are set up once for a room, not touched during
-              a service, and the rail is worth more as space for the preview
-              and live screens. */}
-        </aside>
-      </div>
+      {screenContextMenu}
 
       <StatusBar
         liveState={liveState}
@@ -2725,6 +2847,24 @@ function SlideGrid({
  * it is on a screen and which - plus a way back if it was closed on purpose,
  * since otherwise nothing short of unplugging the cable would bring it back.
  */
+/**
+ * The thin label above each dock in the broadcast shape.
+ *
+ * A streaming desk names every dock - Scenes, Sources, Audio Mixer, Controls
+ * - and that naming is most of what makes such a layout readable at a glance:
+ * three panes
+ * of dense content in a row need to say which is which. It is deliberately
+ * quiet, 28px of small caps, so it orients without competing with the content
+ * underneath it.
+ */
+function DockTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-7 shrink-0 items-center border-b border-[var(--v-border)] bg-[var(--v-surface-2)] px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--v-text-faint)]">
+      {children}
+    </div>
+  );
+}
+
 function ProjectorStatusLine({
   desktop,
   projector,
