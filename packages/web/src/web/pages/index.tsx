@@ -3046,7 +3046,7 @@ function AutoFollowPanel({
       )}
       {status === "unavailable" && (
         <p className="mt-1 text-[11px] text-[var(--v-text-faint)]">
-          Set <code>DEEPGRAM_API_KEY</code> in the server env to enable live speech-follow.
+          Add your Deepgram key in Settings &rsaquo; AI auto-follow, or switch to the on-this-machine engine there.
         </p>
       )}
 

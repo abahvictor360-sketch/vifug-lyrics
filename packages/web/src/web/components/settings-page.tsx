@@ -4125,6 +4125,50 @@ function AboutSection({ desktop }: { desktop: ReturnType<typeof useDesktop> }) {
         </p>
       </Group>
 
+      {/* Support. The same six ways the website offers, so someone who wants
+          to help does not have to go looking for the page that says how. */}
+      <Group title="Support Vifug" icon={Heart}>
+        <p className="text-[14px] leading-relaxed text-[var(--v-text-dim)]">
+          Vifug is free, and it stays free because people who use it help keep it going. If it has saved your team
+          time, any of these makes a difference:
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {[
+            ["Give once", "A gift of any size keeps development going and the app free for every church."],
+            ["Give monthly", "Regular support lets us plan ahead."],
+            ["Sponsor as a church or business", "Put your name behind a feature, or fund one your church has asked for."],
+            ["Give your time or skills", "Translate Vifug, test new builds, add songs or Bible versions in your language."],
+            ["Spread the word", "A message from one media team to another carries further than any advert."],
+            ["Something else", "Equipment to test on, a venue to try Vifug in, a partnership - tell us."],
+          ].map(([title, body]) => (
+            <div key={title} className="rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-3)] p-3">
+              <p className="text-[13px] font-semibold">{title}</p>
+              <p className="mt-0.5 text-[12px] text-[var(--v-text-faint)]">{body}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <a
+            href="https://vifug.com/#support"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-b from-[var(--v-accent)] to-[var(--v-accent-2)] px-3.5 text-sm font-semibold text-black"
+          >
+            <Heart className="h-4 w-4" /> Support Vifug
+          </a>
+          <a
+            href="mailto:contact@vifug.com?subject=Supporting%20Vifug"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--v-border)] px-3.5 text-sm hover:bg-[var(--v-surface-3)]"
+          >
+            <Mail className="h-4 w-4" /> contact@vifug.com
+          </a>
+        </div>
+        <p className="mt-2 text-[12px] text-[var(--v-text-faint)]">
+          The button opens the support form on vifug.com, where you choose how you would like to help and we get back
+          to you. Nothing is charged from inside the app.
+        </p>
+      </Group>
+
       {/* Credits */}
       <Group title="Credits and licence" icon={Heart}>
         <p className="flex flex-wrap items-center gap-1.5 text-[14px] text-[var(--v-text-dim)]">
