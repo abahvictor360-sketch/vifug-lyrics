@@ -7,6 +7,8 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
+- DOCS: **four new guide videos**, bringing the set to fifteen, all narrated. **Add Bible versions** (44s, in the Bible chapter) - the 31 English versions are always there, other languages are a switch, and your own translation is an import. **Add a presentation** (56s, in the Media chapter) - build a deck slide by slide, or import a PowerPoint or PDF. **Media, plans and history** (75s, in the Service plans chapter) - the three tabs that organise a service, and what each one is for. **Set up Vifug and send it to the screen** (47s, in the projection chapter) - a tour of Settings, the status line under the live picture, and the right-click output menu.
+
 - DOCS: **every guide video now has a spoken voice-over.** All eleven - your first song, the screen layouts, a Bible verse, adding a song, changing the background, adding sound, showing a camera, the phone remote, live streaming, AI auto-follow and the theme designer - are narrated end to end by one voice, so you can follow along while watching the screen instead of reading captions and watching at the same time. The on-screen captions are still there, and the videos still play silently if your sound is off. Each narration starts after the title card and describes the step that is on screen as it happens.
 
 - DOCS: **the last six old screenshots are retaken.** The announcement ticker and logo panels in Settings, the Timer panel, the live screen with logo, countdown and announcement together, and the two camera pictures (the "How it will look on air" preview and the Video shape & size panel) now show the current app.
