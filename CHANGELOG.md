@@ -7,6 +7,7 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
+- DOCS: **the guide's screenshots are current.** Seventeen pictures in the guide still showed the app as it looked in October - before the status bar, the slide label bars, the title bars on Preview and Live, the new Library button and the moved mixer. They were taken again from the current app: the main screen, Bible, Settings, text margin, Media tab, media library, camera picker and capture, full-screen live view, output menu, audio mixer, sound output, stage display, phone view and the phone remote with its PIN screen. A stray development helper file that had been committed by mistake was also removed.
 - DOCS: **a video for the screen layouts.** "Choose how the operator screen is laid out" (64 seconds) sits at the top of the guide's layout chapter: it shows the Vifug layout, switches to Broadcast in Settings → Layout, puts a slide live with Preview and Live across the top, and switches back. It has no sound, and a caption for each step.
 
 ## [1.36.0] — 2026-11-18
