@@ -598,13 +598,29 @@ let recordingWin: BrowserWindow | null = null;
  */
 let recordingSurfaceUsers = 0;
 
-ipcMain.handle("recorder:surface", async (_e, size?: { width?: number; height?: number }) => {
+/**
+ * Just past the right-hand edge of EVERY display, not only the primary one.
+ * With a projector plugged in to the right of the main screen, "past the
+ * primary" is on the projector - where an off-screen surface is neither off
+ * screen nor safe from showing through.
+ */
+function beyondAllDisplays(): { x: number; y: number } {
+  const all = screen.getAllDisplays();
+  const right = Math.max(...all.map((d) => d.bounds.x + d.bounds.width));
+  const top = Math.min(...all.map((d) => d.bounds.y));
+  return { x: right + 40, y: top };
+}
+
+ipcMain.handle("recorder:surface", async (_e, size?: { width?: number; height?: number }, forceOwn?: boolean) => {
   // Streaming above 1080p asks for a bigger surface, so the picture is drawn
   // at that size rather than stretched up to it. Recording asks for nothing
   // and gets 1080p, as before.
   const wantW = Math.min(7680, Math.max(1280, Math.round(size?.width ?? 1920)));
   const wantH = Math.min(4320, Math.max(720, Math.round(size?.height ?? 1080)));
-  if (mainProjector()) {
+  // Normally the projector itself is what gets captured. If the renderer found
+  // it could not be (forceOwn), the recording gets a surface of its own showing
+  // the same live picture, the way it does when no projector is open at all.
+  if (mainProjector() && !forceOwn) {
     return { title: "Vifug Projector", temporary: false };
   }
   recordingSurfaceUsers++;
@@ -615,7 +631,6 @@ ipcMain.handle("recorder:surface", async (_e, size?: { width?: number; height?: 
     return { title: RECORDING_WINDOW_TITLE, temporary: true };
   }
 
-  const primary = screen.getPrimaryDisplay();
   recordingWin = new BrowserWindow({
     width: wantW,
     height: wantH,
@@ -625,8 +640,7 @@ ipcMain.handle("recorder:surface", async (_e, size?: { width?: number; height?: 
     // Just off the right edge: still inside the desktop's coordinate space, so
     // the compositor keeps drawing it and desktopCapturer can see it, but not
     // over anything the operator is using.
-    x: primary.bounds.x + primary.bounds.width + 40,
-    y: primary.bounds.y,
+    ...beyondAllDisplays(),
     frame: false,
     show: true,
     skipTaskbar: true,
@@ -678,13 +692,11 @@ ipcMain.handle("broadcast:surface", async (_e, size?: { width?: number; height?:
     broadcastWin.setSize(wantW, wantH);
     return { title: BROADCAST_WINDOW_TITLE, temporary: true };
   }
-  const primary = screen.getPrimaryDisplay();
   broadcastWin = new BrowserWindow({
     width: wantW,
     height: wantH,
     enableLargerThanScreen: true,
-    x: primary.bounds.x + primary.bounds.width + 40,
-    y: primary.bounds.y,
+    ...beyondAllDisplays(),
     frame: false,
     show: true,
     skipTaskbar: true,

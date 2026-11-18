@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [1.36.0] — 2026-11-18
+
+- FIX: **"Could not find the live output to record" when a projector is on.** Recording and streaming find the projector by looking for its window in the system's window list, and on some computers that list does not include a fullscreen window on another monitor, so the search came up empty even though the projector was showing. They now match the window title more loosely, and if it still cannot be found they capture a second copy of the same live picture, made for the purpose, exactly as they already did when no projector was open. That copy is now placed past the edge of every screen rather than only the main one, so with a projector to the right of the main screen it no longer lands on the projector.
+
 ## [1.35.0] — 2026-11-17
 
 - DOCS: **the guide now covers the two operator screen layouts** (new chapter 4), and the landing page shows both with a screenshot of each - the same song live, once in the Vifug layout and once in the Broadcast one. The site's structured data, its FAQ and llms.txt mention the Broadcast layout too, so search engines and AI assistants describing Vifug have it to work from. The hero screenshot was also retaken on the current version.

@@ -50,7 +50,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Screen / window capture - returns pickable sources. The renderer that
   // shows the feed acquires the stream itself from the chosen id.
   listCaptureSources: () => ipcRenderer.invoke("capture:sources"),
-  recorderSurface: (size?: { width?: number; height?: number }) => ipcRenderer.invoke("recorder:surface", size),
+  recorderSurface: (size?: { width?: number; height?: number }, forceOwn?: boolean) =>
+    ipcRenderer.invoke("recorder:surface", size, forceOwn),
   recorderRelease: () => ipcRenderer.invoke("recorder:release"),
   broadcastSurface: (size?: { width?: number; height?: number }) => ipcRenderer.invoke("broadcast:surface", size),
   broadcastRelease: () => ipcRenderer.invoke("broadcast:release"),

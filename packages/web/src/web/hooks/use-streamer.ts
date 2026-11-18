@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDesktopAPI } from "../lib/desktop";
+import { findOutputSource } from "../lib/output-source";
 import {
   STREAM_QUALITIES,
   destinationUrl,
@@ -122,8 +123,13 @@ export function useStreamer(micDeviceId?: string | null, onlineLowerThird = fals
           ? await desktop.recorderSurface(size)
           : { title: PROJECTOR_WINDOW_TITLE, temporary: false };
       temporarySurfaceRef.current = surface.temporary;
-      const sources = await desktop.listCaptureSources();
-      const target = sources.find((s) => s.kind === "window" && s.name === surface.title);
+      // The broadcast picture has its own window; the room's picture is looked
+      // for, and if it cannot be found a surface of its own is made for it.
+      const found = useBroadcast ? null : await findOutputSource(desktop, surface, size);
+      const target = useBroadcast
+        ? (await desktop.listCaptureSources()).find((x) => x.kind === "window" && (x.name === surface.title || x.name.includes(surface.title)))
+        : found?.source;
+      if (found) temporarySurfaceRef.current = found.surface.temporary;
       if (!target) throw new Error("Could not find the live output to stream.");
 
       const video = await navigator.mediaDevices.getUserMedia({

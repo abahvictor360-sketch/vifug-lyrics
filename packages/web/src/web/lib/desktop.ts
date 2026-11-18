@@ -74,7 +74,11 @@ export interface ElectronAPI {
    * no projector is open. `temporary` says whether it was created for this
    * recording and should be released afterwards.
    */
-  recorderSurface?: (size?: { width?: number; height?: number }) => Promise<{ title: string; temporary: boolean }>;
+  recorderSurface?: (
+    size?: { width?: number; height?: number },
+    /** Ignore the projector and make a surface of its own showing the same picture. */
+    forceOwn?: boolean,
+  ) => Promise<{ title: string; temporary: boolean }>;
   /** Tear down a surface created by recorderSurface(). */
   recorderRelease?: () => Promise<{ ok: boolean }>;
   /** A surface showing the online audience's picture (/broadcast), for the stream. */
