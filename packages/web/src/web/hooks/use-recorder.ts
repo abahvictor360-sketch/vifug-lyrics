@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDesktopAPI } from "../lib/desktop";
+import { findOutputSource } from "../lib/output-source";
 
 /**
  * Records the live output to a video file.
@@ -73,8 +74,12 @@ export function useRecorder() {
         : { title: PROJECTOR_WINDOW_TITLE, temporary: false };
       temporarySurfaceRef.current = surface.temporary;
 
-      const sources = await desktop.listCaptureSources();
-      const target = sources.find((s) => s.kind === "window" && s.name === surface.title);
+      const found = await findOutputSource(desktop, surface);
+      const target = found?.source;
+      if (found) {
+        // The fallback may have made a surface of its own, which must be released.
+        temporarySurfaceRef.current = found.surface.temporary;
+      }
       if (!target) {
         setStatus("error");
         setError("Could not find the live output to record.");
