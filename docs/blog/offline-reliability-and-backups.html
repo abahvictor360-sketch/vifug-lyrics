@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J4HYT937CV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-J4HYT937CV');
+</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Planning for no-internet Sundays: offline and backups | Vifug</title>
+<meta name="description" content="Design your church media setup to survive a dead router or a dead laptop: offline-first habits, backups, a spare machine, and restoring in Vifug." />
+<link rel="canonical" href="https://vifug.com/blog/offline-reliability-and-backups" />
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+<meta name="theme-color" content="#080a0f" />
+<meta name="author" content="Victor Abah" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Planning for no-internet Sundays: offline and backups | Vifug" />
+<meta property="og:description" content="Design your church media setup to survive a dead router or a dead laptop: offline-first habits, backups, a spare machine, and restoring in Vifug." />
+<meta property="og:url" content="https://vifug.com/blog/offline-reliability-and-backups" />
+<meta property="og:image" content="https://vifug.com/blog/og/offline-reliability-and-backups.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Planning for no-internet Sundays: offline and backups" />
+<meta property="og:site_name" content="Vifug" />
+<meta property="og:locale" content="en_US" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Planning for no-internet Sundays: offline and backups | Vifug" />
+<meta name="twitter:description" content="Design your church media setup to survive a dead router or a dead laptop: offline-first habits, backups, a spare machine, and restoring in Vifug." />
+<meta name="twitter:image" content="https://vifug.com/blog/og/offline-reliability-and-backups.png" />
+<meta name="twitter:image:alt" content="Planning for no-internet Sundays: offline and backups" />
+<link rel="alternate" type="application/rss+xml" title="Vifug blog" href="https://vifug.com/blog/feed.xml" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23a3e635'/%3E%3Cg fill='none' stroke='%23080a0f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' transform='translate(3.4 3.4) scale(0.72)'%3E%3Cpath d='M9 18V5l12-2v13'/%3E%3Cpath d='m9 9 12-2'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Ccircle cx='18' cy='16' r='3'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Planning for no-internet Sundays: offline and backups", "description": "Design your church media setup to survive a dead router or a dead laptop: offline-first habits, backups, a spare machine, and restoring in Vifug.", "datePublished": "2026-10-10", "dateModified": "2026-10-10", "author": {"@type": "Person", "name": "Victor Abah", "url": "https://vifug.com"}, "publisher": {"@type": "Organization", "name": "Vifug", "url": "https://vifug.com", "logo": {"@type": "ImageObject", "url": "https://vifug.com/og-image.png"}}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://vifug.com/blog/offline-reliability-and-backups"}, "image": "https://vifug.com/blog/og/offline-reliability-and-backups.png", "keywords": "offline, backups, reliability, spare laptop, disaster recovery", "wordCount": 1439, "articleSection": "Operations", "inLanguage": "en", "isPartOf": {"@type": "Blog", "name": "The Vifug blog", "@id": "https://vifug.com/blog/"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Vifug", "item": "https://vifug.com/"}, {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://vifug.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Planning for no-internet Sundays: offline and backups", "item": "https://vifug.com/blog/offline-reliability-and-backups"}]}</script>
+<meta property="article:published_time" content="2026-10-10" />
+<meta property="article:modified_time" content="2026-10-10" />
+<meta property="article:author" content="Victor Abah" />
+<meta property="article:section" content="Operations" />
+<meta property="article:tag" content="offline" />
+<meta property="article:tag" content="backups" />
+<meta property="article:tag" content="reliability" />
+<meta property="article:tag" content="spare laptop" />
+<meta property="article:tag" content="disaster recovery" />
+</head>
+<body>
+<header>
+  <div class="nav">
+    <a class="brand" href="/">
+      <span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><path d="m9 9 12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+      Vifug
+    </a>
+    <div class="nav-links">
+      <a class="hide-sm" href="/">Home</a>
+      <a href="/guide.html">Guide</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+      <a class="btn btn-live" href="/download.html">Download free</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <article class="article">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Vifug</a> / <a href="/blog/">Blog</a> / Operations</nav>
+    <span class="eyebrow">Operations</span>
+    <h1>Planning for no-internet Sundays: offline and backups</h1>
+    <p class="lede">Design your church media setup to survive a dead router or a dead laptop: offline-first habits, backups, a spare machine, and restoring in Vifug.</p>
+    <div class="meta"><span>By Victor Abah</span><time datetime="2026-10-10">October 10, 2026</time><span>7 min read</span></div>
+    <nav class="toc" aria-label="In this article"><strong>In this article</strong><ol><li><a href="#list-what-can-fail">List what can fail</a></li><li><a href="#design-for-offline-from-the-start">Design for offline from the start</a></li><li><a href="#what-vifug-does-offline">What Vifug does offline</a></li><li><a href="#back-up-on-a-schedule">Back up on a schedule</a></li><li><a href="#backing-up-in-vifug">Backing up in Vifug</a></li><li><a href="#keep-a-spare-machine">Keep a spare machine</a></li><li><a href="#restoring-calmly">Restoring calmly</a></li><li><a href="#a-simple-weekly-routine">A simple weekly routine</a></li><li><a href="#where-to-start">Where to start</a></li></ol></nav>
+    <div class="prose">
+<p>Ten minutes before the service the router drops, and the song you meant to find online will not load. Or the laptop will not boot at all, and the only copy of your themes and custom songs is on its disk. These are ordinary Sunday problems, and they are much less frightening if you decided in advance what happens when they occur.</p>
+<p>This post is about designing the media desk so it does not depend on things you cannot control: the internet, a single computer, or one person's memory. None of it needs a big budget.</p>
+
+<h2 id="list-what-can-fail">List what can fail</h2>
+<p>Start with a plain list. For each thing, write what you would do if it vanished at 9:55 on a Sunday.</p>
+<table>
+<thead><tr><th>What fails</th><th>Likely cause</th><th>What you need ready</th></tr></thead>
+<tbody>
+<tr><td>Internet</td><td>Router, provider outage, shared Wi-Fi overloaded</td><td>Everything for the service stored on the computer</td></tr>
+<tr><td>Wi-Fi inside the building</td><td>Access point, too many phones</td><td>A wired connection or an alternative for any phone or tablet control</td></tr>
+<tr><td>The laptop</td><td>Update, hardware fault, drink spilled</td><td>A spare machine with the same software and a recent backup</td></tr>
+<tr><td>The projector or cable</td><td>Lamp, loose plug</td><td>A spare cable; a TV as a fallback</td></tr>
+<tr><td>The one person who knows how</td><td>Illness, travel</td><td>A written checklist and at least one trained backup</td></tr>
+<tr><td>The files</td><td>Disk failure, accidental deletion</td><td>A dated backup on a separate drive</td></tr>
+</tbody>
+</table>
+<p>The point is not to be paranoid. It is to know, ahead of time, which of these you have already handled and which you are leaving to luck.</p>
+
+<h2 id="design-for-offline-from-the-start">Design for offline from the start</h2>
+<p>The simplest reliability rule is that the live service should never need the internet. That means everything you will show on Sunday is already on the machine by Saturday night.</p>
+<ul>
+<li><strong>Songs and lyrics</strong> in a local library, not fetched on the day.</li>
+<li><strong>Bible text</strong> installed locally, not read from a website.</li>
+<li><strong>Presentations</strong> saved to the computer, not opened from a cloud link.</li>
+<li><strong>Videos and backgrounds</strong> copied to the local media folder. Streaming a clip from the internet during a service is a bet.</li>
+<li><strong>Fonts</strong> installed or loaded into the software, so a missing font does not change the look of your slides.</li>
+<li><strong>Software updates</strong> done during the week, not on Sunday morning. Never let a laptop decide to restart for an update during a service.</li>
+</ul>
+<p>Treat internet-dependent extras as optional. Live streaming, a song search, or a cloud-based speech tool are useful when they work, but the service should still run if they do not.</p>
+
+<h2 id="what-vifug-does-offline">What Vifug does offline</h2>
+<p>Vifug is designed this way. According to its documentation, everything needed to run a service works without internet. The song library of 325 songs and the offline Bible are already installed, and the desktop app is offline-first by design. The things that use the internet are optional: live streaming, Deepgram speech recognition (an on-device engine works offline), song search, phone camera pairing and update checks. Live streaming, recording, NDI and library import need the desktop app.</p>
+<p>Two practical notes follow from that. First, if your church's line is unreliable, run the desktop app rather than the browser version. The guide says a hosted deployment needs a connection, and suggests using the hosted one for rehearsal and planning only. Second, the phone remote and stage display travel over your local network, not over the internet, so they depend on the building's Wi-Fi rather than on the outside world. Both devices have to be on the same Wi-Fi, which is described in the <a href="/guide.html#remote">remote chapter</a>. If the Wi-Fi itself is the weak point, test the remote before the service and keep a plan that works from the desk alone.</p>
+
+<h2 id="back-up-on-a-schedule">Back up on a schedule</h2>
+<p>A backup is a copy you can actually restore, kept somewhere other than the computer it came from. Three rules cover most of it:</p>
+<ol>
+<li><strong>Keep more than one copy.</strong> One on the computer is not a backup. One on a USB stick or external drive is. One more in a synced folder or at a team member's home is better.</li>
+<li><strong>Do it on a schedule.</strong> After every significant change, and at least weekly. Tie it to something you already do, like the Monday review.</li>
+<li><strong>Test a restore.</strong> A backup you have never restored is a hope, not a plan. Do a restore on a spare machine at least once.</li>
+</ol>
+<p>Label drives with the date. If you rotate between two sticks, you always have the previous one if the latest turns out to be damaged.</p>
+
+<h2 id="backing-up-in-vifug">Backing up in Vifug</h2>
+<p>In the desktop app, backup, restore and import all live in Settings, then General, then Backup. The <a href="/guide.html#library-move">back up, restore and move chapter</a> describes three buttons:</p>
+<ul>
+<li><strong>Back up now</strong> copies the whole library and your media files into a dated folder. Pick a USB stick, an external drive or a synced folder, and Vifug creates a folder named Vifug-Backup followed by the date and time. Inside are a file called vifug.db, which holds every song, presentation, theme, font, plan and setting, and a Media folder with pictures, videos and sound. Keep the two together.</li>
+<li><strong>Import from another Vifug</strong> adds another library to this one. Nothing already there is changed or replaced, and nothing is added twice. Importing the same folder again adds nothing, so it is safe to repeat.</li>
+<li><strong>Restore from backup</strong> replaces this library with the backup's. It asks you to confirm, adds the backup's media beside what is there, and restarts the app. Anything added since that backup was made is lost, so back up first if you are unsure.</li>
+</ul>
+<p>The guide recommends backing up before anything risky and regularly. A good habit is to press Back up now at the end of each week's final rehearsal and again after a big change such as importing songs or building new themes.</p>
+<p>There is no Backup group in the browser version, since a browser cannot read folders on your computer. This is another reason to run the desktop app for the main service machine.</p>
+
+<h2 id="keep-a-spare-machine">Keep a spare machine</h2>
+<p>A second computer that can run the service is the best single reliability investment you can make. It does not need to be new or fast. An older laptop that can drive a projector is enough.</p>
+<ul>
+<li>Install the same software and keep it updated.</li>
+<li>Copy your latest backup onto it and restore or import it.</li>
+<li>Keep it charged and stored with its own power lead and a spare video cable.</li>
+<li>Test it once a month: plug it in, project a song, check the stage display and remote.</li>
+<li>Keep a spare video adapter with it, since the adapter is often what goes missing.</li>
+</ul>
+<p>Moving to the spare in an emergency is then a matter of connecting the cable and loading the plan. Note what is not carried across when you import: according to the guide, settings, service plans and live history are not imported, since they describe the other computer's services. So if you need the same plan, rebuild it or use Restore, which brings settings and plans with it, and keep a printed run sheet as a safety net.</p>
+
+<h2 id="restoring-calmly">Restoring calmly</h2>
+<p>If the main machine dies, work through this in order:</p>
+<ol>
+<li>Switch to the spare laptop. Connect the projector.</li>
+<li>Plug in the backup drive and open Settings, then General, then Backup.</li>
+<li>For an identical copy, choose Restore from backup and pick the Vifug-Backup folder itself. For a spare that already has its own settings, choose Import from another Vifug to add the songs, media and themes.</li>
+<li>Check the first few songs and the first presentation on screen.</li>
+<li>Carry on the service from the printed run sheet.</li>
+</ol>
+<p>If Vifug says there is no vifug.db, you probably picked the USB stick or the Media folder rather than the Vifug-Backup folder. If a picture shows as missing, the backup was likely copied without its Media folder. Copy the whole folder and try again.</p>
+
+<h2 id="a-simple-weekly-routine">A simple weekly routine</h2>
+<ul>
+<li>Monday: Back up now, to a labelled drive. Put the drive in a different place from the laptop.</li>
+<li>Midweek: install updates on both machines and restart them.</li>
+<li>Saturday: check the spare still boots, load the plan on both if you can, and make sure every video and picture is local.</li>
+<li>Sunday: arrive early, and run the pre-service checklist.</li>
+</ul>
+
+<h2 id="where-to-start">Where to start</h2>
+<p>If you do one thing this week, make a backup and prove you can restore it. <a href="/download.html">Vifug is free to download</a>, so you can install it on a spare machine at no cost and practise the import there. The <a href="/guide.html#library-move">library chapter</a> walks through every button. If you also want a written plan for the desk, see <a href="/blog/service-planning-and-run-sheets">service planning and run sheets</a>.</p>
+    </div>
+    <aside class="cta">
+      <h2>Try Vifug free</h2>
+      <p>Vifug is free presentation and live-production software for churches, events and studios: lyrics, Scripture, slides, cameras and streaming, with a Preview and Live workflow. No watermark, and it runs a service without internet.</p>
+      <div class="row"><a class="btn btn-live" href="/download.html">Download Vifug</a><a class="btn" href="/guide.html">Read the guide</a></div>
+    </aside>
+  </article>
+  <div class="wrap related">
+    <h2>Keep reading</h2>
+    <div class="grid">
+      <a class="post-card" href="/blog/preview-and-live-workflow" data-cat="Operations">
+        <span class="tag">Operations</span>
+        <h2>The Preview and Live workflow: stop on-screen mistakes</h2>
+        <p>Why separating Preview from Live prevents wrong slides, typos and surprise camera shots, with a step-by-step way to run it and the mistakes it catches.</p>
+        <span class="meta"><time datetime="2026-10-06">October 6, 2026</time><span>6 min read</span></span>
+      </a>
+      <a class="post-card" href="/blog/service-planning-and-run-sheets" data-cat="Operations">
+        <span class="tag">Operations</span>
+        <h2>Service planning and run sheets for the media desk</h2>
+        <p>How to build a service run sheet with the right order, cues, timers and announcements, and how to turn it into a plan, timer and ticker in Vifug.</p>
+        <span class="meta"><time datetime="2026-10-03">October 3, 2026</time><span>7 min read</span></span>
+      </a>
+      <a class="post-card" href="/blog/setting-up-a-projector-and-second-screen" data-cat="Operations">
+        <span class="tag">Operations</span>
+        <h2>Setting up a projector and second screen for church</h2>
+        <p>How to cable a projector, choose mirror or extend, match resolution and aspect ratio, test brightness, and assign the output screen in Vifug.</p>
+        <span class="meta"><time datetime="2026-09-12">September 12, 2026</time><span>7 min read</span></span>
+      </a>
+    </div>
+  </div>
+</main>
+<footer>
+  <div class="wrap foot">
+    <span>© <span id="year"></span> Vifug · Free worship presentation software · Made by Victor Abah · All rights reserved</span>
+    <nav class="foot-links">
+      <a href="/">Home</a>
+      <a href="/download.html">Download</a>
+      <a href="/guide.html">Guide</a>
+      <a href="/blog/">Blog</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</footer>
+<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

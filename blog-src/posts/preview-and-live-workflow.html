@@ -1,0 +1,85 @@
+title: The Preview and Live workflow: stop on-screen mistakes
+slug: preview-and-live-workflow
+description: Why separating Preview from Live prevents wrong slides, typos and surprise camera shots, with a step-by-step way to run it and the mistakes it catches.
+category: Operations
+date: 2026-10-06
+tags: preview, live, church media, operator, workflow
+---
+<p>Every media volunteer remembers their first one. The wrong song comes up in the middle of prayer. A verse appears with a typo in the reference. A video starts with its sound blaring, or the camera shows the ceiling for six awkward seconds. Everyone in the room saw it, because there was nothing between your click and their eyes.</p>
+<p>The fix is a habit more than a feature: put things in a private place first, look at them, then send them out on purpose. This post explains that two-stage workflow, shows how to run it in practice, and lists the specific mistakes it catches.</p>
+
+<h2>Two stages, one output</h2>
+<p>The idea is simple. There are two places a slide can be:</p>
+<ul>
+<li><strong>Preview</strong> is private. Only the operator sees it. You can load anything here, fix it, check it, and discard it, and the audience never knows.</li>
+<li><strong>Live</strong> is public. Whatever is here is on the projector, the stream and every other output.</li>
+</ul>
+<p>Moving something from Preview to Live is a separate, deliberate action. Clicking a slide does not send it. Browsing does not send it. Only the send does.</p>
+<p>A slide tool in presenter mode usually works the other way round: advancing means showing. The audience is always looking at your latest click. The two-stage approach adds one step, but that step is the safety net.</p>
+
+<h2>How it runs in Vifug</h2>
+<p>Vifug is built around this workflow, and the guide calls it the core idea of the app. Here is the rhythm, using the keys from the <a href="/guide.html#workflow">Preview to Live chapter</a>.</p>
+<ol>
+<li><strong>Cue.</strong> Click a slide, or press the arrow keys, to load it into Preview.</li>
+<li><strong>Check.</strong> Read it. Does the text fit? Is it the right verse? Is it the song you meant?</li>
+<li><strong>Send.</strong> Press Enter or click GO LIVE. Preview becomes Live on every screen at once: projector, stage display, the OBS overlay and NDI receivers.</li>
+<li><strong>Move on.</strong> The arrow keys (or Page Down and Page Up from a presenter clicker) step through the next slides in Preview.</li>
+</ol>
+<p>Two controls handle the moments between:</p>
+<ul>
+<li><strong>Space</strong> blanks the output to black without losing your place. Use it for prayer or a transition.</li>
+<li><strong>Esc</strong> clears the live slide completely.</li>
+</ul>
+<p>Shortcuts switch themselves off while you are typing in a text box, a dropdown or a dialog, so typing a song title will not trigger a Blank or Clear.</p>
+<p>The Bible tab follows the same pattern. Type a reference, press Enter to cue it, and the verse sits in Preview. Pressing Enter again on a reference you have already previewed sends it live. The up and down arrows then walk to the next and previous verse.</p>
+
+<h2>The mistakes this catches</h2>
+<h3>The wrong item</h3>
+<p>Two songs have similar titles. You clicked the other one. In Preview you see the wrong lyrics, change your selection, and nobody else is the wiser.</p>
+<h3>Typos and wrong references</h3>
+<p>You typed "Romans 8:2" and the preacher said 8:28. The Preview shows verse 2, and you fix it before it reaches the screen.</p>
+<h3>Text that does not fit</h3>
+<p>A long line overflows the box, or a verse breaks across two slides in an ugly place. Preview shows exactly what the room will see. Fix the lines per slide or the font size before sending.</p>
+<h3>The camera that points at the ceiling</h3>
+<p>This one is straight from the guide: choosing a capture source cues it to Preview and does not broadcast it. You see the framing, the lighting and whether the words sit clear of faces, while the room still sees the previous slide. The guide notes that pointing a capture card at the room and finding out live that it was aimed at the ceiling is exactly what Preview exists to prevent.</p>
+<h3>The unplanned video with sound</h3>
+<p>A clip you thought was silent is not. Cue it, check its sound setting, and only then send it. In Vifug, sound is a property of each video, off for backdrops and on for a testimony, which you set before it ever goes live.</p>
+<h3>The wrong screen</h3>
+<p>When you have more than one output, it is easy to reach for the wrong one. In Vifug, GO LIVE always means the main output only. A second screen, such as a stage countdown or a foyer display, is sent to separately, by right-clicking the Preview thumbnail and choosing it under Send preview to. Nothing you send to another screen changes what the main screen is showing.</p>
+
+<h2>Habits that make it work</h2>
+<p>The software gives you the safety net. These habits keep you in it.</p>
+<ol>
+<li><strong>Never send without looking.</strong> A glance at Preview takes a second. Make it automatic.</li>
+<li><strong>Stay one slide ahead.</strong> While a verse is live, step to the next in Preview so it is ready. When the leader moves, you press Enter.</li>
+<li><strong>Use Blank, not Esc, for pauses.</strong> Blank keeps your place so you can return to exactly where you were.</li>
+<li><strong>Have a default screen.</strong> If something goes wrong, know your safe state: blank, or the church logo. Practise getting there.</li>
+<li><strong>Say it aloud on a rehearsal.</strong> "Cueing verse 3, sending." It sounds silly, and it prevents mistakes.</li>
+</ol>
+
+<h2>Running it with a team</h2>
+<p>The workflow is most valuable when more than one person is involved. Some churches split the roles: one person cues, another sends. Because Preview is shared, the cueing operator can put the next item in place while the sender watches the live output.</p>
+<p>Vifug's phone remote supports this style. A tablet or phone, entered with a PIN, can pick songs, Scripture, decks and photos into the operator's Preview. According to the guide, nothing reaches the congregation until GO LIVE is pressed on either the remote or the operator's screen. That makes it safer to hand the remote to an usher or a worship-team member, because choosing something is not the same as showing it. Details are in the <a href="/guide.html#remote">remote chapter</a>.</p>
+
+<h2>Seeing Preview and Live properly</h2>
+<p>A small thumbnail of Preview is easy to misjudge. Vifug offers two operator layouts, chosen in Settings, then Layout. The classic one puts the library, the words and a rail of Preview and Live side by side. The Broadcast layout puts Preview and Live across the top at full size, with the list, slides and controls as docks underneath, so you can read a verse from across the booth. In Broadcast the live slide is outlined in red, so you can see what is on the wall at a glance. The choice is remembered per device, so the desk laptop and a back-of-room tablet can differ. See the <a href="/guide.html#layout">layout chapter</a>.</p>
+<p>Which layout you pick matters less than being able to read the Preview without leaning in. If you squint, enlarge it.</p>
+
+<h2>When separating the stages is not worth it</h2>
+<p>To be fair, two stages add a step. For a speaker clicking through his own talk, a single stage is simpler, and a slide tool is a sound choice. The two-stage approach earns its keep when someone other than the content's author is operating, when content changes live, and when mistakes are costly: a funeral, a wedding, a broadcast, a room full of visitors.</p>
+
+<h2>A five-minute drill</h2>
+<p>Practise this before your next service.</p>
+<ol>
+<li>Open a song and cue the first slide. Check it. Send it.</li>
+<li>Step to the chorus in Preview. Send it.</li>
+<li>Press Space. The screen goes black. Press Space again to return.</li>
+<li>Cue a Bible verse, deliberately mistype the reference, and correct it in Preview before sending.</li>
+<li>Press Esc to clear.</li>
+</ol>
+<p>Do it twice with a second volunteer watching. It builds the habit better than any explanation.</p>
+
+<h2>Trying it</h2>
+<p>If you want a free tool to practise on, Vifug is built around this workflow. The desktop app is free, has no watermark, and runs on Windows, macOS and Linux, with a browser version at app.vifug.com. Install it from the <a href="/download.html">download page</a>, load one of the 325 included songs, and run the drill above. It takes less time than reading this post, and you will have felt the difference between clicking a slide and sending it.</p>
+<h2>Related reading</h2>
+<ul><li><a href="/blog/training-new-media-team-volunteers">Training new media team volunteers in four weeks</a></li><li><a href="/blog/service-planning-and-run-sheets">Service planning and run sheets for the media desk</a></li><li><a href="/blog/how-ai-auto-follow-works">How AI auto-follow works, and what it cannot do</a></li></ul>

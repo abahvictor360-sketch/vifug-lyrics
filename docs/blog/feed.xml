@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>Vifug blog</title>
+  <link>https://vifug.com/blog/</link>
+  <description>Practical articles on presentation software for churches and live events.</description>
+  <language>en</language>
+  <item>
+    <title>Accessible presentations: rules that help everyone</title>
+    <link>https://vifug.com/blog/accessible-presentations-for-everyone</link>
+    <guid>https://vifug.com/blog/accessible-presentations-for-everyone</guid>
+    <pubDate>Wed, 14 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>Practical rules for contrast, size, colour-blind safety, motion, language and hearing-impaired viewers, and how theme options help you apply them.</description>
+  </item>
+  <item>
+    <title>Live presentation software beyond church</title>
+    <link>https://vifug.com/blog/presentation-software-beyond-church</link>
+    <guid>https://vifug.com/blog/presentation-software-beyond-church</guid>
+    <pubDate>Tue, 13 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Basics</category>
+    <description>How schools, conferences, studios, venues and signage setups can use live presentation software, with practical examples using Vifug.</description>
+  </item>
+  <item>
+    <title>Switching from ProPresenter or EasyWorship</title>
+    <link>https://vifug.com/blog/switching-from-propresenter-or-easyworship</link>
+    <guid>https://vifug.com/blog/switching-from-propresenter-or-easyworship</guid>
+    <pubDate>Mon, 12 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Guides</category>
+    <description>A step-by-step plan for moving a church media team to new presentation software: audit songs, import, rebuild themes, and run both systems in parallel.</description>
+  </item>
+  <item>
+    <title>Planning for no-internet Sundays: offline and backups</title>
+    <link>https://vifug.com/blog/offline-reliability-and-backups</link>
+    <guid>https://vifug.com/blog/offline-reliability-and-backups</guid>
+    <pubDate>Sat, 10 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>Design your church media setup to survive a dead router or a dead laptop: offline-first habits, backups, a spare machine, and restoring in Vifug.</description>
+  </item>
+  <item>
+    <title>Why lyrics and Scripture need different themes</title>
+    <link>https://vifug.com/blog/one-theme-per-content-type</link>
+    <guid>https://vifug.com/blog/one-theme-per-content-type</guid>
+    <pubDate>Thu, 08 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>Why one slide look cannot serve lyrics, Scripture, sermon slides and announcements, and how to give each content type and screen its own theme in Vifug.</description>
+  </item>
+  <item>
+    <title>The Preview and Live workflow: stop on-screen mistakes</title>
+    <link>https://vifug.com/blog/preview-and-live-workflow</link>
+    <guid>https://vifug.com/blog/preview-and-live-workflow</guid>
+    <pubDate>Tue, 06 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>Why separating Preview from Live prevents wrong slides, typos and surprise camera shots, with a step-by-step way to run it and the mistakes it catches.</description>
+  </item>
+  <item>
+    <title>Presenting Bible verses well on screen</title>
+    <link>https://vifug.com/blog/presenting-bible-verses-well</link>
+    <guid>https://vifug.com/blog/presenting-bible-verses-well</guid>
+    <pubDate>Mon, 05 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Guides</category>
+    <description>Practical advice on translation choice, verse chunking, references, multiple languages and pace, with an offline Bible in 31 English versions and more.</description>
+  </item>
+  <item>
+    <title>Service planning and run sheets for the media desk</title>
+    <link>https://vifug.com/blog/service-planning-and-run-sheets</link>
+    <guid>https://vifug.com/blog/service-planning-and-run-sheets</guid>
+    <pubDate>Sat, 03 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>How to build a service run sheet with the right order, cues, timers and announcements, and how to turn it into a plan, timer and ticker in Vifug.</description>
+  </item>
+  <item>
+    <title>Lower thirds and speaker name bars for livestreams</title>
+    <link>https://vifug.com/blog/lower-thirds-and-speaker-name-bars</link>
+    <guid>https://vifug.com/blog/lower-thirds-and-speaker-name-bars</guid>
+    <pubDate>Thu, 01 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>What lower thirds and name bars are, when to show them, how to design and time them, and how to set up both in Vifug over a camera or stream overlay.</description>
+  </item>
+  <item>
+    <title>Church presentation software vs PowerPoint</title>
+    <link>https://vifug.com/blog/church-presentation-software-vs-powerpoint</link>
+    <guid>https://vifug.com/blog/church-presentation-software-vs-powerpoint</guid>
+    <pubDate>Tue, 29 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Basics</category>
+    <description>PowerPoint, Keynote and Google Slides are enough for some churches. Here is where dedicated live software starts to pay for itself, and where it does not.</description>
+  </item>
+  <item>
+    <title>How AI auto-follow works, and what it cannot do</title>
+    <link>https://vifug.com/blog/how-ai-auto-follow-works</link>
+    <guid>https://vifug.com/blog/how-ai-auto-follow-works</guid>
+    <pubDate>Mon, 28 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Streaming</category>
+    <description>What speech-following for lyrics and Scripture can and cannot do, Deepgram versus on-device engines, and how to keep the operator in charge.</description>
+  </item>
+  <item>
+    <title>Training new media team volunteers in four weeks</title>
+    <link>https://vifug.com/blog/training-new-media-team-volunteers</link>
+    <guid>https://vifug.com/blog/training-new-media-team-volunteers</guid>
+    <pubDate>Sat, 26 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Guides</category>
+    <description>A four-week onboarding plan for new church media volunteers, with roles, a one-page checklist, rehearsal habits and calm Sunday-morning routines.</description>
+  </item>
+  <item>
+    <title>Choosing worship backgrounds: stills and motion</title>
+    <link>https://vifug.com/blog/choosing-worship-backgrounds-and-motion</link>
+    <guid>https://vifug.com/blog/choosing-worship-backgrounds-and-motion</guid>
+    <pubDate>Thu, 24 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>How to pick still or motion backgrounds for worship slides, keep them legal and light on the computer, and keep words readable, using Vifug as the example.</description>
+  </item>
+  <item>
+    <title>How to choose presentation software: a checklist</title>
+    <link>https://vifug.com/blog/how-to-choose-presentation-software</link>
+    <guid>https://vifug.com/blog/how-to-choose-presentation-software</guid>
+    <pubDate>Tue, 22 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Guides</category>
+    <description>A step-by-step checklist for choosing presentation software: team skill, hardware, offline use, streaming, import and support, with a scoring table.</description>
+  </item>
+  <item>
+    <title>Different pictures for the room and online viewers</title>
+    <link>https://vifug.com/blog/different-pictures-for-the-room-and-online</link>
+    <guid>https://vifug.com/blog/different-pictures-for-the-room-and-online</guid>
+    <pubDate>Mon, 21 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Streaming</category>
+    <description>Why the room needs full-screen words while online viewers need a lower third over the camera, and how to send each audience its own picture.</description>
+  </item>
+  <item>
+    <title>Stage display and multiple screens for church services</title>
+    <link>https://vifug.com/blog/stage-display-and-multiple-screens</link>
+    <guid>https://vifug.com/blog/stage-display-and-multiple-screens</guid>
+    <pubDate>Sat, 19 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>Plan confidence monitors, lobby and overflow screens that each show different content, and set them up with Vifug&#x27;s stage display and per-screen themes.</description>
+  </item>
+  <item>
+    <title>How many lines of a song should go on each slide?</title>
+    <link>https://vifug.com/blog/how-many-lines-per-slide</link>
+    <guid>https://vifug.com/blog/how-many-lines-per-slide</guid>
+    <pubDate>Thu, 17 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>Two lines or four? How line length, phrasing and repeated choruses should decide your lyric slide breaks, and the lines-per-slide control in Vifug.</description>
+  </item>
+  <item>
+    <title>Best free presentation software for churches</title>
+    <link>https://vifug.com/blog/best-free-presentation-software-for-churches</link>
+    <guid>https://vifug.com/blog/best-free-presentation-software-for-churches</guid>
+    <pubDate>Tue, 15 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Basics</category>
+    <description>A fair look at free church presentation software: the categories, what free usually costs you, and a checklist to test any option before Sunday.</description>
+  </item>
+  <item>
+    <title>Livestream lyrics with OBS, vMix and NDI</title>
+    <link>https://vifug.com/blog/livestream-lyrics-with-obs-vmix-and-ndi</link>
+    <guid>https://vifug.com/blog/livestream-lyrics-with-obs-vmix-and-ndi</guid>
+    <pubDate>Mon, 14 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Streaming</category>
+    <description>How a transparent lyrics overlay reaches OBS, vMix or an NDI receiver, what each path needs, and how to set it up with Vifug without a capture card.</description>
+  </item>
+  <item>
+    <title>Setting up a projector and second screen for church</title>
+    <link>https://vifug.com/blog/setting-up-a-projector-and-second-screen</link>
+    <guid>https://vifug.com/blog/setting-up-a-projector-and-second-screen</guid>
+    <pubDate>Sat, 12 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>How to cable a projector, choose mirror or extend, match resolution and aspect ratio, test brightness, and assign the output screen in Vifug.</description>
+  </item>
+  <item>
+    <title>Designing lyric slides readable from the back row</title>
+    <link>https://vifug.com/blog/designing-readable-lyric-slides</link>
+    <guid>https://vifug.com/blog/designing-readable-lyric-slides</guid>
+    <pubDate>Thu, 10 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>Font, size, contrast, outlines, safe margins and reading distance for lyric slides, with the exact settings to use in Vifug&#x27;s theme designer.</description>
+  </item>
+  <item>
+    <title>What is presentation software? Types and uses</title>
+    <link>https://vifug.com/blog/what-is-presentation-software</link>
+    <guid>https://vifug.com/blog/what-is-presentation-software</guid>
+    <pubDate>Tue, 08 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Basics</category>
+    <description>A plain explanation of presentation software: slide tools, worship and live-production tools, and signage, and what each kind is actually good at.</description>
+  </item>
+</channel></rss>

@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J4HYT937CV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-J4HYT937CV');
+</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How AI auto-follow works, and what it cannot do | Vifug</title>
+<meta name="description" content="What speech-following for lyrics and Scripture can and cannot do, Deepgram versus on-device engines, and how to keep the operator in charge." />
+<link rel="canonical" href="https://vifug.com/blog/how-ai-auto-follow-works" />
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+<meta name="theme-color" content="#080a0f" />
+<meta name="author" content="Victor Abah" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="How AI auto-follow works, and what it cannot do | Vifug" />
+<meta property="og:description" content="What speech-following for lyrics and Scripture can and cannot do, Deepgram versus on-device engines, and how to keep the operator in charge." />
+<meta property="og:url" content="https://vifug.com/blog/how-ai-auto-follow-works" />
+<meta property="og:image" content="https://vifug.com/blog/og/how-ai-auto-follow-works.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="How AI auto-follow works, and what it cannot do" />
+<meta property="og:site_name" content="Vifug" />
+<meta property="og:locale" content="en_US" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="How AI auto-follow works, and what it cannot do | Vifug" />
+<meta name="twitter:description" content="What speech-following for lyrics and Scripture can and cannot do, Deepgram versus on-device engines, and how to keep the operator in charge." />
+<meta name="twitter:image" content="https://vifug.com/blog/og/how-ai-auto-follow-works.png" />
+<meta name="twitter:image:alt" content="How AI auto-follow works, and what it cannot do" />
+<link rel="alternate" type="application/rss+xml" title="Vifug blog" href="https://vifug.com/blog/feed.xml" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23a3e635'/%3E%3Cg fill='none' stroke='%23080a0f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' transform='translate(3.4 3.4) scale(0.72)'%3E%3Cpath d='M9 18V5l12-2v13'/%3E%3Cpath d='m9 9 12-2'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Ccircle cx='18' cy='16' r='3'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "How AI auto-follow works, and what it cannot do", "description": "What speech-following for lyrics and Scripture can and cannot do, Deepgram versus on-device engines, and how to keep the operator in charge.", "datePublished": "2026-09-28", "dateModified": "2026-09-28", "author": {"@type": "Person", "name": "Victor Abah", "url": "https://vifug.com"}, "publisher": {"@type": "Organization", "name": "Vifug", "url": "https://vifug.com", "logo": {"@type": "ImageObject", "url": "https://vifug.com/og-image.png"}}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://vifug.com/blog/how-ai-auto-follow-works"}, "image": "https://vifug.com/blog/og/how-ai-auto-follow-works.png", "keywords": "auto-follow, speech recognition, deepgram, whisper, bible", "wordCount": 1458, "articleSection": "Streaming", "inLanguage": "en", "isPartOf": {"@type": "Blog", "name": "The Vifug blog", "@id": "https://vifug.com/blog/"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Vifug", "item": "https://vifug.com/"}, {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://vifug.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "How AI auto-follow works, and what it cannot do", "item": "https://vifug.com/blog/how-ai-auto-follow-works"}]}</script>
+<meta property="article:published_time" content="2026-09-28" />
+<meta property="article:modified_time" content="2026-09-28" />
+<meta property="article:author" content="Victor Abah" />
+<meta property="article:section" content="Streaming" />
+<meta property="article:tag" content="auto-follow" />
+<meta property="article:tag" content="speech recognition" />
+<meta property="article:tag" content="deepgram" />
+<meta property="article:tag" content="whisper" />
+<meta property="article:tag" content="bible" />
+</head>
+<body>
+<header>
+  <div class="nav">
+    <a class="brand" href="/">
+      <span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><path d="m9 9 12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+      Vifug
+    </a>
+    <div class="nav-links">
+      <a class="hide-sm" href="/">Home</a>
+      <a href="/guide.html">Guide</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+      <a class="btn btn-live" href="/download.html">Download free</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <article class="article">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Vifug</a> / <a href="/blog/">Blog</a> / Streaming</nav>
+    <span class="eyebrow">Streaming</span>
+    <h1>How AI auto-follow works, and what it cannot do</h1>
+    <p class="lede">What speech-following for lyrics and Scripture can and cannot do, Deepgram versus on-device engines, and how to keep the operator in charge.</p>
+    <div class="meta"><span>By Victor Abah</span><time datetime="2026-09-28">September 28, 2026</time><span>7 min read</span></div>
+    <nav class="toc" aria-label="In this article"><strong>In this article</strong><ol><li><a href="#what-following-means">What &quot;following&quot; means</a></li><li><a href="#the-operator-stays-in-control">The operator stays in control</a></li><li><a href="#two-engines-two-trade-offs">Two engines, two trade-offs</a></li><li><a href="#accents-and-languages">Accents and languages</a></li><li><a href="#where-it-works-well-and-where-it-does-not">Where it works well, and where it does not</a></li><li><a href="#preview-or-live-choose-per-detection">Preview or Live: choose per detection</a></li><li><a href="#a-first-use-plan">A first-use plan</a></li><li><a href="#setting-expectations-with-your-team">Setting expectations with your team</a></li><li><a href="#is-it-worth-using">Is it worth using?</a></li><li><a href="#related-reading">Related reading</a></li></ol></nav>
+    <div class="prose">
+<p>Every media team has the same wish at some point in a long service: let the software follow along so I can look up from the laptop. Speech-following tools promise that. They listen to the room, work out where the singing or the sermon has got to, and move the screen to match. They can do it, within limits, and the limits matter more than the promise. This post explains how the idea works, where it breaks, and how to use it without handing the congregation's screen to a guess.</p>
+
+<h2 id="what-following-means">What "following" means</h2>
+<p>There are two quite different jobs hiding under one name.</p>
+<p><strong>Following a song.</strong> The software already has the words of the song, split into slides. It listens for the words being sung and decides which slide those words belong to. This is a matching problem against a small, known text, which makes it relatively forgiving.</p>
+<p><strong>Following Scripture.</strong> The software listens to a preacher and tries to spot a Bible reference or a verse. The text could be anything, and the preacher can say anything, so it has to recognise a cited reference ("John chapter three verse sixteen"), a quotation of the actual words, or a loose paraphrase. These are three very different levels of confidence.</p>
+<p>Vifug's AI auto-follow does both, and keeps them as separate switches in Settings, under AI auto-follow. Songs advance by listening to the room, and Scripture can be put up by a spoken reference, a quoted verse or a paraphrase.</p>
+
+<h2 id="the-operator-stays-in-control">The operator stays in control</h2>
+<p>The most important design rule is that a human can always override. In Vifug, your own next and previous controls always win: the moment you touch one, auto-follow carries on from wherever you left it. The microphone mute in the Audio Mixer also does more than silence a meter. It pauses auto-follow's listening entirely, so it is a genuine "stop listening to the room" control.</p>
+<p>That rule should shape how you use any tool of this kind. Think of it as a second pair of hands that sometimes guesses wrong, not an autopilot.</p>
+
+<h2 id="two-engines-two-trade-offs">Two engines, two trade-offs</h2>
+<p>Vifug offers two speech recognisers, with the switch at the top of the auto-follow panel.</p>
+<table>
+<thead><tr><th></th><th>Deepgram (online)</th><th>On this machine (Whisper)</th></tr></thead>
+<tbody>
+<tr><td>Internet</td><td>Needed for the whole service</td><td>Only to download the model once</td></tr>
+<tr><td>Account</td><td>A free Deepgram API key</td><td>None</td></tr>
+<tr><td>Speed</td><td>Words stream in while the speaker is still talking</td><td>Hears a phrase at a time, so it reacts after a pause</td></tr>
+<tr><td>Accuracy</td><td>The better of the two</td><td>Slower and rougher, depending on the model</td></tr>
+<tr><td>Privacy</td><td>Audio goes to the service</td><td>No audio leaves the building</td></tr>
+</tbody>
+</table>
+<p>If speed matters, for example you want a verse to appear while the preacher is still reading it, Deepgram is the engine to use. If your hall Wi-Fi is unreliable, or you do not want audio leaving the building, the on-device engine keeps working when the network does not.</p>
+<p>The on-device engine comes in sizes. Tiny (about 40 MB) is fastest and mishears names. Base (about 80 MB) is a clear step up and a sensible place to start. Small (about 250 MB) handles names and numbers better but wants a recent machine. Large v3 Turbo (about 800 MB) is the most accurate and the slowest, and it needs a graphics card the app can use. On a plain processor it can fall a sentence or more behind the preacher. Try Base first.</p>
+
+<h2 id="accents-and-languages">Accents and languages</h2>
+<p>Recognition is only as good as what the model has heard before. The English-only models were trained on English alone, which in practice means mostly American and British speech. If your congregation speaks English with a Nigerian, Ghanaian, Kenyan, Caribbean or Indian accent, Vifug has a switch, <em>The English here is accented</em>, which uses the all-languages model of the same size. It is the same speed and handles those accents noticeably better.</p>
+<p>The on-device engine can listen in several African languages, including Yoruba, Hausa, Swahili, Amharic, Somali, Shona, Lingala, Malagasy and Afrikaans. It cannot hear Igbo, Nigerian Pidgin or Twi, because it was never trained on them. Vifug ships Bibles in Igbo and Twi, so those can still be put up by hand or from a service plan. Only the listening part is unavailable.</p>
+
+<h2 id="where-it-works-well-and-where-it-does-not">Where it works well, and where it does not</h2>
+<p><strong>Works well:</strong></p>
+<ul>
+<li>A song with a clear lead vocal and a mic that hears the room. The software matches the words it hears against the next few slides and jumps to the furthest confident match.</li>
+<li>A cited reference. Vifug treats this as 100 percent certain, because the words "John chapter three verse sixteen" are unambiguous.</li>
+<li>Carrying on from a passage already up: "verse nine", "verses ten to twelve", "look over at chapter four".</li>
+</ul>
+<p><strong>Works less well:</strong></p>
+<ul>
+<li>A loud band, a muddy room or a mic across the hall. The software can only act on what it hears.</li>
+<li>Songs with heavy ad-libbing, long instrumental breaks or a leader who changes the order on the fly.</li>
+<li>Paraphrases. A paraphrase is a ranked guess from the words heard. By default Vifug matches words, not meaning, so "lack nothing" will not find "shall not want". There is an option to understand paraphrases by meaning using a small language model of about 23 MB that runs on your computer, but it is still a guess and always shows a confidence figure.</li>
+<li>Common phrases. "And the Lord spake unto Moses" settles nothing, because it appears many times.</li>
+</ul>
+
+<h2 id="preview-or-live-choose-per-detection">Preview or Live: choose per detection</h2>
+<p>The key safety control is where a heard passage goes. In the AI Auto-Follow panel on the main screen, each kind of detection can be sent to Preview or straight to Live, separately.</p>
+<ul>
+<li><strong>Reference read out:</strong> safe to send Live, because a cited reference is unmistakable.</li>
+<li><strong>Verse quoted:</strong> a judgement, so it starts on Preview.</li>
+<li><strong>Verse paraphrased:</strong> a guess, so it also starts on Preview, and is the one to think hardest about before sending Live.</li>
+</ul>
+<p>With Preview, the verse lands in the preview pane and you press Go live, so a wrong guess costs a glance, not an embarrassment on the wall. A Present button next to each detection puts it on the screen in one press. A sensible mix is a spoken reference going Live while a quotation waits in Preview. Sending everything Live suits only a service where nobody is at the desk, and the price is that the room sees every mistake too.</p>
+
+<h2 id="a-first-use-plan">A first-use plan</h2>
+<ol>
+<li>Choose the engine. For most halls, start with Deepgram if you have reliable internet, or Base on-device if you do not.</li>
+<li>Pick the microphone in the panel or the Audio Mixer and press Test. Aim for a clean voice signal, not a loud one. Leave noise reduction on if you have fans or projector hum.</li>
+<li>Turn on song following only, and leave Scripture off for the first rehearsal.</li>
+<li>Watch the panel. It shows the words it hears and a short history of what it changed, each tagged: sung, read out, quoted or version. The tags tell you which parts to trust.</li>
+<li>Add Scripture following next, with detections going to Preview.</li>
+<li>Prepare quoted-scripture matching before the service, not mid-sermon. It indexes a whole Bible version in memory, and needs a few seconds the first time.</li>
+<li>Run a full rehearsal, then a real service with an operator still at the desk.</li>
+</ol>
+
+<h2 id="setting-expectations-with-your-team">Setting expectations with your team</h2>
+<p>Tell volunteers plainly what the tool is. It is not magic and it is not a promise that nothing will go wrong. It will sometimes be a line behind, it will sometimes jump when a chorus repeats, and it will occasionally put up a verse nobody asked for. If the team expects that, a miss is a small thing: someone presses next and carries on. If the team was told it would run itself, the first miss feels like a failure.</p>
+<p>It also helps to decide in advance who owns the screen. One person at the desk, watching the panel, is enough. Their job is not to press every button but to notice when the tags in the history stop making sense, such as a run of wrong "sung" jumps, and take over by hand.</p>
+
+<h2 id="is-it-worth-using">Is it worth using?</h2>
+<p>For many teams, yes, as an assistant. It frees you from hammering the next button on every line and lets you watch the room. It will not replace a person who knows the service. Vifug is free to download, and AI auto-follow is described in full in the <a href="/guide.html#autofollow">auto-follow chapter of the guide</a>. Get the app from the <a href="/download.html">download page</a>, and try it on a rehearsal first.</p>
+<h2 id="related-reading">Related reading</h2>
+<ul><li><a href="/blog/preview-and-live-workflow">The Preview and Live workflow: stop on-screen mistakes</a></li><li><a href="/blog/presenting-bible-verses-well">Presenting Bible verses well on screen</a></li><li><a href="/blog/training-new-media-team-volunteers">Training new media team volunteers in four weeks</a></li></ul>
+    </div>
+    <aside class="cta">
+      <h2>Try Vifug free</h2>
+      <p>Vifug is free presentation and live-production software for churches, events and studios: lyrics, Scripture, slides, cameras and streaming, with a Preview and Live workflow. No watermark, and it runs a service without internet.</p>
+      <div class="row"><a class="btn btn-live" href="/download.html">Download Vifug</a><a class="btn" href="/guide.html">Read the guide</a></div>
+    </aside>
+  </article>
+  <div class="wrap related">
+    <h2>Keep reading</h2>
+    <div class="grid">
+      <a class="post-card" href="/blog/different-pictures-for-the-room-and-online" data-cat="Streaming">
+        <span class="tag">Streaming</span>
+        <h2>Different pictures for the room and online viewers</h2>
+        <p>Why the room needs full-screen words while online viewers need a lower third over the camera, and how to send each audience its own picture.</p>
+        <span class="meta"><time datetime="2026-09-21">September 21, 2026</time><span>6 min read</span></span>
+      </a>
+      <a class="post-card" href="/blog/livestream-lyrics-with-obs-vmix-and-ndi" data-cat="Streaming">
+        <span class="tag">Streaming</span>
+        <h2>Livestream lyrics with OBS, vMix and NDI</h2>
+        <p>How a transparent lyrics overlay reaches OBS, vMix or an NDI receiver, what each path needs, and how to set it up with Vifug without a capture card.</p>
+        <span class="meta"><time datetime="2026-09-14">September 14, 2026</time><span>6 min read</span></span>
+      </a>
+      <a class="post-card" href="/blog/presenting-bible-verses-well" data-cat="Guides">
+        <span class="tag">Guides</span>
+        <h2>Presenting Bible verses well on screen</h2>
+        <p>Practical advice on translation choice, verse chunking, references, multiple languages and pace, with an offline Bible in 31 English versions and more.</p>
+        <span class="meta"><time datetime="2026-10-05">October 5, 2026</time><span>6 min read</span></span>
+      </a>
+    </div>
+  </div>
+</main>
+<footer>
+  <div class="wrap foot">
+    <span>© <span id="year"></span> Vifug · Free worship presentation software · Made by Victor Abah · All rights reserved</span>
+    <nav class="foot-links">
+      <a href="/">Home</a>
+      <a href="/download.html">Download</a>
+      <a href="/guide.html">Guide</a>
+      <a href="/blog/">Blog</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</footer>
+<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>
