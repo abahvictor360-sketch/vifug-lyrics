@@ -90,3 +90,4 @@ footer { border-top:1px solid var(--line-soft); padding:32px 0; }
 .toc strong { font-family:var(--font-display); font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
 .toc ol { margin:10px 0 0 1.2em; }
 .toc li { margin:4px 0; }
+.nav-links a.btn-live, .nav-links a.btn-live:hover { color:var(--ink); }

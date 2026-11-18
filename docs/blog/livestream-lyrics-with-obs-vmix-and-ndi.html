@@ -38,7 +38,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/blog/blog.css" />
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Livestream lyrics with OBS, vMix and NDI", "description": "How a transparent lyrics overlay reaches OBS, vMix or an NDI receiver, what each path needs, and how to set it up with Vifug without a capture card.", "datePublished": "2026-09-14", "dateModified": "2026-09-14", "author": {"@type": "Person", "name": "Victor Abah", "url": "https://vifug.com"}, "publisher": {"@type": "Organization", "name": "Vifug", "url": "https://vifug.com", "logo": {"@type": "ImageObject", "url": "https://vifug.com/og-image.png"}}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://vifug.com/blog/livestream-lyrics-with-obs-vmix-and-ndi"}, "image": "https://vifug.com/blog/og/livestream-lyrics-with-obs-vmix-and-ndi.png", "keywords": "obs, vmix, ndi, overlay, livestream", "wordCount": 1342, "articleSection": "Streaming", "inLanguage": "en", "isPartOf": {"@type": "Blog", "name": "The Vifug blog", "@id": "https://vifug.com/blog/"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Livestream lyrics with OBS, vMix and NDI", "description": "How a transparent lyrics overlay reaches OBS, vMix or an NDI receiver, what each path needs, and how to set it up with Vifug without a capture card.", "datePublished": "2026-09-14", "dateModified": "2026-09-14", "author": {"@type": "Person", "name": "Victor Abah", "url": "https://vifug.com"}, "publisher": {"@type": "Organization", "name": "Vifug", "url": "https://vifug.com", "logo": {"@type": "ImageObject", "url": "https://vifug.com/og-image.png"}}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://vifug.com/blog/livestream-lyrics-with-obs-vmix-and-ndi"}, "image": "https://vifug.com/blog/og/livestream-lyrics-with-obs-vmix-and-ndi.png", "keywords": "obs, vmix, ndi, overlay, livestream", "wordCount": 1367, "articleSection": "Streaming", "inLanguage": "en", "isPartOf": {"@type": "Blog", "name": "The Vifug blog", "@id": "https://vifug.com/blog/"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Vifug", "item": "https://vifug.com/"}, {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://vifug.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Livestream lyrics with OBS, vMix and NDI", "item": "https://vifug.com/blog/livestream-lyrics-with-obs-vmix-and-ndi"}]}</script>
 <meta property="article:published_time" content="2026-09-14" />
 <meta property="article:modified_time" content="2026-09-14" />
@@ -73,7 +73,7 @@
     <h1>Livestream lyrics with OBS, vMix and NDI</h1>
     <p class="lede">How a transparent lyrics overlay reaches OBS, vMix or an NDI receiver, what each path needs, and how to set it up with Vifug without a capture card.</p>
     <div class="meta"><span>By Victor Abah</span><time datetime="2026-09-14">September 14, 2026</time><span>6 min read</span></div>
-    <nav class="toc" aria-label="In this article"><strong>In this article</strong><ol><li><a href="#what-a-transparent-overlay-actually-is">What a transparent overlay actually is</a></li><li><a href="#path-1-a-browser-source-in-obs-or-vmix">Path 1: a browser source in OBS or vMix</a></li><li><a href="#path-2-ndi-over-the-local-network">Path 2: NDI over the local network</a></li><li><a href="#path-3-the-capture-card-fallback">Path 3: the capture card fallback</a></li><li><a href="#which-path-fits-which-setup">Which path fits which setup</a></li><li><a href="#design-the-text-for-video-not-for-a-wall">Design the text for video, not for a wall</a></li><li><a href="#a-test-routine-before-the-first-sunday">A test routine before the first Sunday</a></li><li><a href="#where-vifug-fits">Where Vifug fits</a></li></ol></nav>
+    <nav class="toc" aria-label="In this article"><strong>In this article</strong><ol><li><a href="#what-a-transparent-overlay-actually-is">What a transparent overlay actually is</a></li><li><a href="#path-1-a-browser-source-in-obs-or-vmix">Path 1: a browser source in OBS or vMix</a></li><li><a href="#path-2-ndi-over-the-local-network">Path 2: NDI over the local network</a></li><li><a href="#path-3-the-capture-card-fallback">Path 3: the capture card fallback</a></li><li><a href="#which-path-fits-which-setup">Which path fits which setup</a></li><li><a href="#design-the-text-for-video-not-for-a-wall">Design the text for video, not for a wall</a></li><li><a href="#a-test-routine-before-the-first-sunday">A test routine before the first Sunday</a></li><li><a href="#where-vifug-fits">Where Vifug fits</a></li><li><a href="#related-reading">Related reading</a></li></ol></nav>
     <div class="prose">
 <p>You have a camera, a switcher and a Sunday service to put online, and the words of the songs live on a different computer from the one making the stream. The usual first answer is a capture card: send the projector feed into the streaming PC and key it. It works, but it is one more cable, one more box to fail, and you get the lyrics at whatever the projector resolution happens to be. There are cleaner ways to get words onto a stream, and they all start from the same idea: the lyrics are a transparent layer that your video software places on top of the camera.</p>
 <p>This post walks through the three common paths, a browser source in OBS or vMix, NDI over the network, and the capture-card fallback, and says what each one needs. Vifug is used as the worked example because it produces both the browser overlay and a native NDI source, but the thinking applies to any lyrics software.</p>
@@ -141,6 +141,8 @@
 
 <h2 id="where-vifug-fits">Where Vifug fits</h2>
 <p>Vifug is free, has no watermark, and produces the transparent overlay and the NDI source from the same Preview to Live workflow, so what the room sees and what your switcher receives change together when you press Go live. The streaming steps above are covered in more detail in the <a href="/guide.html#streaming">streaming chapter of the guide</a>, and the app is on the <a href="/download.html">download page</a>. If you already have OBS or vMix tuned the way you like, you do not need to change anything except the one new source.</p>
+<h2 id="related-reading">Related reading</h2>
+<ul><li><a href="/blog/different-pictures-for-the-room-and-online">Different pictures for the room and online viewers</a></li><li><a href="/blog/lower-thirds-and-speaker-name-bars">Lower thirds and speaker name bars for livestreams</a></li><li><a href="/blog/offline-reliability-and-backups">Planning for no-internet Sundays: offline and backups</a></li></ul>
     </div>
     <aside class="cta">
       <h2>Try Vifug free</h2>
@@ -153,7 +155,7 @@
     <div class="grid">
       <a class="post-card" href="/blog/different-pictures-for-the-room-and-online" data-cat="Streaming">
         <span class="tag">Streaming</span>
-        <h2>Different pictures for the room and the online audience</h2>
+        <h2>Different pictures for the room and online viewers</h2>
         <p>Why the room needs full-screen words while online viewers need a lower third over the camera, and how to send each audience its own picture.</p>
         <span class="meta"><time datetime="2026-09-21">September 21, 2026</time><span>6 min read</span></span>
       </a>
@@ -165,7 +167,7 @@
       </a>
       <a class="post-card" href="/blog/lower-thirds-and-speaker-name-bars" data-cat="Design">
         <span class="tag">Design</span>
-        <h2>Lower thirds and speaker name bars for church livestreams</h2>
+        <h2>Lower thirds and speaker name bars for livestreams</h2>
         <p>What lower thirds and name bars are, when to show them, how to design and time them, and how to set up both in Vifug over a camera or stream overlay.</p>
         <span class="meta"><time datetime="2026-10-01">October 1, 2026</time><span>7 min read</span></span>
       </a>

@@ -5,8 +5,13 @@
   "category": "Design"
  },
  {
+  "slug": "presentation-software-beyond-church",
+  "title": "Live presentation software beyond church",
+  "category": "Basics"
+ },
+ {
   "slug": "switching-from-propresenter-or-easyworship",
-  "title": "Switching from ProPresenter or EasyWorship: a migration plan",
+  "title": "Switching from ProPresenter or EasyWorship",
   "category": "Guides"
  },
  {
@@ -16,7 +21,7 @@
  },
  {
   "slug": "one-theme-per-content-type",
-  "title": "Why lyrics, Scripture and announcements need different themes",
+  "title": "Why lyrics and Scripture need different themes",
   "category": "Design"
  },
  {
@@ -36,12 +41,12 @@
  },
  {
   "slug": "lower-thirds-and-speaker-name-bars",
-  "title": "Lower thirds and speaker name bars for church livestreams",
+  "title": "Lower thirds and speaker name bars for livestreams",
   "category": "Design"
  },
  {
   "slug": "church-presentation-software-vs-powerpoint",
-  "title": "Church presentation software vs PowerPoint: when each makes sense",
+  "title": "Church presentation software vs PowerPoint",
   "category": "Basics"
  },
  {
@@ -56,17 +61,17 @@
  },
  {
   "slug": "choosing-worship-backgrounds-and-motion",
-  "title": "Choosing worship backgrounds: stills, motion and legibility",
+  "title": "Choosing worship backgrounds: stills and motion",
   "category": "Design"
  },
  {
   "slug": "how-to-choose-presentation-software",
-  "title": "How to choose presentation software: a practical checklist",
+  "title": "How to choose presentation software: a checklist",
   "category": "Guides"
  },
  {
   "slug": "different-pictures-for-the-room-and-online",
-  "title": "Different pictures for the room and the online audience",
+  "title": "Different pictures for the room and online viewers",
   "category": "Streaming"
  },
  {
@@ -81,7 +86,7 @@
  },
  {
   "slug": "best-free-presentation-software-for-churches",
-  "title": "Best free presentation software for churches: what to look for",
+  "title": "Best free presentation software for churches",
   "category": "Basics"
  },
  {
@@ -96,12 +101,12 @@
  },
  {
   "slug": "designing-readable-lyric-slides",
-  "title": "Designing lyric slides people can read from the back row",
+  "title": "Designing lyric slides readable from the back row",
   "category": "Design"
  },
  {
   "slug": "what-is-presentation-software",
-  "title": "What is presentation software? Types, uses and how they differ",
+  "title": "What is presentation software? Types and uses",
   "category": "Basics"
  }
 ]
