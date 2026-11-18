@@ -57,7 +57,7 @@ Allow: /
 # -- WHERE TO READ MORE ----------------------------
 # Guide with short videos:        https://vifug.com/guide.html
 #   Short videos (no sound, captions on screen): first song, Bible verse, add a song, change the background,
-#     add sound, show a camera, phone remote, live streaming, AI auto-follow, theme designer
+#     add sound, show a camera, phone remote, live streaming, AI auto-follow, theme designer, screen layout
 #   Quick start                   https://vifug.com/guide.html#quickstart
 #   Two operator screen layouts   https://vifug.com/guide.html#layout
 #   Bible                         https://vifug.com/guide.html#bible
