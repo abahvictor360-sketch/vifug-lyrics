@@ -166,6 +166,7 @@ FOOT = """<footer>
       <a href="/guide.html">Guide</a>
       <a href="/blog/">Blog</a>
       <a href="/contact.html">Contact</a>
+      <a href="/support.html">Support us</a>
     </nav>
   </div>
 </footer>
