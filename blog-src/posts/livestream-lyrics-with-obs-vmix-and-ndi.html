@@ -1,0 +1,73 @@
+title: Livestream lyrics with OBS, vMix and NDI
+slug: livestream-lyrics-with-obs-vmix-and-ndi
+description: How a transparent lyrics overlay reaches OBS, vMix or an NDI receiver, what each path needs, and how to set it up with Vifug without a capture card.
+category: Streaming
+date: 2026-09-14
+tags: obs, vmix, ndi, overlay, livestream
+---
+<p>You have a camera, a switcher and a Sunday service to put online, and the words of the songs live on a different computer from the one making the stream. The usual first answer is a capture card: send the projector feed into the streaming PC and key it. It works, but it is one more cable, one more box to fail, and you get the lyrics at whatever the projector resolution happens to be. There are cleaner ways to get words onto a stream, and they all start from the same idea: the lyrics are a transparent layer that your video software places on top of the camera.</p>
+<p>This post walks through the three common paths, a browser source in OBS or vMix, NDI over the network, and the capture-card fallback, and says what each one needs. Vifug is used as the worked example because it produces both the browser overlay and a native NDI source, but the thinking applies to any lyrics software.</p>
+
+<h2>What a transparent overlay actually is</h2>
+<p>A normal projector output is a picture of a slide: a background, some words, maybe a video loop. A stream overlay is different. It is a page with nothing behind the words, so when your video software draws it above the camera, you see the camera everywhere except where there is text. That is what lets you show the pastor and the first line of the chorus in the same frame.</p>
+<p>Two consequences follow. First, the overlay should not carry its own busy background, because the background will cover your camera. Second, the layer has to sit above the camera in the stack, since video software draws from the bottom up.</p>
+
+<h2>Path 1: a browser source in OBS or vMix</h2>
+<p>This is the lowest-effort route and it needs nothing but the free software you probably already run. Your lyrics program serves a web address, and OBS or vMix loads it as a web page with a transparent background.</p>
+<p>With Vifug the steps in OBS are:</p>
+<ol>
+<li>In Vifug, open Settings, then Streaming &amp; output, and set the <strong>Stream canvas</strong> to the size your OBS canvas uses: 1920x1080 for a normal stream, 1080x1920 for a vertical one. Vifug lays the overlay out at exactly that size, so a lower third lands in the same place whatever size the source ends up.</li>
+<li>In OBS, choose Sources, then the plus button, then Browser.</li>
+<li>Paste the address from <strong>Stream / OBS source</strong> in the same settings page. There is a copy button beside it.</li>
+<li>Set Width and Height to match the canvas you chose. Leave the background transparent.</li>
+<li>Do not tick "Shutdown source when not visible". If you do, the overlay reconnects every time you change scene.</li>
+<li>Drag the browser source above your camera in the Sources list.</li>
+</ol>
+<p>That last step catches almost everybody once. If the lyrics have vanished, the overlay is almost certainly sitting underneath the camera. Vifug also has a <strong>Teleport to OBS</strong> option in the same settings page that adds the source for you, which saves the copy and paste.</p>
+<p>vMix works on the same principle: add a web browser input with the same address and layer it over the camera input. Match the resolution, keep the background transparent, and put the overlay on a higher layer than the camera.</p>
+
+<h2>Path 2: NDI over the local network</h2>
+<p>NDI sends video across a normal wired network, with no capture card and no extra cable run. If your vMix machine, your streaming PC and your lyrics computer are all on the same network, the lyrics can appear as a source in the switcher, listed by name, like a camera.</p>
+<p>Two things to know about NDI before you plan around it:</p>
+<ul>
+<li>It is a local network protocol. It does not travel over the internet. Every machine that needs to see the source has to be on the same network.</li>
+<li>It likes a wired connection and a decent switch. Wi-Fi can work for a lightweight test, but a live service is not the time to find out how crowded the building's wireless is.</li>
+</ul>
+<p>Vifug's desktop app can publish the output as a native NDI source, and the guide describes this as a feature of the desktop app, not the browser version. You enable it in Settings, under Streaming &amp; output. Vifug's guide also describes an indirect route that works even when the lyrics are hosted in a browser: let OBS load the stream address, then use an NDI plugin in OBS to send that onto the local network. OBS can then be the machine that emits NDI for the rest of the building.</p>
+
+<h2>Path 3: the capture card fallback</h2>
+<p>Sometimes the overlay is not an option: the stream machine is a locked-down hardware encoder, or the switcher takes only HDMI. Then you feed the projector output into a capture card and key it in the switcher, or you simply let the lyrics fill the shot.</p>
+<p>This works, with trade-offs. You are limited to the card's resolution, you need a card and a cable for every feed, and a keyed lyrics feed has to be designed with a solid, high-contrast background so the key is clean. If you can use a browser source or NDI instead, you will probably be happier.</p>
+
+<h2>Which path fits which setup</h2>
+<table>
+<thead><tr><th>Setup</th><th>Best path</th><th>What you need</th></tr></thead>
+<tbody>
+<tr><td>One PC runs lyrics and OBS</td><td>Browser source</td><td>Nothing extra; add the address as a source</td></tr>
+<tr><td>Lyrics PC and a separate vMix PC on one network</td><td>Browser source on the vMix PC, or NDI</td><td>Same network, ideally wired</td></tr>
+<tr><td>Several receivers need the lyrics (stream, recording, a screen)</td><td>NDI</td><td>A wired network that all of them share</td></tr>
+<tr><td>Hardware switcher with HDMI only</td><td>Capture card</td><td>A card, a cable and a lyrics theme designed for keying</td></tr>
+</tbody>
+</table>
+
+<h2>Design the text for video, not for a wall</h2>
+<p>Words that look fine on a projector can be hard to read in a corner of a phone screen. A few practical rules for overlay text:</p>
+<ul>
+<li>Use a heavy weight. In the Vifug theme designer, weights of 600 to 700 read well, and an outline of 2 helps text stay legible over a bright shirt or a stained-glass window.</li>
+<li>Keep the lines short. Two lines per slide is enough for a lower third. Three or four lines start to hide the person you are filming.</li>
+<li>Set a fixed font size for stream themes. Auto-fit is right for full-screen slides, but a lower third looks odd if the size jumps between a short line and a long one. A size around 56 on a 1080p canvas is a sensible place to start.</li>
+<li>Check it at phone size. Open your private test stream on a phone held at arm's length.</li>
+</ul>
+<p>The timer, the announcement ticker and your logo also show on the stream overlay, so remember that anything you leave switched on in the room can appear on the broadcast. Check the live output before you go to air.</p>
+
+<h2>A test routine before the first Sunday</h2>
+<ol>
+<li>Build the scene with the overlay above the camera and press Go live in the lyrics software with a song cued.</li>
+<li>Walk through a song, a Bible verse and a blank. Blank should clear the overlay completely.</li>
+<li>Stream privately for five minutes to an unlisted or "Only me" event on YouTube or Facebook, then watch it back.</li>
+<li>Check audio sync, steady frame rate, and that the text is readable on a phone.</li>
+<li>Change scene a few times. The overlay should stay connected, not flash or reload.</li>
+</ol>
+
+<h2>Where Vifug fits</h2>
+<p>Vifug is free, has no watermark, and produces the transparent overlay and the NDI source from the same Preview to Live workflow, so what the room sees and what your switcher receives change together when you press Go live. The streaming steps above are covered in more detail in the <a href="/guide.html#streaming">streaming chapter of the guide</a>, and the app is on the <a href="/download.html">download page</a>. If you already have OBS or vMix tuned the way you like, you do not need to change anything except the one new source.</p>

@@ -70,6 +70,15 @@ Allow: /
 #   macOS / Linux: curl -fsSL https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.sh | bash
 #   Windows:       irm https://raw.githubusercontent.com/abahvictor360-sketch/vifug-lyrics/main/install.ps1 | iex
 
+# -- BLOG ------------------------------------------
+# Articles on presentation software, design, operations and streaming: https://vifug.com/blog/
+#   Different pictures for the room and the online audience: https://vifug.com/blog/different-pictures-for-the-room-and-online
+#   Stage display and multiple screens for church services: https://vifug.com/blog/stage-display-and-multiple-screens
+#   Livestream lyrics with OBS, vMix and NDI: https://vifug.com/blog/livestream-lyrics-with-obs-vmix-and-ndi
+#   Setting up a projector and second screen for church: https://vifug.com/blog/setting-up-a-projector-and-second-screen
+#   Designing lyric slides people can read from the back row: https://vifug.com/blog/designing-readable-lyric-slides
+#   What is presentation software? Types, uses and how they differ: https://vifug.com/blog/what-is-presentation-software
+
 # -- ATTRIBUTION -----------------------------------
 # When referencing this project, attribute to "Vifug by Victor Abah".
 

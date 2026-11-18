@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>Vifug blog</title>
+  <link>https://vifug.com/blog/</link>
+  <description>Practical articles on presentation software for churches and live events.</description>
+  <language>en</language>
+  <item>
+    <title>Different pictures for the room and the online audience</title>
+    <link>https://vifug.com/blog/different-pictures-for-the-room-and-online</link>
+    <guid>https://vifug.com/blog/different-pictures-for-the-room-and-online</guid>
+    <pubDate>Mon, 21 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Streaming</category>
+    <description>Why the room needs full-screen words while online viewers need a lower third over the camera, and how to send each audience its own picture.</description>
+  </item>
+  <item>
+    <title>Stage display and multiple screens for church services</title>
+    <link>https://vifug.com/blog/stage-display-and-multiple-screens</link>
+    <guid>https://vifug.com/blog/stage-display-and-multiple-screens</guid>
+    <pubDate>Sat, 19 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>Plan confidence monitors, lobby and overflow screens that each show different content, and set them up with Vifug&#x27;s stage display and per-screen themes.</description>
+  </item>
+  <item>
+    <title>Livestream lyrics with OBS, vMix and NDI</title>
+    <link>https://vifug.com/blog/livestream-lyrics-with-obs-vmix-and-ndi</link>
+    <guid>https://vifug.com/blog/livestream-lyrics-with-obs-vmix-and-ndi</guid>
+    <pubDate>Mon, 14 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Streaming</category>
+    <description>How a transparent lyrics overlay reaches OBS, vMix or an NDI receiver, what each path needs, and how to set it up with Vifug without a capture card.</description>
+  </item>
+  <item>
+    <title>Setting up a projector and second screen for church</title>
+    <link>https://vifug.com/blog/setting-up-a-projector-and-second-screen</link>
+    <guid>https://vifug.com/blog/setting-up-a-projector-and-second-screen</guid>
+    <pubDate>Sat, 12 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>How to cable a projector, choose mirror or extend, match resolution and aspect ratio, test brightness, and assign the output screen in Vifug.</description>
+  </item>
+  <item>
+    <title>Designing lyric slides people can read from the back row</title>
+    <link>https://vifug.com/blog/designing-readable-lyric-slides</link>
+    <guid>https://vifug.com/blog/designing-readable-lyric-slides</guid>
+    <pubDate>Thu, 10 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>Font, size, contrast, outlines, safe margins and reading distance for lyric slides, with the exact settings to use in Vifug&#x27;s theme designer.</description>
+  </item>
+  <item>
+    <title>What is presentation software? Types, uses and how they differ</title>
+    <link>https://vifug.com/blog/what-is-presentation-software</link>
+    <guid>https://vifug.com/blog/what-is-presentation-software</guid>
+    <pubDate>Tue, 08 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Basics</category>
+    <description>A plain explanation of presentation software: slide tools, worship and live-production tools, and signage, and what each kind is actually good at.</description>
+  </item>
+</channel></rss>

@@ -1,0 +1,64 @@
+title: Different pictures for the room and the online audience
+slug: different-pictures-for-the-room-and-online
+description: Why the room needs full-screen words while online viewers need a lower third over the camera, and how to send each audience its own picture.
+category: Streaming
+date: 2026-09-21
+tags: livestream, lower third, church online, youtube, rtmp
+---
+<p>Watch your own stream back on a phone and you will probably notice something odd. The picture in the building is a big slide of words, because that is what a congregation needs from the back row. The picture online is the same big slide of words, which means viewers at home stare at lyrics for twenty minutes and never see the singers, the preacher or the room. Two audiences with different needs are being given one picture.</p>
+<p>The fix is to treat the room and the online audience as two separate outputs. This post explains why they differ, what each should show, and how to set it up, using Vifug as the example because it has a setting built for exactly this.</p>
+
+<h2>What each audience is trying to do</h2>
+<p>People in the room are surrounded by the event. They can see the platform, the band and each other. What they lack is the words, so the screen exists to carry the words, large, from wall to wall.</p>
+<p>People online have the opposite problem. They have only your camera, so the camera is the event. The words are a help, like subtitles on a film, and should stay out of the way along the bottom of the picture. A full-screen lyric slide on a stream is a long blank wall between them and the service.</p>
+<table>
+<thead><tr><th></th><th>In the room</th><th>Online</th></tr></thead>
+<tbody>
+<tr><td>Main picture</td><td>The words</td><td>The camera</td></tr>
+<tr><td>Text size</td><td>As large as fits</td><td>Smaller, in a band</td></tr>
+<tr><td>Text position</td><td>Fills the screen</td><td>Bottom third, left aligned or centred</td></tr>
+<tr><td>Background</td><td>Picture, video or colour</td><td>The live shot, with a bar if needed</td></tr>
+<tr><td>Viewing distance</td><td>Many metres</td><td>Phone, tablet or laptop</td></tr>
+</tbody>
+</table>
+
+<h2>Why a single output compromises both</h2>
+<p>If you design for the room, the stream shows slides. If you design for the stream, the room gets small text at the bottom of a screen that is mostly a camera shot, which is hard to read from the back. People often try a middle path, a lower third on the main screen with the camera behind it, and end up with a compromise that works fully for neither group.</p>
+<p>Some teams solve this with a second computer running a second copy of the slides. That does work, but it doubles the operator's job and the two copies drift out of step the moment someone advances one and forgets the other. A better design has one operator, one cue, and two pictures made from it.</p>
+
+<h2>How Vifug splits them</h2>
+<p>In the desktop app, Settings has a section called <strong>What the online audience sees</strong>, under Streaming &amp; output. You choose <strong>Lower third over the camera</strong> there, and the room's screens are not changed. The setup is short:</p>
+<ol>
+<li>Open Settings, then Streaming &amp; output, then What the online audience sees, and choose Lower third over the camera.</li>
+<li>Press <strong>Choose a camera</strong> and pick the camera or capture card. This is the picture behind the words when you stream with the Go live button.</li>
+<li>Pick a design. <strong>Automatic</strong> keeps the room's font and colours and sets the words on a dark bar along the bottom. To use your own design, make a theme in the theme designer, starting from the Lower third preset, and choose it under Lower third design.</li>
+<li>Press Go live as usual. The room sees the full display. The stream carries the camera with the words as a lower third.</li>
+</ol>
+<p>If you stream through OBS or vMix rather than the Go live button, add the camera there instead. The Vifug overlay then supplies only the words, and you decide in your switcher where the camera goes. A <strong>Same as the room</strong> choice returns the stream to showing exactly what is on the main screen, which is useful when a video or a full-screen graphic should reach everybody.</p>
+
+<h2>Designing the online lower third</h2>
+<p>The theme designer's recipe for a stream lower third is a good starting point: pick the Lower third preset, set the words to sit at the bottom, turn off Auto-fit and set a size around 56, left align, and add an outline of 2. Then set the stream overlay to that theme. The room keeps full-screen words, and viewers get a bar across the bottom of the picture.</p>
+<p>A few things to check once it is working:</p>
+<ul>
+<li><strong>Size.</strong> Look at it on a phone. If you have to squint, raise the size or shorten the lines.</li>
+<li><strong>Safe space.</strong> Keep the words clear of the very bottom edge, where platforms sometimes draw their own controls.</li>
+<li><strong>Lines.</strong> Two lines per slide is plenty. If your songs are cut into four-line slides for the room, remember the online bar will not hold that comfortably.</li>
+<li><strong>Contrast.</strong> A semi-opaque dark bar behind the words stops white text disappearing against a light wall.</li>
+</ul>
+
+<h2>Streaming to YouTube, Facebook, Twitch or RTMP</h2>
+<p>Vifug's desktop app can stream by itself, without OBS. In Settings, under Streaming &amp; output, find <strong>Go live to YouTube, Facebook and more</strong> and press YouTube, Facebook, Twitch or Other (RTMP) to add a destination. For the first three the server address is already filled in, and you paste in the stream key. You can add more than one and stream to several places at once.</p>
+<p>Pick a quality from 720p upward to suit your computer and your upload speed. Facebook and Twitch accept up to 1080p, and YouTube accepts up to 4K. A stream that is slightly lower resolution but never stutters beats a higher one that buffers, so test your real upload speed and stay well inside it. Leave <em>Send the microphone</em> on to send the microphone chosen under AI auto-follow.</p>
+<p>Treat a stream key like a password. Anyone holding it can broadcast to your channel, so do not show it on screen and reset it if it leaks.</p>
+
+<h2>A short checklist for the first run</h2>
+<ul>
+<li>Do a private or unlisted test and watch it back on a phone.</li>
+<li>Confirm that Blank clears the lower third online as well as the screen in the room.</li>
+<li>Check that the timer, ticker and logo appear where you want them on both outputs.</li>
+<li>Have someone in the room confirm the words are still full size and unchanged.</li>
+<li>Write down the settings that worked, so a second operator can repeat them.</li>
+</ul>
+
+<h2>Where to go next</h2>
+<p>You do not need to buy extra gear for any of this, but you do need to look at both pictures before you go to air. Vifug is free to try, with no watermark, and the steps above are in the <a href="/guide.html#new">what's new chapter</a> and the <a href="/guide.html#streaming">streaming chapter</a> of the guide. Download it from the <a href="/download.html">download page</a>, and stream privately to yourself first.</p>
