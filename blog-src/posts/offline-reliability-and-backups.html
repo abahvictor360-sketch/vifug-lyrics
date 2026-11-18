@@ -1,0 +1,92 @@
+title: Planning for no-internet Sundays: offline and backups
+slug: offline-reliability-and-backups
+description: Design your church media setup to survive a dead router or a dead laptop: offline-first habits, backups, a spare machine, and restoring in Vifug.
+category: Operations
+date: 2026-10-10
+tags: offline, backups, reliability, spare laptop, disaster recovery
+---
+<p>Ten minutes before the service the router drops, and the song you meant to find online will not load. Or the laptop will not boot at all, and the only copy of your themes and custom songs is on its disk. These are ordinary Sunday problems, and they are much less frightening if you decided in advance what happens when they occur.</p>
+<p>This post is about designing the media desk so it does not depend on things you cannot control: the internet, a single computer, or one person's memory. None of it needs a big budget.</p>
+
+<h2>List what can fail</h2>
+<p>Start with a plain list. For each thing, write what you would do if it vanished at 9:55 on a Sunday.</p>
+<table>
+<thead><tr><th>What fails</th><th>Likely cause</th><th>What you need ready</th></tr></thead>
+<tbody>
+<tr><td>Internet</td><td>Router, provider outage, shared Wi-Fi overloaded</td><td>Everything for the service stored on the computer</td></tr>
+<tr><td>Wi-Fi inside the building</td><td>Access point, too many phones</td><td>A wired connection or an alternative for any phone or tablet control</td></tr>
+<tr><td>The laptop</td><td>Update, hardware fault, drink spilled</td><td>A spare machine with the same software and a recent backup</td></tr>
+<tr><td>The projector or cable</td><td>Lamp, loose plug</td><td>A spare cable; a TV as a fallback</td></tr>
+<tr><td>The one person who knows how</td><td>Illness, travel</td><td>A written checklist and at least one trained backup</td></tr>
+<tr><td>The files</td><td>Disk failure, accidental deletion</td><td>A dated backup on a separate drive</td></tr>
+</tbody>
+</table>
+<p>The point is not to be paranoid. It is to know, ahead of time, which of these you have already handled and which you are leaving to luck.</p>
+
+<h2>Design for offline from the start</h2>
+<p>The simplest reliability rule is that the live service should never need the internet. That means everything you will show on Sunday is already on the machine by Saturday night.</p>
+<ul>
+<li><strong>Songs and lyrics</strong> in a local library, not fetched on the day.</li>
+<li><strong>Bible text</strong> installed locally, not read from a website.</li>
+<li><strong>Presentations</strong> saved to the computer, not opened from a cloud link.</li>
+<li><strong>Videos and backgrounds</strong> copied to the local media folder. Streaming a clip from the internet during a service is a bet.</li>
+<li><strong>Fonts</strong> installed or loaded into the software, so a missing font does not change the look of your slides.</li>
+<li><strong>Software updates</strong> done during the week, not on Sunday morning. Never let a laptop decide to restart for an update during a service.</li>
+</ul>
+<p>Treat internet-dependent extras as optional. Live streaming, a song search, or a cloud-based speech tool are useful when they work, but the service should still run if they do not.</p>
+
+<h2>What Vifug does offline</h2>
+<p>Vifug is designed this way. According to its documentation, everything needed to run a service works without internet. The song library of 325 songs and the offline Bible are already installed, and the desktop app is offline-first by design. The things that use the internet are optional: live streaming, Deepgram speech recognition (an on-device engine works offline), song search, phone camera pairing and update checks. Live streaming, recording, NDI and library import need the desktop app.</p>
+<p>Two practical notes follow from that. First, if your church's line is unreliable, run the desktop app rather than the browser version. The guide says a hosted deployment needs a connection, and suggests using the hosted one for rehearsal and planning only. Second, the phone remote and stage display travel over your local network, not over the internet, so they depend on the building's Wi-Fi rather than on the outside world. Both devices have to be on the same Wi-Fi, which is described in the <a href="/guide.html#remote">remote chapter</a>. If the Wi-Fi itself is the weak point, test the remote before the service and keep a plan that works from the desk alone.</p>
+
+<h2>Back up on a schedule</h2>
+<p>A backup is a copy you can actually restore, kept somewhere other than the computer it came from. Three rules cover most of it:</p>
+<ol>
+<li><strong>Keep more than one copy.</strong> One on the computer is not a backup. One on a USB stick or external drive is. One more in a synced folder or at a team member's home is better.</li>
+<li><strong>Do it on a schedule.</strong> After every significant change, and at least weekly. Tie it to something you already do, like the Monday review.</li>
+<li><strong>Test a restore.</strong> A backup you have never restored is a hope, not a plan. Do a restore on a spare machine at least once.</li>
+</ol>
+<p>Label drives with the date. If you rotate between two sticks, you always have the previous one if the latest turns out to be damaged.</p>
+
+<h2>Backing up in Vifug</h2>
+<p>In the desktop app, backup, restore and import all live in Settings, then General, then Backup. The <a href="/guide.html#library-move">back up, restore and move chapter</a> describes three buttons:</p>
+<ul>
+<li><strong>Back up now</strong> copies the whole library and your media files into a dated folder. Pick a USB stick, an external drive or a synced folder, and Vifug creates a folder named Vifug-Backup followed by the date and time. Inside are a file called vifug.db, which holds every song, presentation, theme, font, plan and setting, and a Media folder with pictures, videos and sound. Keep the two together.</li>
+<li><strong>Import from another Vifug</strong> adds another library to this one. Nothing already there is changed or replaced, and nothing is added twice. Importing the same folder again adds nothing, so it is safe to repeat.</li>
+<li><strong>Restore from backup</strong> replaces this library with the backup's. It asks you to confirm, adds the backup's media beside what is there, and restarts the app. Anything added since that backup was made is lost, so back up first if you are unsure.</li>
+</ul>
+<p>The guide recommends backing up before anything risky and regularly. A good habit is to press Back up now at the end of each week's final rehearsal and again after a big change such as importing songs or building new themes.</p>
+<p>There is no Backup group in the browser version, since a browser cannot read folders on your computer. This is another reason to run the desktop app for the main service machine.</p>
+
+<h2>Keep a spare machine</h2>
+<p>A second computer that can run the service is the best single reliability investment you can make. It does not need to be new or fast. An older laptop that can drive a projector is enough.</p>
+<ul>
+<li>Install the same software and keep it updated.</li>
+<li>Copy your latest backup onto it and restore or import it.</li>
+<li>Keep it charged and stored with its own power lead and a spare video cable.</li>
+<li>Test it once a month: plug it in, project a song, check the stage display and remote.</li>
+<li>Keep a spare video adapter with it, since the adapter is often what goes missing.</li>
+</ul>
+<p>Moving to the spare in an emergency is then a matter of connecting the cable and loading the plan. Note what is not carried across when you import: according to the guide, settings, service plans and live history are not imported, since they describe the other computer's services. So if you need the same plan, rebuild it or use Restore, which brings settings and plans with it, and keep a printed run sheet as a safety net.</p>
+
+<h2>Restoring calmly</h2>
+<p>If the main machine dies, work through this in order:</p>
+<ol>
+<li>Switch to the spare laptop. Connect the projector.</li>
+<li>Plug in the backup drive and open Settings, then General, then Backup.</li>
+<li>For an identical copy, choose Restore from backup and pick the Vifug-Backup folder itself. For a spare that already has its own settings, choose Import from another Vifug to add the songs, media and themes.</li>
+<li>Check the first few songs and the first presentation on screen.</li>
+<li>Carry on the service from the printed run sheet.</li>
+</ol>
+<p>If Vifug says there is no vifug.db, you probably picked the USB stick or the Media folder rather than the Vifug-Backup folder. If a picture shows as missing, the backup was likely copied without its Media folder. Copy the whole folder and try again.</p>
+
+<h2>A simple weekly routine</h2>
+<ul>
+<li>Monday: Back up now, to a labelled drive. Put the drive in a different place from the laptop.</li>
+<li>Midweek: install updates on both machines and restart them.</li>
+<li>Saturday: check the spare still boots, load the plan on both if you can, and make sure every video and picture is local.</li>
+<li>Sunday: arrive early, and run the pre-service checklist.</li>
+</ul>
+
+<h2>Where to start</h2>
+<p>If you do one thing this week, make a backup and prove you can restore it. <a href="/download.html">Vifug is free to download</a>, so you can install it on a spare machine at no cost and practise the import there. The <a href="/guide.html#library-move">library chapter</a> walks through every button. If you also want a written plan for the desk, see <a href="/blog/service-planning-and-run-sheets">service planning and run sheets</a>.</p>

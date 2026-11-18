@@ -1,0 +1,65 @@
+title: Why lyrics and Scripture need different themes
+slug: one-theme-per-content-type
+description: Why one slide look cannot serve lyrics, Scripture, sermon slides and announcements, and how to give each content type and screen its own theme in Vifug.
+category: Design
+date: 2026-10-08
+tags: themes, scripture, sermon slides, announcements, screens
+---
+<p>The Scripture reading goes up in the same big, bold, centred type you use for songs. A long passage from Romans comes out as a wall of words in huge letters, the reference is lost somewhere at the bottom, and the reader is halfway down the page before the front row finishes the first sentence. Meanwhile the announcement slide for the youth retreat is a dark picture with white worship type, and the date is hard to find.</p>
+<p>The problem is not the software or the font. It is that one look was asked to do four different jobs. Lyrics, Scripture, sermon slides and announcements are read in different ways, at different speeds, with different amounts of text. This post explains why they deserve separate looks, what each one needs, and how to set that up in Vifug, where a theme can be chosen for each kind of content and for each screen.</p>
+
+<h2>Four ways of reading</h2>
+<p>Look at what people do with each type of slide.</p>
+<table>
+<thead><tr><th>Content</th><th>How it is read</th><th>Typical amount of text</th><th>What the design must do</th></tr></thead>
+<tbody>
+<tr><td>Song lyrics</td><td>Sung, glanced at, mostly known</td><td>2 to 4 short lines</td><td>Very large, bold, high contrast, easy to read at a glance</td></tr>
+<tr><td>Scripture</td><td>Read along or followed, sometimes slowly</td><td>1 to 5 verses, longer lines</td><td>Calm, even type, a clear reference, room for several lines</td></tr>
+<tr><td>Sermon and teaching slides</td><td>Read quickly, then discussed</td><td>A heading and a few points</td><td>Clear hierarchy: title larger than body, space between items</td></tr>
+<tr><td>Announcements</td><td>Skimmed for details</td><td>Event, date, time, place</td><td>The key facts stand out; busy pictures are an enemy</td></tr>
+</tbody>
+</table>
+<p>Song lyrics can afford huge type because there is so little of it. Scripture cannot, and trying to match the lyric size makes a verse overflow or forces you to split it across slides. A sermon slide has a heading and body, so it wants a hierarchy that a lyric theme does not offer. Announcements are the odd one out: they are read like a poster, so the date and place need to jump out.</p>
+
+<h2>What each type tends to want</h2>
+<p><strong>Lyrics.</strong> Large type, auto-fitted, bold weight, centred. A dim or soft background, because the words are the whole point. Moving backgrounds are common here, since the lines are short.</p>
+<p><strong>Scripture.</strong> A slightly smaller, steadier size so a passage fits, and often a quieter background than songs. The reference needs a clear place, and the translation line matters when you show more than one version. Many teams choose a plain or very soft background for readings because people are reading longer text and need less visual noise.</p>
+<p><strong>Sermon slides.</strong> Left-aligned text often reads better than centred when there are several points. Hierarchy matters more than decoration. A theme made for body text can carry a quiet background of its own.</p>
+<p><strong>Announcements.</strong> Plain backgrounds, large type for the key facts, and a visible brand colour. If you also use a scrolling ticker, keep it distinct from the slide look so it is not mistaken for a slide.</p>
+<p>None of this is a rule that you must change everything. A small team with a single clean theme that works for all four is doing fine. But if you find yourself changing the font size, colour or background by hand before every Scripture reading, that is a sign the theme should exist already.</p>
+
+<h2>Different audiences, different screens</h2>
+<p>Content type is one axis. The other is who is looking.</p>
+<ul>
+<li><strong>The room</strong> sees full-screen words on the projector or TV.</li>
+<li><strong>Online viewers</strong> may be better served by words in a lower third over the camera picture, so they still see the speaker.</li>
+<li><strong>The band</strong> looking at a stage display wants plain, large type, often black background, with no distracting picture.</li>
+<li><strong>A lobby or overflow screen</strong> may want a welcome slide or just the words, in a smaller layout.</li>
+</ul>
+<p>Putting the same picture on all of them forces compromises that satisfy no one. A background that is lovely on the projector may be unreadable on a phone stream. A giant full-screen word block over a camera feed hides the speaker. Different screens deserve different themes.</p>
+
+<h2>How Vifug handles it</h2>
+<p>Vifug separates the look of a theme from where it is used, which is what makes this workable.</p>
+<p><strong>Making themes.</strong> In Settings, then Theme designer, each theme has a For setting: Everything, Lyrics only, Scripture only, Presentations only, or Speaker name (lower third). A theme made for one thing is offered only in that theme list, so a Scripture-only theme appears in the Bible list and a Presentations-only theme in the Presentations list. The designer also shows the matching sample, so a Scripture theme is checked against a verse, not a two-line chorus. To keep a look and try a variation, use Duplicate under Settings, Lyrics, Themes, then edit the copy.</p>
+<p><strong>Choosing what uses what.</strong> Open Settings, Lyrics, Theme for each screen. The top three rows are the kind of content: Lyrics, Bible and Presentations. Lyrics is the main one, and Bible and Presentations follow it until you choose otherwise. Leave them on Same as lyrics if you want one look everywhere, or pick a theme of their own. There is also a button to put Bible and Presentations back on the lyric theme.</p>
+<p>The bottom rows are the audience: the Stream overlay and each extra screen, such as stage, lobby or overflow. Leave one on Same as what is sent, or pick a theme and that screen wears it whatever you send. Extra screens are added under Settings, Streaming and output. Screens pick up theme changes within about four seconds, so a change on one screen does not need a restart on another.</p>
+<p><strong>Backgrounds follow the same split.</strong> Scripture can have a quieter background than songs. In the Media tab, setting a Bible background switches Scripture off sharing the lyric one, and a background set on a Presentations theme or deck wins over the default. If a background does not change where you expect, the guide tells you to check the Background section in Settings for Bible or Presentations.</p>
+<p><strong>One song, its own look.</strong> Sometimes a single song wants to break from the rest, such as a communion hymn on a darker background. Open the song in the editor and use the "This song's own look" panel to set a theme, a background and a text colour for that song only. Each is optional, and anything left on App default keeps following your Settings.</p>
+
+<h2>A practical setup to start from</h2>
+<ol>
+<li><strong>Build one lyric theme.</strong> Auto-fit on, bold weight, a dimmed background, a sensible text margin. Test it with the 2 lines and 4 lines samples.</li>
+<li><strong>Duplicate it for Scripture.</strong> Set For to Scripture only, calm the background, reduce the size a little if needed, and check it with the Scripture sample, which shows where the reference sits. Then pick it beside Bible in the screen list.</li>
+<li><strong>Make a presentations theme.</strong> Plain background, left-aligned text, set For to Presentations only, and choose it beside Presentations.</li>
+<li><strong>Make a plain stage theme.</strong> The guide's recipe: New theme, Full screen preset, Auto-fit on, Weight 800, background None, black. Add a screen called Stage under Streaming and output and set its row to this theme.</li>
+<li><strong>Make a stream theme if you stream.</strong> Lower third preset, Bottom, fixed size around 56, Left, Outline 2, then set the Stream overlay row to it.</li>
+<li><strong>Test every row</strong> with real content: a long song, a long passage, a slide with a heading and bullets.</li>
+</ol>
+<p>That is five themes, but they all start from the first one by duplication, so it is less work than it sounds.</p>
+
+<h2>Two cautions</h2>
+<p>First, editing a theme changes every screen using it, straight away. During a service, do not edit the one that is live. Duplicate it, design the copy, and switch when it is ready. Second, the designer opens on the lyric theme, not the one you last worked on. If a change seems to do nothing, check the Theme picker at the top of the designer before assuming something is broken.</p>
+<p>Also keep an eye on how many themes you create. Each one is something a volunteer might have to understand. Names such as "Lyrics main", "Scripture calm" and "Stage plain" make the screen list self-explanatory.</p>
+
+<h2>Where to try it</h2>
+<p>Vifug is <a href="/download.html">free to download</a>, has no watermark, and runs on Windows, macOS and Linux, with a browser version at app.vifug.com. The themes-per-screen steps are in the <a href="/guide.html#designer">theme designer chapter</a> of the guide, and the Look and feel settings are in <a href="/guide.html#look">chapter 6</a>. For help with the type choices inside each theme, see <a href="/blog/designing-readable-lyric-slides">designing readable lyric slides</a>, and for the stream version of a bottom bar, <a href="/blog/lower-thirds-and-speaker-name-bars">lower thirds and speaker name bars</a>.</p>
