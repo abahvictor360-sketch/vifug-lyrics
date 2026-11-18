@@ -5,6 +5,46 @@
   <description>Practical articles on presentation software for churches and live events.</description>
   <language>en</language>
   <item>
+    <title>Presenting Bible verses well on screen</title>
+    <link>https://vifug.com/blog/presenting-bible-verses-well</link>
+    <guid>https://vifug.com/blog/presenting-bible-verses-well</guid>
+    <pubDate>Mon, 05 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Guides</category>
+    <description>Practical advice on translation choice, verse chunking, references, multiple languages and pace, with an offline Bible in 31 English versions and more.</description>
+  </item>
+  <item>
+    <title>How AI auto-follow works, and what it cannot do</title>
+    <link>https://vifug.com/blog/how-ai-auto-follow-works</link>
+    <guid>https://vifug.com/blog/how-ai-auto-follow-works</guid>
+    <pubDate>Mon, 28 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Streaming</category>
+    <description>An honest look at speech-following for lyrics and Scripture: what it can do, where it fails, Deepgram versus on-device engines, and keeping the operator in charge.</description>
+  </item>
+  <item>
+    <title>Training new media team volunteers in four weeks</title>
+    <link>https://vifug.com/blog/training-new-media-team-volunteers</link>
+    <guid>https://vifug.com/blog/training-new-media-team-volunteers</guid>
+    <pubDate>Sat, 26 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Guides</category>
+    <description>A four-week onboarding plan for new church media volunteers, with roles, a one-page checklist, rehearsal habits and calm Sunday-morning routines.</description>
+  </item>
+  <item>
+    <title>Choosing worship backgrounds: stills, motion and legibility</title>
+    <link>https://vifug.com/blog/choosing-worship-backgrounds-and-motion</link>
+    <guid>https://vifug.com/blog/choosing-worship-backgrounds-and-motion</guid>
+    <pubDate>Thu, 24 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>How to pick still or motion backgrounds for worship slides, keep them legal and light on the computer, and keep the words readable, with Vifug as the example.</description>
+  </item>
+  <item>
+    <title>How to choose presentation software: a practical checklist</title>
+    <link>https://vifug.com/blog/how-to-choose-presentation-software</link>
+    <guid>https://vifug.com/blog/how-to-choose-presentation-software</guid>
+    <pubDate>Tue, 22 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Guides</category>
+    <description>A step-by-step checklist for choosing presentation software, covering team skill, hardware, offline use, streaming, import and support, with a scoring table.</description>
+  </item>
+  <item>
     <title>Different pictures for the room and the online audience</title>
     <link>https://vifug.com/blog/different-pictures-for-the-room-and-online</link>
     <guid>https://vifug.com/blog/different-pictures-for-the-room-and-online</guid>
@@ -19,6 +59,22 @@
     <pubDate>Sat, 19 Sep 2026 08:00:00 GMT</pubDate>
     <category>Operations</category>
     <description>Plan confidence monitors, lobby and overflow screens that each show different content, and set them up with Vifug&#x27;s stage display and per-screen themes.</description>
+  </item>
+  <item>
+    <title>How many lines of a song should go on each slide?</title>
+    <link>https://vifug.com/blog/how-many-lines-per-slide</link>
+    <guid>https://vifug.com/blog/how-many-lines-per-slide</guid>
+    <pubDate>Thu, 17 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>Two lines or four? How line length, phrasing and repeated choruses should decide your lyric slide breaks, and the lines-per-slide control in Vifug.</description>
+  </item>
+  <item>
+    <title>Best free presentation software for churches: what to look for</title>
+    <link>https://vifug.com/blog/best-free-presentation-software-for-churches</link>
+    <guid>https://vifug.com/blog/best-free-presentation-software-for-churches</guid>
+    <pubDate>Tue, 15 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Basics</category>
+    <description>A fair look at free church presentation software: the categories, what free usually costs you, and a checklist to test any option before Sunday.</description>
   </item>
   <item>
     <title>Livestream lyrics with OBS, vMix and NDI</title>

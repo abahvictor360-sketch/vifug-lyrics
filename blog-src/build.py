@@ -61,11 +61,51 @@ def load():
     return posts
 
 
+
+def slugify(t):
+    t = re.sub(r"<[^>]+>", "", html.unescape(t)).lower()
+    return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:60] or "section"
+
+
+def add_ids(body):
+    """Give every h2/h3 an id and return (body, toc entries for h2)."""
+    seen, toc = set(), []
+    def rep(m):
+        tag, inner = m.group(1), m.group(3)
+        base = slugify(inner); i, sid = 2, base
+        while sid in seen:
+            sid = f"{base}-{i}"; i += 1
+        seen.add(sid)
+        if tag == "h2":
+            toc.append((sid, re.sub(r"<[^>]+>", "", inner)))
+        return f'<{tag} id="{sid}">{inner}</{tag}>'
+    return re.sub(r"<(h[23])(\s[^>]*)?>(.*?)</\1>", rep, body, flags=re.S), toc
+
+
+def audit(p):
+    w = []
+    tt = len(p["title"]) + len(" | Vifug")
+    if tt > 62: w.append(f"title tag {tt} chars (>62)")
+    if not 110 <= len(p["description"]) <= 160: w.append(f"description {len(p['description'])} chars (want 110-160)")
+    if p["words"] < 1200: w.append(f"only {p['words']} words")
+    b = p["body"]
+    if len(re.findall(r"<h2", b)) < 4: w.append("fewer than 4 h2")
+    if "/guide.html" not in b: w.append("no link to /guide.html")
+    if "/download.html" not in b: w.append("no link to /download.html")
+    if len(re.findall(r'href="/blog/', b)) < 1: w.append("no internal link to another post")
+    if "vifug" not in b.lower(): w.append("never mentions Vifug")
+    for m in re.finditer(r"<img\b[^>]*>", b):
+        if 'alt="' not in m.group(0): w.append("img without alt")
+    if not re.search(r"<p>", b[:400]): w.append("body does not open with a paragraph")
+    return w
+
+
 def nice(d):
     return f"{d.strftime('%B')} {d.day}, {d.year}"
 
 
-def head(title, desc, url, extra=""):
+def head(title, desc, url, extra="", image=None, alt="Vifug - free presentation software"):
+    image = image or f"{SITE}/og-image.png"
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -81,13 +121,17 @@ def head(title, desc, url, extra=""):
 <meta property="og:title" content="{e(title)}" />
 <meta property="og:description" content="{e(desc)}" />
 <meta property="og:url" content="{url}" />
-<meta property="og:image" content="{SITE}/og-image.png" />
+<meta property="og:image" content="{image}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="{e(alt)}" />
 <meta property="og:site_name" content="Vifug" />
 <meta property="og:locale" content="en_US" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="{e(title)}" />
 <meta name="twitter:description" content="{e(desc)}" />
-<meta name="twitter:image" content="{SITE}/og-image.png" />
+<meta name="twitter:image" content="{image}" />
+<meta name="twitter:image:alt" content="{e(alt)}" />
 <link rel="alternate" type="application/rss+xml" title="Vifug blog" href="{SITE}/blog/feed.xml" />
 <link rel="icon" href="{FAVICON}" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -189,22 +233,31 @@ def related(p, posts):
 
 def build_post(p, posts):
     url = f"{SITE}/blog/{p['slug']}"
+    img = f"{SITE}/blog/og/{p['slug']}.png"
+    body, toc = add_ids(p["body"])
     ld = [{"@context": "https://schema.org", "@type": "BlogPosting", "headline": p["title"],
            "description": p["description"], "datePublished": p["date"], "dateModified": p["date"],
-           "author": {"@type": "Person", "name": "Victor Abah"},
-           "publisher": {"@type": "Organization", "name": "Vifug", "url": SITE},
-           "mainEntityOfPage": url, "image": f"{SITE}/og-image.png", "keywords": ", ".join(p["tags"]),
-           "wordCount": p["words"]},
+           "author": {"@type": "Person", "name": "Victor Abah", "url": SITE},
+           "publisher": {"@type": "Organization", "name": "Vifug", "url": SITE,
+                         "logo": {"@type": "ImageObject", "url": f"{SITE}/og-image.png"}},
+           "mainEntityOfPage": {"@type": "WebPage", "@id": url}, "image": img,
+           "keywords": ", ".join(p["tags"]), "wordCount": p["words"], "articleSection": p["category"],
+           "inLanguage": "en", "isPartOf": {"@type": "Blog", "name": "The Vifug blog", "@id": SITE + "/blog/"}},
           {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
               {"@type": "ListItem", "position": 1, "name": "Vifug", "item": SITE + "/"},
               {"@type": "ListItem", "position": 2, "name": "Blog", "item": SITE + "/blog/"},
               {"@type": "ListItem", "position": 3, "name": p["title"], "item": url}]}]
     extra = "".join(f'<script type="application/ld+json">{json.dumps(x)}</script>\n' for x in ld)
-    extra += f'<meta property="article:published_time" content="{p["date"]}" />\n'
-    h = head(f"{p['title']} - Vifug blog", p["description"], url, extra).replace(
-        'property="og:locale"', 'property="og:locale"', 1).replace(
+    extra += f'<meta property="article:published_time" content="{p["date"]}" />\n<meta property="article:modified_time" content="{p["date"]}" />\n<meta property="article:author" content="Victor Abah" />\n<meta property="article:section" content="{e(p["category"])}" />\n'
+    extra += "".join(f'<meta property="article:tag" content="{e(t)}" />\n' for t in p["tags"])
+
+    h = head(f"{p['title']} | Vifug", p["description"], url, extra, img, p["title"]).replace(
         '<meta property="og:title"', '<meta property="og:type" content="article" />\n<meta property="og:title"', 1)
     rel = "\n".join(card(q) for q in related(p, posts))
+    toc_html = ""
+    if len(toc) >= 4:
+        toc_html = '    <nav class="toc" aria-label="In this article"><strong>In this article</strong><ol>' + "".join(
+            f'<li><a href="#{i}">{e(t)}</a></li>' for i, t in toc) + "</ol></nav>\n"
     return h + f"""
 <main>
   <article class="article">
@@ -213,8 +266,8 @@ def build_post(p, posts):
     <h1>{e(p['title'])}</h1>
     <p class="lede">{e(p['description'])}</p>
     <div class="meta"><span>By Victor Abah</span><time datetime="{p['date']}">{nice(p['d'])}</time><span>{p['minutes']} min read</span></div>
-    <div class="prose">
-{p['body']}
+{toc_html}    <div class="prose">
+{body}
     </div>
     <aside class="cta">
       <h2>Try Vifug free</h2>
@@ -297,6 +350,11 @@ def main():
     (OUT / "feed.xml").write_text(build_feed(posts), encoding="utf-8")
     update_sitemap(posts)
     update_llms(posts)
+    (ROOT / "blog-src" / "posts.json").write_text(json.dumps([{"slug": p["slug"], "title": p["title"], "category": p["category"]} for p in posts], indent=1))
+    bad = 0
+    for p in posts:
+        for w in audit(p):
+            bad += 1; print(f"  SEO WARN {p['slug']}: {w}")
     print(f"built {len(posts)} posts, {sum(p['words'] for p in posts)} words")
     for p in posts:
         print(f"  {p['words']:5d}  {p['slug']}")

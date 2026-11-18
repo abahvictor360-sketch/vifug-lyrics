@@ -1,0 +1,81 @@
+title: How many lines of a song should go on each slide?
+slug: how-many-lines-per-slide
+description: Two lines or four? How line length, phrasing and repeated choruses should decide your lyric slide breaks, and the lines-per-slide control in Vifug.
+category: Design
+date: 2026-09-17
+tags: lyrics, slides, line breaks, worship, readability
+---
+<p>Two songs, same screen, two completely different feelings. In the first, the slide changes every line and a half and the operator seems to be sprinting. In the second, six lines sit on screen in type small enough that the back half of the room gives up and just hums. Both teams meant well. They just picked a number of lines per slide without asking what the number was for.</p>
+<p>There is no single right answer, but there is a way to find yours. It comes down to how big the words need to be, how long a line is, where the singer naturally breathes, and how often your songs repeat. This post goes through each, then shows how to apply the result in Vifug, where lines per slide is one setting and the slides are recalculated as you change it.</p>
+
+<h2>What the number actually controls</h2>
+<p>Lines per slide is a trade between three things you cannot all have at once:</p>
+<ul>
+<li><strong>Size.</strong> More lines on a slide means each line gets less height, so the letters shrink.</li>
+<li><strong>Look-ahead.</strong> More lines lets people see what is coming next, which helps with unfamiliar songs.</li>
+<li><strong>Operator workload.</strong> Fewer lines means more slide changes, so more chances to be late or to click twice.</li>
+</ul>
+<p>Pick the one that matters most for your room and your songs and accept the cost of the others.</p>
+
+<h2>Two, three, four and more</h2>
+<table>
+<thead><tr><th>Lines</th><th>Good for</th><th>Watch out for</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Very large rooms, slow songs, lower thirds over a camera</td><td>Many slide changes; a line can feel cut off from its partner</td></tr>
+<tr><td>2</td><td>Big venues, long-distance reading, mixed-age congregations</td><td>Songs whose phrases run over two lines get split in awkward places</td></tr>
+<tr><td>3</td><td>An even middle ground; hymn-style verses with three-line stanzas</td><td>Can leave a lone line stranded on the next slide</td></tr>
+<tr><td>4</td><td>Medium rooms, familiar songs, a rhymed couplet pair</td><td>Smaller type; look-ahead can make people read ahead of the singing</td></tr>
+<tr><td>5 or more</td><td>Small rooms, home groups, stage screens for the band</td><td>Back rows struggle; the slide becomes a block of text</td></tr>
+</tbody>
+</table>
+<p>For a main screen in a room with more than about a hundred people, two or four lines are the common choices. Two if the room is deep or the screen is small relative to the room, four if the room is wide and the screen is large. Three works well for songs written in three-line stanzas, and badly for songs that rhyme in pairs.</p>
+<p>The stage display for the band is a different job. Musicians glance at it rather than read it, and often want more look-ahead, so a higher number there is fine. We will come back to that below.</p>
+
+<h2>Match the slide to the phrase, not the count</h2>
+<p>Singing does not happen in equal blocks. A line break in the middle of a sentence makes people stumble, because the eye has to jump to a new slide before the thought is finished. Compare:</p>
+<blockquote><p>Amazing grace, how sweet the sound<br>That saved a wretch like me</p></blockquote>
+<p>These two lines are one thought. Splitting them across slides forces a mid-sentence change. A slide of two lines here is exactly right. But a song with short, punchy lines, such as a one-word-per-line chant, will feel bare with only two lines and may need four.</p>
+<p>A quick method for any new song:</p>
+<ol>
+<li>Read the verse aloud and mark where you naturally breathe.</li>
+<li>Count the lines between breaths. That is the song's natural slide length.</li>
+<li>If most phrases are two lines, use two. If they are four, use four. If they vary, pick the number that never cuts a phrase in half in the verses and fix the odd ones by hand.</li>
+</ol>
+
+<h2>Line length changes everything</h2>
+<p>A line of 25 characters and a line of 55 characters are not the same object. Long lines wrap onto a second row when the type is big, and then your "two lines" is really four rows of text. This is the most common reason a slide looks crowded.</p>
+<p>Some practical guidance:</p>
+<ul>
+<li>Aim for lines that fit on one row at your chosen size. As a rule of thumb, 30 to 40 characters per row reads comfortably on a widescreen slide.</li>
+<li>If a long line wraps, either shorten the font size, widen the text box, or trim to fewer lines on that slide. Do not let one line wrap awkwardly with a single orphan word on the second row.</li>
+<li>Check your longest lines first. If the worst case fits, the rest will.</li>
+</ul>
+<p>In Vifug, the theme designer's text box and its Auto-fit option do part of this for you. With Auto-fit on, the words are sized to fill the box, so two lines come out large and six come out smaller. With it off you set a size and every slide uses it, and long slides may overflow the box. The designer guide's advice for overflow is plain: make the box bigger, make the size smaller, tick Auto-fit, or show fewer lines per slide.</p>
+
+<h2>Choruses, repeats and tags</h2>
+<p>Repeated sections are where slide counts balloon. A chorus that returns four times is the same slide four times, and a song with a repeated last line ("Hallelujah, hallelujah") can eat three extra clicks.</p>
+<ul>
+<li><strong>Do not write out the repeat.</strong> Keep one chorus, and play it in the order the song is sung. Typing it again each time makes edits painful.</li>
+<li><strong>Treat the tag as its own short slide.</strong> A final repeated line deserves a slide of its own so the operator can hold it as long as the band does.</li>
+<li><strong>Check where the chorus breaks.</strong> If your verse is four lines on two slides and the chorus is five lines, the five-line one will leave a single line stranded. Better to design the chorus as 2 + 3 and adjust.</li>
+</ul>
+<p>Vifug stores a song as structured text, verses, choruses and bridges, rather than a fixed deck. The guide says you can reorder sections, repeat a chorus or add a new verse straight from the song editor, and the changes apply live without re-importing anything. That is what makes repeats painless: the song is the text, and the slides come from the text.</p>
+
+<h2>Setting it in Vifug</h2>
+<p>Vifug has a lines-per-slide setting, and the guide describes how it behaves: it re-paginates on the fly, so changing it from 2 to 4 lines reshuffles every slide in the song instantly, with nothing to rebuild. You can also set it during first-run setup, where one of the questions is how many lines of a song to show at once. After that, it lives in Settings, Lyrics, Slides.</p>
+<p>That makes testing cheap. Open a song you know, put it in Preview, and flip the number between 2, 3 and 4 while you look at where the slide breaks fall. You will see right away which setting cuts phrases and which one keeps them together. Do it with your longest song and your shortest-lined song before you commit.</p>
+<p>When one song just does not fit the global number, the fix is in the song, not the setting. Because Vifug builds slides from sections, you can split a long section into two in the song editor, or merge two short ones, so the breaks land where the singing breathes. Changing a global number to rescue one song usually damages ten others.</p>
+<p>The theme designer's sample buttons, 2 lines and 4 lines, show how your text box handles each count before you go near a real song. If a box that looks good with two lines is cramped with four, you have learned that in Settings rather than live.</p>
+
+<h2>A sensible starting recipe</h2>
+<ol>
+<li>Start with two lines for the main screen if the room is large, four if it is small and the screen is big.</li>
+<li>Turn Auto-fit on so short slides get large type without any extra work.</li>
+<li>Run three songs through Preview: a slow hymn, a fast chorus-heavy song, and a long-lined one.</li>
+<li>Fix any song that breaks mid-phrase by adjusting its sections, not the global number.</li>
+<li>Give the stage display its own, higher count if the band wants more look-ahead. Vifug lets a screen use a different theme from the main one, but check the guide for what each screen can be set to independently.</li>
+</ol>
+<p>None of this needs to be perfect on the first Sunday. Slides built from text can be changed on Tuesday and checked again on Saturday.</p>
+
+<h2>Where to go next</h2>
+<p>If you want to try different line counts on your own songs, <a href="/download.html">download Vifug</a>. It is free, has no watermark, and includes 325 songs to practise on. The settings that matter here are described in the <a href="/guide.html#look">Look and feel chapter</a> and the <a href="/guide.html#designer">theme designer chapter</a> of the guide. For the type size side of this decision, see <a href="/blog/designing-readable-lyric-slides">designing readable lyric slides</a>.</p>

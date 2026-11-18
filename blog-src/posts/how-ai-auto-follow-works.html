@@ -1,0 +1,75 @@
+title: How AI auto-follow works, and what it cannot do
+slug: how-ai-auto-follow-works
+description: An honest look at speech-following for lyrics and Scripture: what it can do, where it fails, Deepgram versus on-device engines, and keeping the operator in charge.
+category: Streaming
+date: 2026-09-28
+tags: auto-follow, speech recognition, deepgram, whisper, bible
+---
+<p>Every media team has the same wish at some point in a long service: let the software follow along so I can look up from the laptop. Speech-following tools promise that. They listen to the room, work out where the singing or the sermon has got to, and move the screen to match. They can do it, within limits, and the limits matter more than the promise. This post explains how the idea works, where it breaks, and how to use it without handing the congregation's screen to a guess.</p>
+
+<h2>What "following" means</h2>
+<p>There are two quite different jobs hiding under one name.</p>
+<p><strong>Following a song.</strong> The software already has the words of the song, split into slides. It listens for the words being sung and decides which slide those words belong to. This is a matching problem against a small, known text, which makes it relatively forgiving.</p>
+<p><strong>Following Scripture.</strong> The software listens to a preacher and tries to spot a Bible reference or a verse. The text could be anything, and the preacher can say anything, so it has to recognise a cited reference ("John chapter three verse sixteen"), a quotation of the actual words, or a loose paraphrase. These are three very different levels of confidence.</p>
+<p>Vifug's AI auto-follow does both, and keeps them as separate switches in Settings, under AI auto-follow. Songs advance by listening to the room, and Scripture can be put up by a spoken reference, a quoted verse or a paraphrase.</p>
+
+<h2>The operator stays in control</h2>
+<p>The most important design rule is that a human can always override. In Vifug, your own next and previous controls always win: the moment you touch one, auto-follow carries on from wherever you left it. The microphone mute in the Audio Mixer also does more than silence a meter. It pauses auto-follow's listening entirely, so it is a genuine "stop listening to the room" control.</p>
+<p>That rule should shape how you use any tool of this kind. Think of it as a second pair of hands that sometimes guesses wrong, not an autopilot.</p>
+
+<h2>Two engines, two trade-offs</h2>
+<p>Vifug offers two speech recognisers, with the switch at the top of the auto-follow panel.</p>
+<table>
+<thead><tr><th></th><th>Deepgram (online)</th><th>On this machine (Whisper)</th></tr></thead>
+<tbody>
+<tr><td>Internet</td><td>Needed for the whole service</td><td>Only to download the model once</td></tr>
+<tr><td>Account</td><td>A free Deepgram API key</td><td>None</td></tr>
+<tr><td>Speed</td><td>Words stream in while the speaker is still talking</td><td>Hears a phrase at a time, so it reacts after a pause</td></tr>
+<tr><td>Accuracy</td><td>The better of the two</td><td>Slower and rougher, depending on the model</td></tr>
+<tr><td>Privacy</td><td>Audio goes to the service</td><td>No audio leaves the building</td></tr>
+</tbody>
+</table>
+<p>If speed matters, for example you want a verse to appear while the preacher is still reading it, Deepgram is the engine to use. If your hall Wi-Fi is unreliable, or you do not want audio leaving the building, the on-device engine keeps working when the network does not.</p>
+<p>The on-device engine comes in sizes. Tiny (about 40 MB) is fastest and mishears names. Base (about 80 MB) is a clear step up and a sensible place to start. Small (about 250 MB) handles names and numbers better but wants a recent machine. Large v3 Turbo (about 800 MB) is the most accurate and the slowest, and it needs a graphics card the app can use. On a plain processor it can fall a sentence or more behind the preacher. Try Base first.</p>
+
+<h2>Accents and languages</h2>
+<p>Recognition is only as good as what the model has heard before. The English-only models were trained on English alone, which in practice means mostly American and British speech. If your congregation speaks English with a Nigerian, Ghanaian, Kenyan, Caribbean or Indian accent, Vifug has a switch, <em>The English here is accented</em>, which uses the all-languages model of the same size. It is the same speed and handles those accents noticeably better.</p>
+<p>The on-device engine can listen in several African languages, including Yoruba, Hausa, Swahili, Amharic, Somali, Shona, Lingala, Malagasy and Afrikaans. It cannot hear Igbo, Nigerian Pidgin or Twi, because it was never trained on them. Vifug ships Bibles in Igbo and Twi, so those can still be put up by hand or from a service plan. Only the listening part is unavailable.</p>
+
+<h2>Where it works well, and where it does not</h2>
+<p><strong>Works well:</strong></p>
+<ul>
+<li>A song with a clear lead vocal and a mic that hears the room. The software matches the words it hears against the next few slides and jumps to the furthest confident match.</li>
+<li>A cited reference. Vifug treats this as 100 percent certain, because the words "John chapter three verse sixteen" are unambiguous.</li>
+<li>Carrying on from a passage already up: "verse nine", "verses ten to twelve", "look over at chapter four".</li>
+</ul>
+<p><strong>Works less well:</strong></p>
+<ul>
+<li>A loud band, a muddy room or a mic across the hall. The software can only act on what it hears.</li>
+<li>Songs with heavy ad-libbing, long instrumental breaks or a leader who changes the order on the fly.</li>
+<li>Paraphrases. A paraphrase is a ranked guess from the words heard. By default Vifug matches words, not meaning, so "lack nothing" will not find "shall not want". There is an option to understand paraphrases by meaning using a small language model of about 23 MB that runs on your computer, but it is still a guess and always shows a confidence figure.</li>
+<li>Common phrases. "And the Lord spake unto Moses" settles nothing, because it appears many times.</li>
+</ul>
+
+<h2>Preview or Live: choose per detection</h2>
+<p>The key safety control is where a heard passage goes. In the AI Auto-Follow panel on the main screen, each kind of detection can be sent to Preview or straight to Live, separately.</p>
+<ul>
+<li><strong>Reference read out:</strong> safe to send Live, because a cited reference is unmistakable.</li>
+<li><strong>Verse quoted:</strong> a judgement, so it starts on Preview.</li>
+<li><strong>Verse paraphrased:</strong> a guess, so it also starts on Preview, and is the one to think hardest about before sending Live.</li>
+</ul>
+<p>With Preview, the verse lands in the preview pane and you press Go live, so a wrong guess costs a glance, not an embarrassment on the wall. A Present button next to each detection puts it on the screen in one press. A sensible mix is a spoken reference going Live while a quotation waits in Preview. Sending everything Live suits only a service where nobody is at the desk, and the price is that the room sees every mistake too.</p>
+
+<h2>A first-use plan</h2>
+<ol>
+<li>Choose the engine. For most halls, start with Deepgram if you have reliable internet, or Base on-device if you do not.</li>
+<li>Pick the microphone in the panel or the Audio Mixer and press Test. Aim for a clean voice signal, not a loud one. Leave noise reduction on if you have fans or projector hum.</li>
+<li>Turn on song following only, and leave Scripture off for the first rehearsal.</li>
+<li>Watch the panel. It shows the words it hears and a short history of what it changed, each tagged: sung, read out, quoted or version. The tags tell you which parts to trust.</li>
+<li>Add Scripture following next, with detections going to Preview.</li>
+<li>Prepare quoted-scripture matching before the service, not mid-sermon. It indexes a whole Bible version in memory, and needs a few seconds the first time.</li>
+<li>Run a full rehearsal, then a real service with an operator still at the desk.</li>
+</ol>
+
+<h2>Is it worth using?</h2>
+<p>For many teams, yes, as an assistant. It frees you from hammering the next button on every line and lets you watch the room. It will not replace a person who knows the service. Vifug is free to download, and AI auto-follow is described in full in the <a href="/guide.html#autofollow">auto-follow chapter of the guide</a>. Get the app from the <a href="/download.html">download page</a>, and try it on a rehearsal first.</p>
