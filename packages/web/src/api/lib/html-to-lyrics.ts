@@ -277,10 +277,28 @@ function paragraphsAreStanzas(html: string): boolean {
   return withBreaks / paras.length >= 0.4;
 }
 
+/**
+ * Newlines inside <pre> are content, not whitespace.
+ *
+ * toLines flattens the source's own newlines before turning tags into breaks,
+ * which is right for ordinary markup and wrong for exactly one element. Hymn
+ * archives and chord-chart sites lay a song out as preformatted text with no
+ * <br> in it at all, so flattening first delivered the whole song as a single
+ * line: the lyric scorer then read it as prose and the import arrived as one
+ * run-on paragraph. Turning each newline inside a <pre> into a <br> first
+ * lets the normal path handle it, blank-line stanza breaks included.
+ */
+function preNewlinesToBreaks(html: string): string {
+  return html.replace(
+    /<pre\b[^>]*>[\s\S]*?<\/pre>/gi,
+    (block) => block.replace(/\r?\n/g, "<br>"),
+  );
+}
+
 /** HTML fragment to trimmed text lines, preserving line and stanza breaks. */
 function toLines(html: string): string[] {
   const paraBreak = paragraphsAreStanzas(html) ? "\n\n" : "\n";
-  const text = html
+  const text = preNewlinesToBreaks(html)
     // Newlines in the source are whitespace, not content - HTML says so, and
     // pages are written accordingly: a line typically ends "<br />\n". Turning
     // the tag into a newline without first flattening the source one yields a

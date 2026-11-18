@@ -57,9 +57,10 @@ Allow: /
 # -- WHERE TO READ MORE ----------------------------
 # Guide with short videos:        https://vifug.com/guide.html
 #   Short videos (spoken narration, with captions on screen too): first song, the two screen
-#     layouts, add a song, add Bible versions, a Bible verse on screen, add a presentation,
-#     media / plans / history, change the background, add sound, set up and send to the screen,
-#     show a camera, phone remote, live streaming, AI auto-follow, theme designer, screen layout
+#     layouts, add a song, add a song from a link, add Bible versions, a Bible verse on screen,
+#     add a presentation, media / plans / history, change the background, add sound,
+#     set up and send to the screen, show a camera, phone remote, live streaming,
+#     AI auto-follow, theme designer
 #   Quick start                   https://vifug.com/guide.html#quickstart
 #   Two operator screen layouts   https://vifug.com/guide.html#layout
 #   Bible                         https://vifug.com/guide.html#bible
