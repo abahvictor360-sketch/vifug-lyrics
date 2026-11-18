@@ -5,6 +5,46 @@
   <description>Practical articles on presentation software for churches and live events.</description>
   <language>en</language>
   <item>
+    <title>Accessible presentations: rules that help everyone</title>
+    <link>https://vifug.com/blog/accessible-presentations-for-everyone</link>
+    <guid>https://vifug.com/blog/accessible-presentations-for-everyone</guid>
+    <pubDate>Wed, 14 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>Practical rules for contrast, size, colour-blind safety, motion, language and hearing-impaired viewers, and how theme options help you apply them.</description>
+  </item>
+  <item>
+    <title>Switching from ProPresenter or EasyWorship: a migration plan</title>
+    <link>https://vifug.com/blog/switching-from-propresenter-or-easyworship</link>
+    <guid>https://vifug.com/blog/switching-from-propresenter-or-easyworship</guid>
+    <pubDate>Mon, 12 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Guides</category>
+    <description>A step-by-step plan for moving a church media team to new presentation software: audit songs, import, rebuild themes, and run both systems in parallel.</description>
+  </item>
+  <item>
+    <title>Planning for no-internet Sundays: offline and backups</title>
+    <link>https://vifug.com/blog/offline-reliability-and-backups</link>
+    <guid>https://vifug.com/blog/offline-reliability-and-backups</guid>
+    <pubDate>Sat, 10 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>Design your church media setup to survive a dead router or a dead laptop: offline-first habits, backups, a spare machine, and restoring in Vifug.</description>
+  </item>
+  <item>
+    <title>Why lyrics, Scripture and announcements need different themes</title>
+    <link>https://vifug.com/blog/one-theme-per-content-type</link>
+    <guid>https://vifug.com/blog/one-theme-per-content-type</guid>
+    <pubDate>Thu, 08 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>Why one slide look cannot serve lyrics, Scripture, sermon slides and announcements, and how to give each content type and screen its own theme in Vifug.</description>
+  </item>
+  <item>
+    <title>The Preview and Live workflow: stop on-screen mistakes</title>
+    <link>https://vifug.com/blog/preview-and-live-workflow</link>
+    <guid>https://vifug.com/blog/preview-and-live-workflow</guid>
+    <pubDate>Tue, 06 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>Why separating Preview from Live prevents wrong slides, typos and surprise camera shots, with a step-by-step way to run it and the mistakes it catches.</description>
+  </item>
+  <item>
     <title>Presenting Bible verses well on screen</title>
     <link>https://vifug.com/blog/presenting-bible-verses-well</link>
     <guid>https://vifug.com/blog/presenting-bible-verses-well</guid>
@@ -13,12 +53,36 @@
     <description>Practical advice on translation choice, verse chunking, references, multiple languages and pace, with an offline Bible in 31 English versions and more.</description>
   </item>
   <item>
+    <title>Service planning and run sheets for the media desk</title>
+    <link>https://vifug.com/blog/service-planning-and-run-sheets</link>
+    <guid>https://vifug.com/blog/service-planning-and-run-sheets</guid>
+    <pubDate>Sat, 03 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Operations</category>
+    <description>How to build a service run sheet with the right order, cues, timers and announcements, and how to turn it into a plan, timer and ticker in Vifug.</description>
+  </item>
+  <item>
+    <title>Lower thirds and speaker name bars for church livestreams</title>
+    <link>https://vifug.com/blog/lower-thirds-and-speaker-name-bars</link>
+    <guid>https://vifug.com/blog/lower-thirds-and-speaker-name-bars</guid>
+    <pubDate>Thu, 01 Oct 2026 08:00:00 GMT</pubDate>
+    <category>Design</category>
+    <description>What lower thirds and name bars are, when to show them, how to design and time them, and how to set up both in Vifug over a camera or stream overlay.</description>
+  </item>
+  <item>
+    <title>Church presentation software vs PowerPoint: when each makes sense</title>
+    <link>https://vifug.com/blog/church-presentation-software-vs-powerpoint</link>
+    <guid>https://vifug.com/blog/church-presentation-software-vs-powerpoint</guid>
+    <pubDate>Tue, 29 Sep 2026 08:00:00 GMT</pubDate>
+    <category>Basics</category>
+    <description>PowerPoint, Keynote and Google Slides are enough for some churches. Here is where dedicated live software starts to pay for itself, and where it does not.</description>
+  </item>
+  <item>
     <title>How AI auto-follow works, and what it cannot do</title>
     <link>https://vifug.com/blog/how-ai-auto-follow-works</link>
     <guid>https://vifug.com/blog/how-ai-auto-follow-works</guid>
     <pubDate>Mon, 28 Sep 2026 08:00:00 GMT</pubDate>
     <category>Streaming</category>
-    <description>An honest look at speech-following for lyrics and Scripture: what it can do, where it fails, Deepgram versus on-device engines, and keeping the operator in charge.</description>
+    <description>What speech-following for lyrics and Scripture can and cannot do, Deepgram versus on-device engines, and how to keep the operator in charge.</description>
   </item>
   <item>
     <title>Training new media team volunteers in four weeks</title>
@@ -34,7 +98,7 @@
     <guid>https://vifug.com/blog/choosing-worship-backgrounds-and-motion</guid>
     <pubDate>Thu, 24 Sep 2026 08:00:00 GMT</pubDate>
     <category>Design</category>
-    <description>How to pick still or motion backgrounds for worship slides, keep them legal and light on the computer, and keep the words readable, with Vifug as the example.</description>
+    <description>How to pick still or motion backgrounds for worship slides, keep them legal and light on the computer, and keep words readable, using Vifug as the example.</description>
   </item>
   <item>
     <title>How to choose presentation software: a practical checklist</title>

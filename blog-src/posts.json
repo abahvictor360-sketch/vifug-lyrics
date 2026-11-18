@@ -1,8 +1,48 @@
 [
  {
+  "slug": "accessible-presentations-for-everyone",
+  "title": "Accessible presentations: rules that help everyone",
+  "category": "Design"
+ },
+ {
+  "slug": "switching-from-propresenter-or-easyworship",
+  "title": "Switching from ProPresenter or EasyWorship: a migration plan",
+  "category": "Guides"
+ },
+ {
+  "slug": "offline-reliability-and-backups",
+  "title": "Planning for no-internet Sundays: offline and backups",
+  "category": "Operations"
+ },
+ {
+  "slug": "one-theme-per-content-type",
+  "title": "Why lyrics, Scripture and announcements need different themes",
+  "category": "Design"
+ },
+ {
+  "slug": "preview-and-live-workflow",
+  "title": "The Preview and Live workflow: stop on-screen mistakes",
+  "category": "Operations"
+ },
+ {
   "slug": "presenting-bible-verses-well",
   "title": "Presenting Bible verses well on screen",
   "category": "Guides"
+ },
+ {
+  "slug": "service-planning-and-run-sheets",
+  "title": "Service planning and run sheets for the media desk",
+  "category": "Operations"
+ },
+ {
+  "slug": "lower-thirds-and-speaker-name-bars",
+  "title": "Lower thirds and speaker name bars for church livestreams",
+  "category": "Design"
+ },
+ {
+  "slug": "church-presentation-software-vs-powerpoint",
+  "title": "Church presentation software vs PowerPoint: when each makes sense",
+  "category": "Basics"
  },
  {
   "slug": "how-ai-auto-follow-works",

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J4HYT937CV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-J4HYT937CV');
+</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Switching from ProPresenter or EasyWorship: a migration plan | Vifug</title>
+<meta name="description" content="A step-by-step plan for moving a church media team to new presentation software: audit songs, import, rebuild themes, and run both systems in parallel." />
+<link rel="canonical" href="https://vifug.com/blog/switching-from-propresenter-or-easyworship" />
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+<meta name="theme-color" content="#080a0f" />
+<meta name="author" content="Victor Abah" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Switching from ProPresenter or EasyWorship: a migration plan | Vifug" />
+<meta property="og:description" content="A step-by-step plan for moving a church media team to new presentation software: audit songs, import, rebuild themes, and run both systems in parallel." />
+<meta property="og:url" content="https://vifug.com/blog/switching-from-propresenter-or-easyworship" />
+<meta property="og:image" content="https://vifug.com/blog/og/switching-from-propresenter-or-easyworship.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Switching from ProPresenter or EasyWorship: a migration plan" />
+<meta property="og:site_name" content="Vifug" />
+<meta property="og:locale" content="en_US" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Switching from ProPresenter or EasyWorship: a migration plan | Vifug" />
+<meta name="twitter:description" content="A step-by-step plan for moving a church media team to new presentation software: audit songs, import, rebuild themes, and run both systems in parallel." />
+<meta name="twitter:image" content="https://vifug.com/blog/og/switching-from-propresenter-or-easyworship.png" />
+<meta name="twitter:image:alt" content="Switching from ProPresenter or EasyWorship: a migration plan" />
+<link rel="alternate" type="application/rss+xml" title="Vifug blog" href="https://vifug.com/blog/feed.xml" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23a3e635'/%3E%3Cg fill='none' stroke='%23080a0f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' transform='translate(3.4 3.4) scale(0.72)'%3E%3Cpath d='M9 18V5l12-2v13'/%3E%3Cpath d='m9 9 12-2'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Ccircle cx='18' cy='16' r='3'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Switching from ProPresenter or EasyWorship: a migration plan", "description": "A step-by-step plan for moving a church media team to new presentation software: audit songs, import, rebuild themes, and run both systems in parallel.", "datePublished": "2026-10-12", "dateModified": "2026-10-12", "author": {"@type": "Person", "name": "Victor Abah", "url": "https://vifug.com"}, "publisher": {"@type": "Organization", "name": "Vifug", "url": "https://vifug.com", "logo": {"@type": "ImageObject", "url": "https://vifug.com/og-image.png"}}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://vifug.com/blog/switching-from-propresenter-or-easyworship"}, "image": "https://vifug.com/blog/og/switching-from-propresenter-or-easyworship.png", "keywords": "migration, propresenter, easyworship, song library, church media", "wordCount": 1435, "articleSection": "Guides", "inLanguage": "en", "isPartOf": {"@type": "Blog", "name": "The Vifug blog", "@id": "https://vifug.com/blog/"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Vifug", "item": "https://vifug.com/"}, {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://vifug.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Switching from ProPresenter or EasyWorship: a migration plan", "item": "https://vifug.com/blog/switching-from-propresenter-or-easyworship"}]}</script>
+<meta property="article:published_time" content="2026-10-12" />
+<meta property="article:modified_time" content="2026-10-12" />
+<meta property="article:author" content="Victor Abah" />
+<meta property="article:section" content="Guides" />
+<meta property="article:tag" content="migration" />
+<meta property="article:tag" content="propresenter" />
+<meta property="article:tag" content="easyworship" />
+<meta property="article:tag" content="song library" />
+<meta property="article:tag" content="church media" />
+</head>
+<body>
+<header>
+  <div class="nav">
+    <a class="brand" href="/">
+      <span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><path d="m9 9 12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+      Vifug
+    </a>
+    <div class="nav-links">
+      <a class="hide-sm" href="/">Home</a>
+      <a href="/guide.html">Guide</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+      <a class="btn btn-live" href="/download.html">Download free</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <article class="article">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Vifug</a> / <a href="/blog/">Blog</a> / Guides</nav>
+    <span class="eyebrow">Guides</span>
+    <h1>Switching from ProPresenter or EasyWorship: a migration plan</h1>
+    <p class="lede">A step-by-step plan for moving a church media team to new presentation software: audit songs, import, rebuild themes, and run both systems in parallel.</p>
+    <div class="meta"><span>By Victor Abah</span><time datetime="2026-10-12">October 12, 2026</time><span>7 min read</span></div>
+    <nav class="toc" aria-label="In this article"><strong>In this article</strong><ol><li><a href="#step-1-decide-what-you-are-actually-moving">Step 1: decide what you are actually moving</a></li><li><a href="#step-2-audit-the-song-library">Step 2: audit the song library</a></li><li><a href="#step-3-export-import-and-check-what-came-across">Step 3: export, import and check what came across</a></li><li><a href="#step-4-bring-media-and-presentations">Step 4: bring media and presentations</a></li><li><a href="#step-5-rebuild-your-themes">Step 5: rebuild your themes</a></li><li><a href="#step-6-learn-the-controls-and-set-shortcuts">Step 6: learn the controls and set shortcuts</a></li><li><a href="#step-7-run-both-in-parallel">Step 7: run both in parallel</a></li><li><a href="#common-problems-and-how-to-handle-them">Common problems and how to handle them</a></li><li><a href="#where-vifug-fits">Where Vifug fits</a></li></ol></nav>
+    <div class="prose">
+<p>Nobody wants to switch presentation software in the middle of the year. The song library has taken years to build, the volunteers know where everything is, and Sunday is never optional. Yet there are good reasons to look around: the cost, a change of computers, a move to Linux or macOS, or a team that wants something simpler to hand to new volunteers. If you have decided to try a different tool, the risk is not the software. The risk is a rushed switch.</p>
+<p>This is a plan that lets you move over in stages, and fall back to the old system any week you need to. Both ProPresenter and EasyWorship are capable, well-established tools, and this is not an argument against them. It is a method for a careful move to anything, with Vifug as the worked example for the import steps.</p>
+
+<h2 id="step-1-decide-what-you-are-actually-moving">Step 1: decide what you are actually moving</h2>
+<p>Before you open the new software, write down what lives in the old one. Most libraries hold more than people remember.</p>
+<ul>
+<li>Songs, with section order and any translations.</li>
+<li>Presentations: announcements, sermon slides, recurring graphics.</li>
+<li>Backgrounds, loops and logos.</li>
+<li>Themes or templates: fonts, colours, text positions.</li>
+<li>Service plans or playlists.</li>
+<li>Settings that took time to get right: screen sizes, margins, output assignments, shortcuts.</li>
+</ul>
+<p>Ask the team which of these they use every week, which they use a few times a year, and which nobody has touched in two years. That third group is the one you should not carry across out of habit.</p>
+
+<h2 id="step-2-audit-the-song-library">Step 2: audit the song library</h2>
+<p>A migration is the best excuse you will ever have to clean up. Open the old library and sort by title.</p>
+<ol>
+<li>Mark duplicates: "Amazing Grace", "Amazing Grace (2)", "Amazing Grace - old".</li>
+<li>Mark songs the church has not sung in several years.</li>
+<li>Mark songs with broken formatting, such as chords mixed into the words, or all text in one slide.</li>
+<li>Check licensing. If you display songs under a licence such as CCLI, make sure the import does not change what you report.</li>
+<li>Make a short list of the thirty or so songs your church sings most. These are the ones you will test hardest.</li>
+</ol>
+<p>Importing a library with the same song three times just gives you the same mess in a new place. A tidy-up before the move takes an evening and pays back for years.</p>
+
+<h2 id="step-3-export-import-and-check-what-came-across">Step 3: export, import and check what came across</h2>
+<p>Different programs keep songs in different formats, and no import is perfect. Treat the import as a first draft, then verify.</p>
+<p>Vifug can import songs from ProPresenter, in .pro6 and .pro files, with section names kept. It can also import a whole EasyWorship 6 or 7 library, with titles, authors, copyright and sections. In both cases songs that are already there are skipped, so running an import twice does not double anything. It can also take plain text and Word files, many at once. The <a href="/guide.html#library">library chapter</a> describes the import options, and the desktop app is the place to do it.</p>
+<p>After the import, check the results methodically:</p>
+<ul>
+<li>Open your thirty most-used songs and read each one from start to finish.</li>
+<li>Check that verses, choruses and bridges came across as sections, and that the order of sections is right.</li>
+<li>Look for odd characters, missing lines, or text split in the wrong place.</li>
+<li>Check any songs with a translation line.</li>
+<li>Compare the song count with the old library, allowing for the duplicates you deliberately left behind.</li>
+</ul>
+<p>Fix problems in the song editor, where you can reorder sections, repeat a chorus or add a verse and the slides update live. Vifug re-paginates the song when you change lines per slide, so you do not rebuild slides by hand.</p>
+
+<h2 id="step-4-bring-media-and-presentations">Step 4: bring media and presentations</h2>
+<p>Pictures, videos and sound files are usually easy to copy, but they are also where you will find gigabytes you do not need. Move what you use.</p>
+<p>For decks, Vifug imports PowerPoint (.pptx) and PDF files and keeps the deck's own backgrounds and text colours. If your old system holds recurring slides, export them as PowerPoint or PDF from there and import them here. Then open each one and look at it, because fonts and layouts rarely survive a trip between programs unchanged.</p>
+<p>If you later move from one Vifug computer to another, the desktop app has a Backup group under Settings, then General. Back up now makes a dated folder, and Import from another Vifug adds that library to a new machine without replacing anything. That is useful once you have set up Vifug the way you like it and want to repeat the setup elsewhere.</p>
+
+<h2 id="step-5-rebuild-your-themes">Step 5: rebuild your themes</h2>
+<p>This is the part that cannot be fully automated, and it is also the part that makes the new system feel like yours. Look at the old system's three or four most-used looks and recreate them.</p>
+<ol>
+<li>Write down the font, size, weight, colours, margins and background of each look.</li>
+<li>In Vifug's theme designer, start from the nearest preset: Full screen, Lower third, Top band, Left half, Right half or Centre card.</li>
+<li>Drag and resize the text box, set the font, colours, outline and shadow, and choose a background picture or video.</li>
+<li>Make separate themes for lyrics, Scripture and presentations, since they are often best with different looks.</li>
+<li>Set the text margin for your actual screen. Every hall is cropped differently.</li>
+<li>Review on the real projector, not just on a laptop.</li>
+</ol>
+<p>Do not try to match the old look pixel for pixel. Use the move as a chance to improve contrast and size, which usually matter more than a perfect copy.</p>
+
+<h2 id="step-6-learn-the-controls-and-set-shortcuts">Step 6: learn the controls and set shortcuts</h2>
+<p>Volunteers spend more time with the keyboard than with the menu. In Vifug, the arrow keys cue, Enter goes live, Space blanks, Esc clears and F9 opens the projector, and you can change any of them under Settings, then Shortcuts, to the keys you know from your old software. The shortcuts are switched off while you type, so a title does not blank the screen.</p>
+<p>The workflow is Preview, then Live: nothing reaches the screen until the operator sends it. If your team is used to the same idea, the change is small. If they are not, spend a rehearsal on it.</p>
+
+<h2 id="step-7-run-both-in-parallel">Step 7: run both in parallel</h2>
+<p>For two or three weeks, keep the old system ready and use the new one for part of the service.</p>
+<table>
+<thead><tr><th>Week</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>Before any service</td><td>Rehearse the full service on the new software, at the real screen, with the real operators</td></tr>
+<tr><td>Week 1</td><td>Use the new software for one low-stakes service, such as a midweek meeting, with the old system ready</td></tr>
+<tr><td>Week 2</td><td>Run Sunday on the new software; keep the old computer plugged in and switched on</td></tr>
+<tr><td>Week 3</td><td>Run Sunday on the new software alone; note anything that surprised the team</td></tr>
+<tr><td>After</td><td>Keep the old library read-only for a few months before archiving it</td></tr>
+</tbody>
+</table>
+<p>Keep a written fallback: if something fails, who switches, how long it takes, and what the room will see meanwhile.</p>
+
+<h2 id="common-problems-and-how-to-handle-them">Common problems and how to handle them</h2>
+<ul>
+<li><strong>A song imported with its sections in the wrong order.</strong> Open it in the editor and reorder the sections. Do this for your most-used songs first, and leave the rarely used ones until they are needed.</li>
+<li><strong>The same title exists twice.</strong> Vifug treats the same title as the same song and skips the second one, so rename one version before importing again if you want both.</li>
+<li><strong>Fonts look different.</strong> Install the font on the new computer, or add the font file in the theme designer. An added font is kept with your library.</li>
+<li><strong>Volunteers reach for the old shortcuts.</strong> Remap them under Settings, then Shortcuts, before the first rehearsal.</li>
+<li><strong>The screen edge is cropped.</strong> Raise the text margin on only the side that is being cut off.</li>
+</ul>
+<p>Keep a short log during the parallel weeks: what broke, what confused people, what was fixed. By the third week the same few items should be the only ones left, and those are what to fix before you retire the old system.</p>
+
+<h2 id="where-vifug-fits">Where Vifug fits</h2>
+<p>Vifug is free, has no watermark, runs on Windows, macOS and Linux, and has a browser version at app.vifug.com you can try without installing anything. It includes 325 songs, so you can test the workflow before you import a single file. Download the desktop app from the <a href="/download.html">download page</a>, import a small batch of songs first, and compare them with the originals. Check each product's own site for its current terms and details.</p>
+    </div>
+    <aside class="cta">
+      <h2>Try Vifug free</h2>
+      <p>Vifug is free presentation and live-production software for churches, events and studios: lyrics, Scripture, slides, cameras and streaming, with a Preview and Live workflow. No watermark, and it runs a service without internet.</p>
+      <div class="row"><a class="btn btn-live" href="/download.html">Download Vifug</a><a class="btn" href="/guide.html">Read the guide</a></div>
+    </aside>
+  </article>
+  <div class="wrap related">
+    <h2>Keep reading</h2>
+    <div class="grid">
+      <a class="post-card" href="/blog/how-to-choose-presentation-software" data-cat="Guides">
+        <span class="tag">Guides</span>
+        <h2>How to choose presentation software: a practical checklist</h2>
+        <p>A step-by-step checklist for choosing presentation software, covering team skill, hardware, offline use, streaming, import and support, with a scoring table.</p>
+        <span class="meta"><time datetime="2026-09-22">September 22, 2026</time><span>6 min read</span></span>
+      </a>
+      <a class="post-card" href="/blog/presenting-bible-verses-well" data-cat="Guides">
+        <span class="tag">Guides</span>
+        <h2>Presenting Bible verses well on screen</h2>
+        <p>Practical advice on translation choice, verse chunking, references, multiple languages and pace, with an offline Bible in 31 English versions and more.</p>
+        <span class="meta"><time datetime="2026-10-05">October 5, 2026</time><span>6 min read</span></span>
+      </a>
+      <a class="post-card" href="/blog/training-new-media-team-volunteers" data-cat="Guides">
+        <span class="tag">Guides</span>
+        <h2>Training new media team volunteers in four weeks</h2>
+        <p>A four-week onboarding plan for new church media volunteers, with roles, a one-page checklist, rehearsal habits and calm Sunday-morning routines.</p>
+        <span class="meta"><time datetime="2026-09-26">September 26, 2026</time><span>6 min read</span></span>
+      </a>
+    </div>
+  </div>
+</main>
+<footer>
+  <div class="wrap foot">
+    <span>© <span id="year"></span> Vifug · Free worship presentation software · Made by Victor Abah · All rights reserved</span>
+    <nav class="foot-links">
+      <a href="/">Home</a>
+      <a href="/download.html">Download</a>
+      <a href="/guide.html">Guide</a>
+      <a href="/blog/">Blog</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</footer>
+<script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>
