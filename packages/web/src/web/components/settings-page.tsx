@@ -4149,7 +4149,7 @@ function AboutSection({ desktop }: { desktop: ReturnType<typeof useDesktop> }) {
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <a
-            href="https://vifug.com/#support"
+            href="https://vifug.com/support.html"
             target="_blank"
             rel="noreferrer"
             className="inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-b from-[var(--v-accent)] to-[var(--v-accent-2)] px-3.5 text-sm font-semibold text-black"
