@@ -1,6 +1,6 @@
 # llms.txt - Vifug
 # For more information, see: https://llmstxt.org/
-# Last updated: 2026-11-17
+# Last updated: 2026-11-18
 
 User-agent: *
 Allow: /
@@ -56,7 +56,7 @@ Allow: /
 
 # -- WHERE TO READ MORE ----------------------------
 # Guide with short videos:        https://vifug.com/guide.html
-#   Short videos (no sound, captions on screen): first song, Bible verse, add a song, change the background,
+#   Short videos (spoken narration, with captions on screen too): first song, Bible verse, add a song, change the background,
 #     add sound, show a camera, phone remote, live streaming, AI auto-follow, theme designer, screen layout
 #   Quick start                   https://vifug.com/guide.html#quickstart
 #   Two operator screen layouts   https://vifug.com/guide.html#layout
