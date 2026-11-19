@@ -1,4 +1,4 @@
-const card = require("./_cards.cjs");
+const card = require("./_cards-install-browser.cjs");
 const DL = "http://localhost:4262/download.html";
 module.exports = {
   name: "install-first-run",

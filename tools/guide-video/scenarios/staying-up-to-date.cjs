@@ -12,10 +12,10 @@ module.exports = {
       run: async (h) => { await showCard(h, { kicker: "Desktop app", title: "It shows what changed",
         lines: ["Remind Me Later closes the prompt, and leaves a small Update pill in the header.", "Skip Version hides that pill too, for that release, until something newer ships."] }); }, minHold: 9 },
     { caption: "3. Or ask any time: Help, then Check for updates.", say: "You can also ask whenever you like. Open the Help menu and choose Check for updates.",
-      run: async (h) => { await hideCard(h); await h.click(h.page.getByRole("button", { name: /Help/ })); await h.sleep(1.2); }, minHold: 5 },
+      run: async (h) => { await hideCard(h); await h.click(h.page.getByText("Help", { exact: true }).first()); await h.sleep(1.2); }, minHold: 5 },
     { caption: "A deliberate check always gives an answer. Here, in a browser, it says so.", say: "A check you ask for always gives an answer. In this browser version, it tells you checking is only for the installed desktop app.",
       run: async (h) => { await h.click(h.page.getByRole("button", { name: /Check for updates/ })); await h.sleep(1.5); }, minHold: 7 },
-    { caption: "4. Your version number is in Settings, then About.", say: "To see which version you are on, open Settings, then About.",
+    { caption: "4. The desktop app shows your version in Settings, then About.", say: "To see which version you are on, open Settings, then About. The desktop app shows the number there.",
       run: async (h) => { await h.page.keyboard.press("Escape"); await h.sleep(0.4);
         const close = h.page.getByRole("button", { name: /^(Close|Done|OK|Dismiss)/ }); if (await close.count()) await h.click(close.first());
         await h.click(h.page.getByRole("button", { name: /Settings/ }).first()); await h.click(h.page.getByRole("button", { name: /^About/ })); }, minHold: 5 },

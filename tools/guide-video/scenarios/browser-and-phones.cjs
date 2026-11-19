@@ -1,4 +1,4 @@
-const card = require("./_cards.cjs");
+const card = require("./_cards-install-browser.cjs");
 module.exports = {
   name: "browser-and-phones",
   async setup(h) { await h.goto("/"); },

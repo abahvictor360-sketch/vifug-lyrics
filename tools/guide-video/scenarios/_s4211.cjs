@@ -7,16 +7,27 @@ exports.openSongLive = async (h, query, title, firstLine) => {
   await h.sleep(0.6);
 };
 // A framed, real render of the projector page (what the room sees), drawn over the operator screen.
+exports.preloadLive = async (h, hash = "/#/projector") => {
+  await h.page.evaluate((src) => {
+    document.getElementById("vf-live-pre")?.remove();
+    const w = document.createElement("div"); w.id = "vf-live-pre";
+    w.style.cssText = "position:fixed;left:50%;top:22px;transform:translateX(-50%);z-index:2147483640;width:900px;background:#0b0e14;border:1.5px solid #a3e635;border-radius:14px;padding:10px;box-shadow:0 10px 40px rgba(0,0,0,.6);visibility:hidden;pointer-events:none";
+    w.innerHTML = '<div class="lab" style="font:600 14px Sora,system-ui,sans-serif;color:#a3e635;margin:0 0 8px 4px;letter-spacing:.04em"></div><iframe src="' + src + '" style="width:880px;height:495px;border:0;border-radius:8px;background:#000;display:block"></iframe>';
+    document.body.appendChild(w);
+  }, hash);
+};
 exports.showLive = async (h, label, hash = "/#/projector", waitText = "Amazing") => {
   await h.page.evaluate(([label, src]) => {
     document.getElementById("vf-live")?.remove();
-    const w = document.createElement("div"); w.id = "vf-live";
+    let w = document.getElementById("vf-live-pre");
+    if (w) { w.id = "vf-live"; w.style.visibility = "visible"; w.querySelector(".lab").textContent = label; return; }
+    w = document.createElement("div"); w.id = "vf-live";
     w.style.cssText = "position:fixed;left:50%;top:22px;transform:translateX(-50%);z-index:2147483640;width:900px;background:#0b0e14;border:1.5px solid #a3e635;border-radius:14px;padding:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)";
     w.innerHTML = '<div style="font:600 14px Sora,system-ui,sans-serif;color:#a3e635;margin:0 0 8px 4px;letter-spacing:.04em">' + label + '</div>' +
       '<iframe src="' + src + '" style="width:880px;height:495px;border:0;border-radius:8px;background:#000;display:block"></iframe>';
     document.body.appendChild(w);
   }, [label, hash]);
-  await h.page.waitForFunction((t) => { const f = document.querySelector("#vf-live iframe"); try { return !t || (f && f.contentDocument && f.contentDocument.body.innerText.includes(t)); } catch (e) { return true; } }, waitText, { timeout: 20000 }).catch(() => {});
+  await h.page.waitForFunction((t) => { const f = document.querySelector("#vf-live iframe"); try { return !t || (f && f.contentDocument && f.contentDocument.body.innerText.includes(t)); } catch (e) { return true; } }, waitText, { timeout: 30000 }).catch(() => {});
   await h.sleep(1.5);
 };
 // Type slowly into a field that re-renders on every key; if characters were dropped, set the value outright.
@@ -67,5 +78,5 @@ exports.showRoomAndStream = async (h, waitText = "Amazing") => {
     document.body.appendChild(w);
   });
   await h.page.waitForFunction((t) => { try { return [...document.querySelectorAll("#vf-live iframe")].every((f) => f.contentDocument.body.innerText.includes(t)); } catch (e) { return true; } }, waitText, { timeout: 20000 }).catch(() => {});
-  await h.sleep(1.5);
+  await h.sleep(3.0);
 };
