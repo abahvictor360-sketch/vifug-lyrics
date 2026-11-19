@@ -1,0 +1,30 @@
+const { showCard, hideCard } = require("./_cards-bullets.cjs");
+const settingsBtn = (h) => h.page.getByRole("button", { name: /Settings/ }).first();
+module.exports = {
+  name: "backup-and-move-library",
+  async setup(h) { await h.goto("/"); },
+  steps: [
+    { caption: "Back up, restore and move your library", say: "Back up, restore and move your library.",
+      run: async (h) => { await h.glide(640, 300, 800); } },
+    { caption: "1. Backup lives in Settings, then General.", say: "Backup lives in Settings, then General, in the desktop app.",
+      run: async (h) => { await h.click(settingsBtn(h)); await h.click(h.page.getByRole("button", { name: /^General/ })); } },
+    { caption: "In a browser there is no Backup group. It is desktop only.", say: "In a browser there is no Backup group. It is in the desktop app only, because a browser cannot read folders on your computer.",
+      run: async (h) => { await h.page.mouse.move(780, 400); for (let i = 0; i < 6; i++) { await h.page.mouse.wheel(0, 420); await h.sleep(0.5); } }, minHold: 7 },
+    { caption: "2. Back up now copies your library and media to a dated folder.", say: "In the desktop app, press Back up now, and choose where it goes. Vifug makes a folder called Vifug-Backup, followed by the date and time.",
+      run: async (h) => { await showCard(h, { kicker: "Desktop app, Settings, General, Backup", title: "Back up now",
+        lines: ["Pick a USB stick, an external drive or a synced folder.", "Vifug makes a folder named Vifug-Backup- followed by the date and time.", "Inside: vifug.db with every song, presentation, theme, font, plan and setting, and a Media folder.", "Keep the two together. The folder is what Import and Restore ask for."] }); }, minHold: 9 },
+    { caption: "3. Import from another Vifug adds songs and media to this library.", say: "To move songs to another computer, back up there, carry the folder across, then press Import from another Vifug, and choose the Vifug-Backup folder itself.",
+      run: async (h) => { await showCard(h, { kicker: "Desktop app, on the other computer", title: "Import from another Vifug",
+        lines: ["Back up on the computer that has the songs, and carry the folder across.", "Settings, General, Backup, then Import from another Vifug.", "Choose the Vifug-Backup folder itself, not the files inside it.", "A green line says what was added and what was already there. The app does not restart."] }); }, minHold: 10 },
+    { caption: "Import never replaces anything, and repeating it is safe.", say: "Import brings songs, presentations, media, themes and fonts. Nothing here is replaced, nothing is added twice, so importing the same folder again adds nothing.",
+      run: async (h) => { await showCard(h, { kicker: "What Import does", title: "Nothing is replaced or removed",
+        lines: ["Brings across songs with translations, presentations, media, themes and fonts.", "Same title or same name means it is skipped, so nothing is doubled.", "Settings, service plans and live history are not imported."] }); }, minHold: 9 },
+    { caption: "4. Restore from backup replaces this library, so back up first.", say: "Restore from backup replaces every song, presentation and setting with the backup's, and restarts the app. Anything added since is lost, so back up first if in doubt.",
+      run: async (h) => { await showCard(h, { kicker: "Desktop app, Settings, General, Backup", title: "Restore from backup",
+        lines: ["Asks for a Vifug-Backup folder, then asks you to confirm.", "Replaces every song, presentation and setting with the backup's, and restarts the app.", "Anything added since that backup was made is lost."] }); }, minHold: 9 },
+    { caption: "5. To add single songs, use Import in the library.", say: "To add single songs, press Import in the library. You can choose ProPresenter files, text files or Word documents.",
+      run: async (h) => { await hideCard(h); await h.click(h.page.getByText("Done", { exact: true })); await h.click(h.page.getByRole("button", { name: /^Import/ })); await h.sleep(0.5); await h.glide(336, 232, 900); }, minHold: 6 },
+    { caption: "Back up before anything risky, and regularly.", say: "Back up before anything risky, and regularly.",
+      run: async (h) => { await h.click(h.page.getByRole("button", { name: "Cancel" })); } },
+  ],
+};
