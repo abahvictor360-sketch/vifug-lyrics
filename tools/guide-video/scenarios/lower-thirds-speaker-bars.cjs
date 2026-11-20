@@ -33,10 +33,9 @@ module.exports = {
         await h.click(h.page.getByRole("button", { name: "Done", exact: true }));
         await h.click(h.page.getByText("Settings", { exact: true }).first());
         await h.click(h.page.getByText("Streaming & output", { exact: true }).first());
-        const ch = h.page.getByText("Lower third over the camera").first();
-        await h.page.mouse.move(760, 400);
-        for (let i = 0; i < 8; i++) { const bb = await ch.boundingBox(); if (bb && bb.y < 520) break; await h.page.mouse.wheel(0, 160); await h.sleep(0.9); }
-        await h.click(ch);
+        const ch = h.page.locator("button", { hasText: "Lower third over the camera" }).first();
+        await ch.waitFor({ timeout: 8000 }); await h.sleep(1.0);
+        await L.clickStable(h, ch);
         await h.sleep(0.8);
       }, minHold: 4 },
     { caption: "5. Go live with a song: full display in the room, lower third online.",

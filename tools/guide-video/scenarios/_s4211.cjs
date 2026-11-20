@@ -80,3 +80,34 @@ exports.showRoomAndStream = async (h, waitText = "Amazing") => {
   await h.page.waitForFunction((t) => { try { return [...document.querySelectorAll("#vf-live iframe")].every((f) => f.contentDocument.body.innerText.includes(t)); } catch (e) { return true; } }, waitText, { timeout: 20000 }).catch(() => {});
   await h.sleep(3.0);
 };
+// Scroll a control into the middle of its scrolling panel, then click it only once its position has stopped moving.
+exports.clickStable = async (h, loc) => {
+  for (let i = 0; i < 6; i++) {
+    await loc.evaluate((el) => { let n = el.parentElement; while (n && n.scrollHeight <= n.clientHeight + 4) n = n.parentElement; const t = el.getBoundingClientRect().top; if (n && (t > 480 || t < 120)) n.scrollTo({ top: n.scrollTop + t - 300, behavior: "instant" }); });
+    await h.sleep(0.5);
+    const b = await loc.boundingBox(); if (!b) continue;
+    await h.glide(b.x + b.width / 2, b.y + b.height / 2);
+    await h.sleep(0.2);
+    const b2 = await loc.boundingBox(); if (process.env.VDBG) console.log("cs", JSON.stringify(b), JSON.stringify(b2));
+    if (b2 && Math.abs(b2.y - b.y) < 3 && b2.y > 100 && b2.y < 540) { await h.page.mouse.down(); await h.sleep(0.06); await h.page.mouse.up(); await h.sleep(0.4); return; }
+  }
+  throw new Error("clickStable failed");
+};
+// Scroll a control to a given height inside its scrolling panel.
+exports.scrollTo = async (h, loc, top = 200) => {
+  await loc.evaluate((el, top) => { let n = el.parentElement; while (n && n.scrollHeight <= n.clientHeight + 4) n = n.parentElement; if (n) n.scrollTo({ top: n.scrollTop + el.getBoundingClientRect().top - top, behavior: "instant" }); }, top);
+  await h.sleep(0.5);
+};
+// Several real screens side by side. items: [{label, src}]
+exports.showPair = async (h, items, waitText = "Amazing") => {
+  await h.page.evaluate((items) => {
+    document.getElementById("vf-live")?.remove();
+    const w = document.createElement("div"); w.id = "vf-live";
+    w.style.cssText = "position:fixed;left:50%;top:20px;transform:translateX(-50%);z-index:2147483640;background:#0b0e14;border:1.5px solid #a3e635;border-radius:14px;padding:10px;box-shadow:0 10px 40px rgba(0,0,0,.6);display:flex;gap:12px";
+    const lab = "font:600 14px Sora,system-ui,sans-serif;color:#a3e635;margin:0 0 8px 4px;letter-spacing:.04em";
+    w.innerHTML = items.map((i) => '<div><div style="' + lab + '">' + i.label + '</div><iframe src="' + i.src + '" style="width:600px;height:338px;border:0;border-radius:8px;background:#000;display:block"></iframe></div>').join("");
+    document.body.appendChild(w);
+  }, items);
+  await h.page.waitForFunction((t) => { try { return [...document.querySelectorAll("#vf-live iframe")].every((f) => f.contentDocument.body.innerText.includes(t)); } catch (e) { return true; } }, waitText, { timeout: 30000 }).catch(() => {});
+  await h.sleep(3.0);
+};
