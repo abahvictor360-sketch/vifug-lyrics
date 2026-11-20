@@ -45,10 +45,10 @@ module.exports = {
         await L.clickStable(h, h.page.getByRole("button", { name: /Add a screen/ }));
         await h.sleep(0.8);
       }, minHold: 5 },
-    { caption: "6. Settings, Lyrics, Theme for each screen: give it its own theme.",
-      say: "Six. Then under Lyrics, Theme for each screen, give that screen its own theme.",
+    { caption: "6. Settings, Lyrics, Theme for each screen: pick a theme for it.",
+      say: "Six. Then under Lyrics, Theme for each screen, pick a theme for that screen.",
       run: async (h) => {
-        await h.click(h.page.getByText("Lyrics", { exact: true }).first());
+        await h.click(h.page.getByText("Theme, background & fonts"));
         await h.sleep(1.0);
         const lab = h.page.locator("label", { hasText: "Screen 2" }).first();
         await L.scrollTo(h, lab, 300);
@@ -57,12 +57,8 @@ module.exports = {
         await sel.selectOption({ label: "Navy Blue" });
         await h.sleep(1.0);
       }, minHold: 6 },
-    { caption: "That screen wears its own look while the main screen keeps its own.",
-      say: "That screen wears its own look, while the main screen keeps its own.",
-      run: async (h) => {
-        const id = await h.page.evaluate(() => fetch("/api/settings").then((r) => r.json()).then((j) => j.config.screens[0].id));
-        await h.click(h.page.getByRole("button", { name: "Done", exact: true }));
-        await L.showPair(h, [{ label: "THE MAIN SCREEN", src: "/#/projector" }, { label: "THE EXTRA SCREEN, WITH ITS OWN THEME", src: "/#/projector?screen=" + id }], "Amazing");
-      }, minHold: 4 },
+    { caption: "Every screen follows the live slide, each with its own look.",
+      say: "Every screen follows the live slide, each with its own look.",
+      run: async (h) => { await h.sleep(1); } },
   ],
 };

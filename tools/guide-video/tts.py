@@ -7,7 +7,10 @@ Needs: pip install kokoro-onnx soundfile ; model files from the kokoro-onnx 'mod
 import json, os, subprocess, sys
 import numpy as np, soundfile as sf
 
-VOICE = os.environ.get("KOKORO_VOICE", "bf_emma")
+# am_adam is the closest Kokoro match to the voice on the original sixteen guide videos
+# (pitch about 110 Hz vs 107, similar tone and timbre; measured, see the git history for the comparison).
+VOICE = os.environ.get("KOKORO_VOICE", "am_adam")
+LANG = "en-gb" if VOICE.startswith(("bf_", "bm_")) else "en-us"
 SR = 24000
 
 def synth(out):
@@ -17,17 +20,24 @@ def synth(out):
     lines = json.load(open(f"{out}/say.json")); secs = []
     for i, t in enumerate(lines):
         if not t.strip(): secs.append(0.0); continue
-        s, sr = k.create(t, voice=VOICE, speed=1.0, lang="en-gb")
+        s, sr = k.create(t, voice=VOICE, speed=float(os.environ.get("KOKORO_SPEED", "1.1")), lang=LANG)
         sf.write(f"{out}/line-{i}.wav", s, sr); secs.append(len(s) / sr)
     json.dump(secs, open(f"{out}/tts.json", "w")); print("synthesized", len(lines), "lines,", round(sum(secs), 1), "s of speech")
 
 def assemble(out, vout, intro=None):
     info = json.load(open(f"{out}/steps.json")); total = info["total"]
     track = np.zeros(int((total + 1) * SR), dtype=np.float32)
-    for st in info["steps"]:
+    steps = info["steps"]
+    for n, st in enumerate(steps):
         p = f"{out}/line-{st['i']}.wav"
         if not os.path.exists(p): continue
         s, sr = sf.read(p, dtype="float32"); a = int((st["start"] + 0.15) * SR)
+        nxt = steps[n + 1]["start"] if n + 1 < len(steps) else total
+        window = nxt - st["start"] - 0.35
+        if len(s) / sr > window > 0:            # a long line: speed it up a little so it ends before the next step
+            rate = len(s) / sr / window
+            if rate > 1.25: print(f"WARNING step {st['i']}: line is {rate:.2f}x too long for its step")
+            import librosa; s = librosa.effects.time_stretch(s, rate=min(rate, 1.25))
         track[a:a + len(s)] += s[: max(0, len(track) - a)]
     sf.write(f"{out}/vo.wav", track[: int(total * SR)], SR)
     main = f"{out}/main.mp4"

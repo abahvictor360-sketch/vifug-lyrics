@@ -109,5 +109,5 @@ exports.showPair = async (h, items, waitText = "Amazing") => {
     document.body.appendChild(w);
   }, items);
   await h.page.waitForFunction((t) => { try { return [...document.querySelectorAll("#vf-live iframe")].every((f) => f.contentDocument.body.innerText.includes(t)); } catch (e) { return true; } }, waitText, { timeout: 30000 }).catch(() => {});
-  await h.sleep(3.0);
+  await h.sleep(4.5);
 };
