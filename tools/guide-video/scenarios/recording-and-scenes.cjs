@@ -78,7 +78,7 @@ module.exports = {
     { caption: "6. Under Scenes, Save current set-up as a scene. Name it Wide shot.",
       say: "Six. Under Scenes, press Save current set-up as a scene, type a name, and press Enter.",
       run: async (h) => {
-        const s = h.page.getByText("Save current set-up as a scene");
+        const s = h.page.getByRole("button", { name: /Save current set-up as a scene/ });
         await h.click(s);
         await L.typeSafe(h, h.page.getByPlaceholder(/Scene name/), "Wide shot", 70);
         await h.press("Enter", 0.8);
@@ -88,7 +88,7 @@ module.exports = {
       run: async (h) => {
         const b = h.page.getByRole("button", { name: "Side by side", exact: true });
         await h.click(b); await h.sleep(0.8);
-        const s = h.page.getByText("Save current set-up as a scene");
+        const s = h.page.getByRole("button", { name: /Save current set-up as a scene/ });
         await h.click(s);
         await L.typeSafe(h, h.page.getByPlaceholder(/Scene name/), "Interview", 70);
         await h.press("Enter", 0.8);
