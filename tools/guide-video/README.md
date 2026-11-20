@@ -29,3 +29,11 @@ so the voice stays in step with the picture. Run it on the finished recording
   video in `docs/guide.html` (and `docs/index.html` for the landing-page video).
 - The poster image (`docs/video/NAME.jpg`) stays the first frame of the
   recording, not the logo.
+
+## Making a new video
+
+1. Write `tools/guide-video/scenarios/NAME.cjs` (see `_smoke.cjs`): steps, each with a caption and a spoken line.
+2. `node rec.cjs say|record ...` records the real app (a web build served locally) and `tts.py synth|assemble` voices and assembles it.
+3. The voice is Kokoro `am_adam` at 1.1x, the closest Kokoro match to the voice on the original sixteen videos
+   (about 120 Hz vs 107 Hz, similar tone, slightly slower). It is not identical: the originals use a different engine.
+4. `assemble` adds the logo intro. Only show what the guide says; use an explainer card for anything the web build cannot show.

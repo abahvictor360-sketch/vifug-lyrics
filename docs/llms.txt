@@ -60,7 +60,7 @@ Allow: /
 #     layouts, add a song, add a song from a link, add Bible versions, a Bible verse on screen,
 #     add a presentation, media / plans / history, change the background, add sound,
 #     set up and send to the screen, show a camera, phone remote, live streaming,
-#     AI auto-follow, theme designer
+#     AI auto-follow, theme designer, record the service and save camera scenes, how the stage display and every screen stay in sync, back up, restore and move your library, how Vifug works in a browser and how phones connect, install Vifug and answer the first-run questions, run the live controls from the keyboard, design a speaker name bar and show a lower third online, put your lyrics into OBS or vMix, add a countdown timer, an announcement and your logo to the live screen, stay up to date, show songs and Scripture in two languages, fix a missing screen, no sound and phones that will not connect
 #   Quick start                   https://vifug.com/guide.html#quickstart
 #   Two operator screen layouts   https://vifug.com/guide.html#layout
 #   Bible                         https://vifug.com/guide.html#bible
