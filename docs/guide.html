@@ -1198,6 +1198,28 @@
         <p><b>A note on TikTok and Instagram.</b> TikTok only issues stream keys to accounts approved for live streaming, so OBS may not be an option on your account. Instagram has no official desktop streaming - tools claiming otherwise are unofficial and can put the account at risk. Streaming to Facebook and having people watch there is the dependable route.</p>
       </div>
 
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">Record the service</h3>
+      <p>
+        Vifug can save what the room sees to a video file, with no second computer and no OBS. It is
+        part of the desktop app. In a browser the <b>Record</b> button answers
+        &ldquo;Recording needs the desktop app.&rdquo;
+      </p>
+      <ol style="margin:10px 0 0 18px;line-height:1.75">
+        <li><b>Put something live.</b> What gets recorded is the live output, so send a slide, a verse or a camera picture live first.</li>
+        <li><b>Press Record</b> under the Live picture, or press <span class="inline-code">F10</span>. The button turns red and counts the time: <b>Stop recording 00:42</b>. <b>REC</b> in the status line at the bottom switches on too.</li>
+        <li><b>Carry on with the service.</b> Change slides as normal. Whatever goes live is what is recorded.</li>
+        <li><b>Press Stop recording</b> (or <span class="inline-code">F10</span> again). Vifug shows <b>Saving&hellip;</b>, then <b>Saved</b> with the file name and the folder.</li>
+      </ol>
+      <p style="margin-top:12px">
+        What to know before you rely on it:
+      </p>
+      <ul style="margin:10px 0 0 18px;line-height:1.75">
+        <li><b>It records the picture, not your screen.</b> The file is the projector picture at its real size, up to 1920 &times; 1080, with none of the operator controls in it. If no projector is open, Vifug makes a hidden full-size copy of the output just for the recording, so recording does not need a second screen.</li>
+        <li><b>There is no sound in the file.</b> It is a silent video. If you need the room's audio, record that separately or stream through OBS.</li>
+        <li><b>Where it goes.</b> Files are saved in a <span class="inline-code">Recordings</span> folder next to your Media folder (under Documents &rsaquo; Vifug), named like <span class="inline-code">Vifug_2026-11-22_10-31-05.webm</span>. It is a WebM file, which plays in a browser or in VLC.</li>
+        <li><b>It is written when you stop.</b> Press Stop recording before you close Vifug, and give a long service a moment to save.</li>
+      </ul>
+
       <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:32px 0 10px">The Audio Mixer</h3>
       <p>
         The operator screen's sidebar carries an <b>Audio Mixer</b> with a channel strip for each
@@ -1286,6 +1308,25 @@
       <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:26px 0 10px">Check it before it goes out</h3>
       <p>Choosing a source <b>cues</b> it, it does not broadcast it. The feed appears in the <b>Preview</b> column with the layout already applied, so you can check the framing, the lighting and whether the words sit clear of faces while the congregation still sees the previous slide. Press <b>GO LIVE</b> when you are happy and the words and video go out together.</p>
       <p>This matters most with a camera: pointing a capture card at the room and finding out live that it was aimed at the ceiling is exactly what the preview column exists to prevent.</p>
+
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:26px 0 10px">Save a set-up as a scene</h3>
+      <p>
+        A camera set-up has several parts: which camera, the layout, the shape of the picture and the
+        name bar. A <b>scene</b> saves all of them under a name, so &ldquo;Interview&rdquo; and
+        &ldquo;Wide shot&rdquo; are one button each instead of a dozen settings changed in a hurry.
+      </p>
+      <ol style="margin:10px 0 0 18px;line-height:1.75">
+        <li>Open the <b>Media</b> tab, choose <b>Capture</b>, and pick a camera or capture card so it is cued.</li>
+        <li>Set it up the way you want it: the layout, the video shape and size, the name bar.</li>
+        <li>Under <b>Scenes</b>, press <b>Save current set-up as a scene</b>, type a name such as <i>Interview</i> and press Enter (or <b>Save</b>).</li>
+        <li>To bring it back, press the scene's button. If nothing is on air it is cued to Preview; if a capture is already live, the picture changes straight away.</li>
+        <li>The small <b>&times;</b> beside a scene deletes it.</li>
+      </ol>
+      <p style="margin-top:12px">
+        Scenes are kept on the computer you made them on, because a scene names a camera by that
+        computer's own id for it. A scene that uses a screen or a window may need its source picked
+        again after Vifug restarts; cameras and capture cards are remembered.
+      </p>
 
       <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:26px 0 10px">Stopping</h3>
       <p>Open the Media Library and press <b>Stop capture</b>. The output returns to exactly the slide that was showing before, so ending a video does not lose your place in the song.</p>
