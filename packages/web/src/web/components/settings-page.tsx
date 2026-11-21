@@ -47,6 +47,8 @@ import {
 } from "../lib/shortcuts";
 import { useLayoutMode } from "../hooks/use-layout-mode";
 import { setLayoutMode, type LayoutMode } from "../lib/layout-mode";
+import { resetPaneSizes } from "../lib/pane-sizes";
+import { usePaneSizesCustom } from "../hooks/use-pane-size";
 import { MicPicker } from "./mic-picker";
 import { SpeakerPicker } from "./speaker-picker";
 import { useBibleManifest } from "../hooks/use-bible";
@@ -402,6 +404,7 @@ export function SettingsPage({
  */
 function LayoutSection() {
   const layout = useLayoutMode();
+  const customSizes = usePaneSizesCustom();
   return (
     <Group title="Operator screen" icon={Columns3}>
       <p className="mb-3 text-[12px] text-[var(--v-text-faint)]">
@@ -422,6 +425,21 @@ function LayoutSection() {
           title="Broadcast"
           blurb="Preview and live across the top at full size, the way a streaming desk is laid out. The list, the slides and the controls become docks below them."
         />
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--v-border)] pt-3">
+        <button
+          type="button"
+          onClick={() => resetPaneSizes()}
+          disabled={!customSizes}
+          className="rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-1.5 text-sm hover:border-[var(--v-accent)] disabled:cursor-default disabled:opacity-50 disabled:hover:border-[var(--v-border)]"
+        >
+          Reset panel sizes
+        </button>
+        <p className="min-w-0 flex-1 text-[12px] text-[var(--v-text-faint)]">
+          Drag the dividers between the panes to make any of them wider or narrower, or taller
+          in the Broadcast shape. The sizes are remembered on this device. Double-click a divider to
+          reset just that one.
+        </p>
       </div>
     </Group>
   );

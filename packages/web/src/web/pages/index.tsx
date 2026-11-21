@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Search, Plus, Upload, Music4, Pencil, Trash2, Monitor, MonitorX,
@@ -84,6 +84,10 @@ import {
   supportsMultiScreen,
 } from "../lib/browser-screens";
 import { isModalOpen, useDialog } from "../hooks/use-dialog";
+import { ResizeHandle } from "../components/resize-handle";
+import { usePaneSize } from "../hooks/use-pane-size";
+import { useElementWidth, useViewportSize } from "../hooks/use-element-width";
+import { clampPane, MIN_CENTER_WIDTH, PANE_LIMITS } from "../lib/pane-sizes";
 
 /** Operator top-level content mode - the tabs shown in the top bar. */
 type OperatorMode = "lyrics" | "bible" | "presentation" | "media" | "plans" | "history";
@@ -571,6 +575,45 @@ export default function OperatorPage() {
   // Operator mode: drive the live output from song lyrics OR the Bible.
   // "plans" is a service-plan builder that cues songs/scripture into lyrics/bible.
   const [mode, setMode] = useState<OperatorMode>("lyrics");
+
+  /* Pane sizes. Every divider on the operator screen can be dragged, and the
+     size it was left at is remembered on this device. `room` is the width of
+     the row the panes sit in, so a size saved on a big monitor can never leave
+     the slides pane squeezed on a small window. */
+  const rowRef = useRef<HTMLDivElement>(null);
+  const rowWidth = useElementWidth(rowRef);
+  const viewport = useViewportSize();
+  const wide = viewport.w >= 1536;
+  const room = rowWidth > 0 ? rowWidth : undefined;
+  const HANDLES = 12; // the two dividers, 6px each
+  const showLibrary = mode === "lyrics";
+
+  const broadcastLibrary = usePaneSize("broadcastLibrary", 288);
+  const broadcastControls = usePaneSize("broadcastControls", wide ? 384 : 336);
+  const dockLibrary = showLibrary
+    ? clampPane("broadcastLibrary", broadcastLibrary.size, room && room - MIN_CENTER_WIDTH - PANE_LIMITS.broadcastControls.min - HANDLES)
+    : 0;
+  const dockControls = clampPane("broadcastControls", broadcastControls.size, room && room - MIN_CENTER_WIDTH - dockLibrary - HANDLES);
+  const dockLibraryMax = clampPane("broadcastLibrary", PANE_LIMITS.broadcastLibrary.max, room && room - MIN_CENTER_WIDTH - dockControls - HANDLES);
+  const dockControlsMax = clampPane("broadcastControls", PANE_LIMITS.broadcastControls.max, room && room - MIN_CENTER_WIDTH - dockLibrary - HANDLES);
+
+  const vifugLibrary = usePaneSize("vifugLibrary", 288);
+  const vifugRail = usePaneSize("vifugRail", wide ? 640 : 512);
+  const vifugLibraryPx = showLibrary
+    ? clampPane("vifugLibrary", vifugLibrary.size, room && room - MIN_CENTER_WIDTH - PANE_LIMITS.vifugRail.min - HANDLES)
+    : 0;
+  const vifugRailPx = clampPane("vifugRail", vifugRail.size, room && room - MIN_CENTER_WIDTH - vifugLibraryPx - HANDLES);
+  const vifugLibraryMax = clampPane("vifugLibrary", PANE_LIMITS.vifugLibrary.max, room && room - MIN_CENTER_WIDTH - vifugRailPx - HANDLES);
+  const vifugRailMax = clampPane("vifugRail", PANE_LIMITS.vifugRail.max, room && room - MIN_CENTER_WIDTH - vifugLibraryPx - HANDLES);
+
+  // The Preview / Live row is as tall as its width allows (they keep 16:9) and as
+  // the docks beneath can spare; the old fixed 40% of the window is just the default.
+  const screensRoom = Math.max(PANE_LIMITS.broadcastScreens.min, Math.min(viewport.h - 400, ((viewport.w - 36) * 9) / 32));
+  // Default: 40% of the window, but never so much that the docks underneath (the
+  // controls need about 380px to show GO LIVE, Prev/Next and Blank/Clear) are cut off.
+  const screensDefault = Math.max(PANE_LIMITS.broadcastScreens.min, Math.min(Math.round(viewport.h * 0.4 - 44), viewport.h - 520));
+  const screensHeight = usePaneSize("broadcastScreens", screensDefault, screensRoom);
+  const screensHeightMax = clampPane("broadcastScreens", PANE_LIMITS.broadcastScreens.max, screensRoom);
   // If the tab being shown is not part of this kind of Vifug (the mode was just
   // changed, or this is a presentations-only install opening on Lyrics), move
   // to the first one that is.
@@ -1245,8 +1288,9 @@ export default function OperatorPage() {
       className={`flex w-full shrink-0 flex-col bg-[var(--v-surface)] ${
         layout === "broadcast"
           ? "min-h-0 flex-1"
-          : "max-h-[45vh] border-b border-[var(--v-border)] lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r"
+          : "max-h-[45vh] border-b border-[var(--v-border)] lg:max-h-none lg:w-[var(--pane-w)] lg:border-b-0"
       }`}
+      style={layout === "broadcast" ? undefined : ({ "--pane-w": `${vifugLibraryPx}px` } as CSSProperties)}
     >
       <div className="border-b border-[var(--v-border)] p-3">
         <div className="relative">
@@ -1865,21 +1909,51 @@ export default function OperatorPage() {
           <div className="shrink-0 border-b border-[var(--v-border)] bg-[var(--v-surface)] px-3 py-2.5">
             <div
               className="mx-auto w-full"
-              style={{ maxWidth: "calc((40vh - 2.75rem) * 32 / 9 + 0.75rem)" }}
+              style={{ maxWidth: `${Math.round((screensHeight.size * 32) / 9 + 12)}px` }}
             >
               {stageScreens}
             </div>
           </div>
 
+          {/* Drag to give the screens or the docks more of the height. */}
+          <ResizeHandle
+            orientation="horizontal"
+            direction={1}
+            value={screensHeight.size}
+            min={PANE_LIMITS.broadcastScreens.min}
+            max={screensHeightMax}
+            label="Resize the Preview and Live screens"
+            onChange={screensHeight.set}
+            onReset={screensHeight.reset}
+            className="-my-[3px]"
+          />
+
           {/* The docks. Same stacking rule as the other shape: three columns
               is a desktop idea, so below `lg` they stack and this row
               scrolls rather than running off the side of a phone. */}
-          <div className="v-scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-y-hidden">
+          <div
+            ref={rowRef}
+            className="v-scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-y-hidden"
+            style={{ "--lib-w": `${dockLibrary}px`, "--ctl-w": `${dockControls}px` } as CSSProperties}
+          >
             {libraryPane && (
-              <div className="flex max-h-[38vh] w-full shrink-0 flex-col border-b border-[var(--v-border)] lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r">
+              <div className="flex max-h-[38vh] w-full shrink-0 flex-col border-b border-[var(--v-border)] lg:max-h-none lg:w-[var(--lib-w)] lg:border-b-0">
                 <DockTitle>Library</DockTitle>
                 {libraryPane}
               </div>
+            )}
+            {libraryPane && (
+              <ResizeHandle
+                orientation="vertical"
+                direction={1}
+                value={dockLibrary}
+                min={PANE_LIMITS.broadcastLibrary.min}
+                max={dockLibraryMax}
+                label="Resize the library"
+                onChange={broadcastLibrary.set}
+                onReset={broadcastLibrary.reset}
+                className="hidden lg:block"
+              />
             )}
 
             <div className="flex min-h-[40vh] min-w-0 flex-1 flex-col lg:min-h-0">
@@ -1899,7 +1973,19 @@ export default function OperatorPage() {
               {centerPanel}
             </div>
 
-            <aside className="flex w-full shrink-0 flex-col border-t border-[var(--v-border)] bg-[var(--v-surface)] lg:w-[21rem] lg:border-t-0 lg:border-l 2xl:w-[24rem]">
+            <ResizeHandle
+              orientation="vertical"
+              direction={-1}
+              value={dockControls}
+              min={PANE_LIMITS.broadcastControls.min}
+              max={dockControlsMax}
+              label="Resize the controls"
+              onChange={broadcastControls.set}
+              onReset={broadcastControls.reset}
+              className="hidden lg:block"
+            />
+
+            <aside className="flex w-full shrink-0 flex-col border-t border-[var(--v-border)] bg-[var(--v-surface)] lg:w-[var(--ctl-w)] lg:border-t-0">
               <DockTitle>Controls</DockTitle>
               <div className="v-scroll min-h-0 flex-1 overflow-y-auto">
                 <div className="border-b border-[var(--v-border)] p-3">{stageActions}</div>
@@ -1917,10 +2003,39 @@ export default function OperatorPage() {
          * `lg` the same three panes stack and this row scrolls; from `lg` up
          * nothing about the desktop layout changes.
          */
-        <div className="v-scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-y-hidden">
+        <div
+          ref={rowRef}
+          className="v-scroll flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-y-hidden"
+          style={{ "--rail-w": `${vifugRailPx}px` } as CSSProperties}
+        >
           {libraryPane}
+          {libraryPane && (
+            <ResizeHandle
+              orientation="vertical"
+              direction={1}
+              value={vifugLibraryPx}
+              min={PANE_LIMITS.vifugLibrary.min}
+              max={vifugLibraryMax}
+              label="Resize the library"
+              onChange={vifugLibrary.set}
+              onReset={vifugLibrary.reset}
+              className="hidden lg:block"
+            />
+          )}
 
           {centerPanel}
+
+          <ResizeHandle
+            orientation="vertical"
+            direction={-1}
+            value={vifugRailPx}
+            min={PANE_LIMITS.vifugRail.min}
+            max={vifugRailMax}
+            label="Resize the live controls"
+            onChange={vifugRail.set}
+            onReset={vifugRail.reset}
+            className="hidden lg:block"
+          />
 
           {/* RIGHT: Preview -> Live stage + transport.
               Preview and live are the two things an operator actually
@@ -1928,7 +2043,7 @@ export default function OperatorPage() {
               panels beneath. It widens on roomier displays instead of taking
               a fixed share, which would squeeze the library on a 1366-wide
               laptop. */}
-          <aside className="v-scroll flex w-full shrink-0 flex-col border-t border-[var(--v-border)] bg-[var(--v-surface)] lg:w-[32rem] lg:overflow-y-auto lg:border-t-0 lg:border-l 2xl:w-[40rem]">
+          <aside className="v-scroll flex w-full shrink-0 flex-col border-t border-[var(--v-border)] bg-[var(--v-surface)] lg:w-[var(--rail-w)] lg:overflow-y-auto lg:border-t-0">
             <div className="border-b border-[var(--v-border)] p-3">
               {stageScreens}
               {stageActions}
