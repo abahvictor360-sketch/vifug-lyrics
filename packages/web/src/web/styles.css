@@ -111,6 +111,16 @@
 }
 
 @layer base {
+  /*
+   * The browser inside Electron 30 gives every <button> align-items:flex-start;
+   * current browsers (where this interface was built and checked) leave it at
+   * normal, i.e. stretch in a flex button. Without this, a flex button there lays
+   * its children out differently - slide thumbnails collapsed into a sliver at the
+   * left edge. Utility classes such as items-center still win over this.
+   */
+  button {
+    align-items: normal;
+  }
   * {
     @apply border-border outline-ring/50;
   }

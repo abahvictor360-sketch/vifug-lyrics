@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- FIX: **slide previews in the Slides dock showed their words squashed into a sliver at the left edge, cut off with "...".** The desktop app's built-in browser (Electron 30) gives every button `align-items: flex-start` by default, where current browsers use `normal`. The preview text box has no width of its own, so inside a button it shrank to its padding. The thumbnail now sets its own alignment and width, and a global rule makes buttons behave in the desktop app the way they do in a current browser, which is what the interface was built and checked in.
+
 ## [1.38.0] — 2026-11-21
 
 - NEW: **search the Bible for a sentence.** Type a line you remember ("for God so loved the world", "the Lord is my shepherd") in the Bible tab's search box and the verses that contain it are listed with their references and the matching words marked. Capitals and punctuation no longer matter, results appear while you are still typing the last word, and a line that runs over a verse break lists both verses. Exact wording comes first, then close wording (a paraphrase), then verses with all the words in any order; before, only an exact match of the raw text was found, and only the first 60 in book order. The same search is used when adding Scripture to a service plan.

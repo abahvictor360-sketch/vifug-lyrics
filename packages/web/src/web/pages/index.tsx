@@ -2986,7 +2986,7 @@ function SlideGrid({
                     key={slide.slideId ?? idx}
                     onClick={() => stage.preview(idx)}
                     onDoubleClick={() => stage.goLive(idx)}
-                    className={`group relative flex aspect-video flex-col overflow-hidden rounded-lg border-2 bg-black text-left transition-[transform,border-color,box-shadow] duration-150 ease-out ${
+                    className={`group relative flex aspect-video flex-col items-stretch overflow-hidden rounded-lg border-2 bg-black text-left transition-[transform,border-color,box-shadow] duration-150 ease-out ${
                       isLive
                         ? "v-live-pulse border-[var(--v-live)] ring-2 ring-[var(--v-live)]/40"
                         : isPreview
@@ -2996,7 +2996,11 @@ function SlideGrid({
                   >
                     {/* The words, sized against the card so a bigger thumbnail
                         means bigger words rather than more empty black. */}
-                    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-2 text-center" style={{ containerType: "size" }}>
+                    {/* items-stretch on the button and w-full here are not decoration: a <button> is
+                        align-items:flex-start by default in the browser inside Electron 30, and a
+                        size-contained box has no width of its own, so without them it shrank to its
+                        padding and pushed the words into a sliver at the left edge. */}
+                    <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center px-2 text-center" style={{ containerType: "size" }}>
                       {slide.sourceLines.map((l, i) => (
                         <div key={i} className="font-lyric leading-tight text-white/90 line-clamp-2" style={{ fontSize: "clamp(11px, 5.2cqw, 22px)" }}>
                           {l}
