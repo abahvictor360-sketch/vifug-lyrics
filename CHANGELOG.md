@@ -7,6 +7,7 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
+- FIX: **double-clicking no longer highlights text.** A double-click is an action here (it sends a slide, a verse or a song live), but the browser also took it as "select this word", so every double-click left highlighted text behind, and on a Bible verse it raised the formatting toolbar too. Double and triple clicks on anything that is not a text field no longer select text. Dragging across words to select them (how a phrase in a verse is marked up) is unchanged, and double-clicking a word in a text box still selects it.
 - FIX: **slide previews in the Slides dock showed their words squashed into a sliver at the left edge, cut off with "...".** The desktop app's built-in browser (Electron 30) gives every button `align-items: flex-start` by default, where current browsers use `normal`. The preview text box has no width of its own, so inside a button it shrank to its padding. The thumbnail now sets its own alignment and width, and a global rule makes buttons behave in the desktop app the way they do in a current browser, which is what the interface was built and checked in.
 
 ## [1.38.0] — 2026-11-21
