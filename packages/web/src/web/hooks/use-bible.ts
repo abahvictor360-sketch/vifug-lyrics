@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUserBook, isUserVersion, listUserVersions } from "../lib/user-bibles";
+import { buildCorpus, type VerseCorpus } from "../lib/quoted-verse";
+import { matchSpans, searchCorpus, type SearchKind } from "../lib/bible-search";
 
 /**
  * Offline Bible data layer.
@@ -49,9 +51,13 @@ export type BookData = { c: Record<string, string[]> };
 
 const bookCache = new Map<string, Promise<BookData>>();
 
+/** The searchable form of each version, built the first time it is searched. */
+const corpusCache = new Map<string, Promise<VerseCorpus>>();
+
 /** Forget a version's cached books, e.g. after it was deleted. */
 export function forgetVersionCache(versionId: string) {
   for (const k of [...bookCache.keys()]) if (k.startsWith(`${versionId}/`)) bookCache.delete(k);
+  corpusCache.delete(versionId);
 }
 
 export function loadBook(versionId: string, code: string): Promise<BookData> {
@@ -136,11 +142,48 @@ export function parseReference(input: string, manifest: BibleManifest): ParsedRe
   return { code: hit.code, chapter, verse, endVerse };
 }
 
-export type SearchHit = { code: string; name: string; chapter: number; verse: number; text: string };
+export type SearchHit = {
+  code: string;
+  name: string;
+  chapter: number;
+  verse: number;
+  text: string;
+  /** How this verse matched: the exact words, close wording, or all the words in any order. */
+  kind?: SearchKind;
+  /** Where the matching words are in `text`, as character ranges. */
+  spans?: [number, number][];
+  /** The sentence carries on into the next verse. */
+  continues?: boolean;
+};
+
+function corpusFor(version: BibleVersion, manifest: BibleManifest): Promise<VerseCorpus> {
+  let p = corpusCache.get(version.id);
+  if (!p) {
+    p = (async () => {
+      const rows: { code: string; name: string; chapter: number; verse: number; text: string }[] = [];
+      const books = await Promise.all(version.books.map((code) => loadBook(version.id, code).then((d) => ({ code, d }))));
+      for (const { code, d } of books) {
+        const name = bookName(manifest, code);
+        for (const [ch, verses] of Object.entries(d.c)) {
+          for (let i = 0; i < verses.length; i++) {
+            const text = verses[i];
+            if (text) rows.push({ code, name, chapter: Number(ch), verse: i + 1, text });
+          }
+        }
+      }
+      return buildCorpus(version.id, rows);
+    })();
+    // A failed load must not be remembered, or search would stay broken until a reload.
+    p.catch(() => corpusCache.delete(version.id));
+    corpusCache.set(version.id, p);
+  }
+  return p;
+}
 
 /**
- * Keyword search across a whole version (loads every book once, cached).
- * Returns up to `limit` hits. Runs fully offline.
+ * Search a version for a word, a phrase or a whole sentence. Exact wording
+ * comes first, then close wording, then verses that have all the words; see
+ * lib/bible-search.ts.
  */
 export async function searchVersion(
   version: BibleVersion,
@@ -148,21 +191,25 @@ export async function searchVersion(
   query: string,
   limit = 60,
 ): Promise<SearchHit[]> {
-  const q = query.trim().toLowerCase();
-  if (q.length < 2) return [];
-  const books = await Promise.all(version.books.map((code) => loadBook(version.id, code).then((d) => ({ code, d }))));
-  const hits: SearchHit[] = [];
-  for (const { code, d } of books) {
-    const name = bookName(manifest, code);
-    for (const [ch, verses] of Object.entries(d.c)) {
-      for (let i = 0; i < verses.length; i++) {
-        const text = verses[i];
-        if (text && text.toLowerCase().includes(q)) {
-          hits.push({ code, name, chapter: Number(ch), verse: i + 1, text });
-          if (hits.length >= limit) return hits;
-        }
-      }
-    }
-  }
-  return hits;
+  if (query.trim().length < 2) return [];
+  const corpus = await corpusFor(version, manifest);
+  const ranked = searchCorpus(corpus, query, limit);
+  return Promise.all(
+    ranked.map(async (r): Promise<SearchHit> => {
+      const code = corpus.code[r.index]!;
+      const chapter = corpus.chapter[r.index]!;
+      const verse = corpus.verse[r.index]!;
+      const text = (await loadBook(version.id, code)).c[String(chapter)]?.[verse - 1] ?? "";
+      return {
+        code,
+        name: corpus.name[r.index]!,
+        chapter,
+        verse,
+        text,
+        kind: r.kind,
+        spans: matchSpans(text, query, r.kind),
+        ...(r.continues ? { continues: true } : {}),
+      };
+    }),
+  );
 }

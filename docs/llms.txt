@@ -29,10 +29,12 @@ Allow: /
 # - Song lyrics library (325 songs included) with a Preview -> Live workflow
 # - Two layouts for the operator's own screen: the classic three-column one, and a
 #   Broadcast one with preview and live across the top at full size and the list,
-#   slides and controls as docks below, the way a streaming desk is laid out.
+#   slides and controls as docks below, the way a streaming desk is laid out, with the
+#   Lyrics, Bible, Presentations and Media tabs directly above the docks.
 #   Chosen in Settings, applied instantly, remembered per device. Every divider can be dragged to resize the panes (library, slides, controls, and the height of the screens in Broadcast), with a Reset panel sizes button.
 # - Offline Bible: 31 English versions plus Yoruba, Hausa, Igbo, Twi and Swahili; add your own
 #   Underline, highlight, bold, italic, colour and resize words in a verse; styled copy and paste keeps the style inside the app
+#   Search for a remembered sentence or phrase and get the verses that contain it (exact wording first, then close wording), with the reference and the matching words marked
 # - Presentations: build slides in the app or import PowerPoint (.pptx) and PDF
 # - Theme designer: drag the text box, fonts (including your own font files), colours,
 #   motion, a bar behind the words, and picture, video and camera layers

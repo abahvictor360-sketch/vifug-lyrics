@@ -611,7 +611,9 @@ export default function OperatorPage() {
   const screensRoom = Math.max(PANE_LIMITS.broadcastScreens.min, Math.min(viewport.h - 400, ((viewport.w - 36) * 9) / 32));
   // Default: 40% of the window, but never so much that the docks underneath (the
   // controls need about 380px to show GO LIVE, Prev/Next and Blank/Clear) are cut off.
-  const screensDefault = Math.max(PANE_LIMITS.broadcastScreens.min, Math.min(Math.round(viewport.h * 0.4 - 44), viewport.h - 520));
+  // The 556 is that 380 plus everything else fixed on the screen: the top bar, the
+  // tab strip over the docks, the dock titles and the status bar.
+  const screensDefault = Math.max(PANE_LIMITS.broadcastScreens.min, Math.min(Math.round(viewport.h * 0.4 - 44), viewport.h - 556));
   const screensHeight = usePaneSize("broadcastScreens", screensDefault, screensRoom);
   const screensHeightMax = clampPane("broadcastScreens", PANE_LIMITS.broadcastScreens.max, screensRoom);
   // If the tab being shown is not part of this kind of Vifug (the mode was just
@@ -1874,22 +1876,29 @@ export default function OperatorPage() {
     </>
   );
 
+  const topBar = (
+    <TopBar
+      // In the Broadcast shape the four content tabs move down to sit above the
+      // docks they change (see ModeStrip); everything else stays up here.
+      hide={layout === "broadcast" ? BROADCAST_STRIP_TABS : undefined}
+      desktop={desktop}
+      liveStatus={liveState.status}
+      onSettings={() => {
+        setSettingsSection("lyrics");
+        setSettingsOpen(true);
+      }}
+      onMedia={() => setMediaOpen(true)}
+      update={update}
+      mode={mode}
+      onModeChange={setMode}
+      tabs={appMode.tabs}
+      plansLabel={appMode.plansLabel}
+    />
+  );
+
   return (
     <div className="flex h-screen flex-col overflow-x-hidden bg-[var(--v-bg)] text-[var(--v-text)]">
-      <TopBar
-        desktop={desktop}
-        liveStatus={liveState.status}
-        onSettings={() => {
-          setSettingsSection("lyrics");
-          setSettingsOpen(true);
-        }}
-        onMedia={() => setMediaOpen(true)}
-        update={update}
-        mode={mode}
-        onModeChange={setMode}
-        tabs={appMode.tabs}
-        plansLabel={appMode.plansLabel}
-      />
+      {topBar}
 
       {layout === "broadcast" ? (
         /*
@@ -1925,8 +1934,14 @@ export default function OperatorPage() {
             label="Resize the Preview and Live screens"
             onChange={screensHeight.set}
             onReset={screensHeight.reset}
-            className="-my-[3px]"
+            // z-50: the menu bar below is z-40, and would otherwise sit on top of
+            // the lower half of this divider's grab area.
+            className="relative z-50 -my-[3px]"
           />
+
+          {/* Lyrics, Bible, Presentations and Media: the tabs that decide what the
+              three docks below hold, so they sit directly above them. */}
+          <ModeStrip tabs={appMode.tabs} mode={mode} onModeChange={setMode} />
 
           {/* The docks. Same stacking rule as the other shape: three columns
               is a desktop idea, so below `lg` they stack and this row
@@ -2266,6 +2281,64 @@ const MODE_TABS: { id: OperatorMode; label: string; icon: typeof Music4 }[] = [
   { id: "history", label: "History", icon: History },
 ];
 
+/** The four tabs that choose what the operator screen's three panes hold. */
+const BROADCAST_STRIP_TABS: OperatorMode[] = ["lyrics", "bible", "presentation", "media"];
+
+function ModeTabButton({
+  tab,
+  active,
+  label,
+  onClick,
+}: {
+  tab: (typeof MODE_TABS)[number];
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  const Icon = tab.icon;
+  return (
+    <button
+      onClick={onClick}
+      className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+        active
+          ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+          : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
+      }`}
+    >
+      <Icon className="h-4 w-4" /> {label}
+    </button>
+  );
+}
+
+/**
+ * Lyrics, Bible, Presentations and Media as a bar directly above the three
+ * docks, in the Broadcast shape. They are the tabs that decide what the docks
+ * below contain, so they belong next to the docks; the rest of the menu (the
+ * logo, Plans, History, status, Help, Library and Settings) stays at the top.
+ */
+function ModeStrip({
+  tabs,
+  mode,
+  onModeChange,
+}: {
+  tabs: OperatorMode[];
+  mode: OperatorMode;
+  onModeChange: (m: OperatorMode) => void;
+}) {
+  const shown = MODE_TABS.filter((t) => BROADCAST_STRIP_TABS.includes(t.id) && tabs.includes(t.id));
+  if (!shown.length) return null;
+  return (
+    <nav
+      aria-label="Lyrics, Bible, Presentations and Media"
+      className="v-scroll flex h-10 shrink-0 items-center gap-1 overflow-x-auto border-b border-[var(--v-border)] bg-[var(--v-surface)] px-3"
+    >
+      {shown.map((t) => (
+        <ModeTabButton key={t.id} tab={t} active={mode === t.id} label={t.label} onClick={() => onModeChange(t.id)} />
+      ))}
+    </nav>
+  );
+}
+
 function TopBar({
   desktop,
   liveStatus,
@@ -2276,7 +2349,10 @@ function TopBar({
   update,
   tabs,
   plansLabel,
+  hide,
 }: {
+  /** Tabs to leave out of this bar because they are shown elsewhere. */
+  hide?: OperatorMode[];
   desktop: ReturnType<typeof useDesktop>;
   liveStatus: string;
   onSettings: () => void;
@@ -2304,23 +2380,15 @@ function TopBar({
       {/* flex-1 so the tabs take the room the controls don't need, and scroll
           sideways within it rather than pushing anything off the screen. */}
       <nav className="v-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-        {MODE_TABS.filter((t) => tabs.includes(t.id)).map((t) => {
-          const Icon = t.icon;
-          const active = mode === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => onModeChange(t.id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                active
-                  ? "bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                  : "text-[var(--v-text-dim)] hover:bg-[var(--v-surface-3)]"
-              }`}
-            >
-              <Icon className="h-4 w-4" /> {t.id === "plans" ? plansLabel : t.label}
-            </button>
-          );
-        })}
+        {MODE_TABS.filter((t) => tabs.includes(t.id) && !hide?.includes(t.id)).map((t) => (
+          <ModeTabButton
+            key={t.id}
+            tab={t}
+            active={mode === t.id}
+            label={t.id === "plans" ? plansLabel : t.label}
+            onClick={() => onModeChange(t.id)}
+          />
+        ))}
       </nav>
 
       {/*

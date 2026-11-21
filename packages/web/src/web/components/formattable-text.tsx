@@ -38,11 +38,18 @@ export function FormattableText({
   formats,
   onFormatsChange,
   className = "",
+  emphasis,
 }: {
   text: string;
   formats: TextFormat[];
   onFormatsChange: (next: TextFormat[]) => void;
   className?: string;
+  /**
+   * Character ranges to show as matches, e.g. the words a search found. A
+   * pointer for the operator only: it is drawn behind the text, is not saved,
+   * and never reaches the live screen.
+   */
+  emphasis?: [number, number][];
 }) {
   const hostRef = useRef<HTMLSpanElement>(null);
   const [sel, setSel] = useState<{ start: number; end: number } | null>(null);
@@ -120,16 +127,26 @@ export function FormattableText({
 
   return (
     <span ref={hostRef} onCopy={onCopy} className={`relative ${className}`}>
-      {runLines.map((runs, li) => (
-        <span key={li}>
-          {li > 0 && "\n"}
-          {runs.map((run, ri) => (
-            <span key={ri} style={runStyle(run)}>
-              {run.text}
+      {(() => {
+        let offset = 0; // where the current run starts in `text`, to place the match marks
+        return runLines.map((runs, li) => {
+          if (li > 0) offset += 1; // the newline
+          return (
+            <span key={li}>
+              {li > 0 && "\n"}
+              {runs.map((run, ri) => {
+                const start = offset;
+                offset += run.text.length;
+                return (
+                  <span key={ri} style={runStyle(run)}>
+                    {emphasis?.length ? markRun(run.text, start, emphasis) : run.text}
+                  </span>
+                );
+              })}
             </span>
-          ))}
-        </span>
-      ))}
+          );
+        });
+      })()}
 
       {sel && pos && (
         <span
@@ -211,6 +228,32 @@ export function FormattableText({
       )}
     </span>
   );
+}
+
+/** Wrap the parts of a run that fall inside a match range. The text itself is unchanged. */
+function markRun(text: string, start: number, ranges: [number, number][]) {
+  const cuts = new Set([0, text.length]);
+  for (const [s, e] of ranges) {
+    for (const p of [s - start, e - start]) if (p > 0 && p < text.length) cuts.add(p);
+  }
+  const points = [...cuts].sort((a, b) => a - b);
+  const out: React.ReactNode[] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i]!;
+    const b = points[i + 1]!;
+    const piece = text.slice(a, b);
+    const hit = ranges.some(([s, e]) => start + a >= s && start + b <= e);
+    out.push(
+      hit ? (
+        <mark key={i} className="rounded-sm bg-[var(--v-accent-soft)] px-0 text-inherit shadow-[0_0_0_1px_var(--v-accent)]">
+          {piece}
+        </mark>
+      ) : (
+        piece
+      ),
+    );
+  }
+  return out;
 }
 
 function Btn({

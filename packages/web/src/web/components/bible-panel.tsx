@@ -347,7 +347,7 @@ export function BiblePanel({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onSearchKeyDown}
-            placeholder="Reference (john 3 16) - Enter to preview, Enter again to go live"
+            placeholder="Reference (john 3 16) or any sentence from the Bible - Enter to preview, Enter again to go live"
             className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-2)] py-2 pl-8 pr-8 text-sm outline-none focus:border-[var(--v-accent)]"
           />
         </div>
@@ -357,7 +357,9 @@ export function BiblePanel({
       <div ref={listRef} className="v-scroll min-h-0 flex-1 overflow-y-auto p-4">
         <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[var(--v-text-dim)]">
           <BookOpen className="h-4 w-4" />
-          {hits ? `${hits.length} result${hits.length === 1 ? "" : "s"}` : `${name} ${chapter}`}
+          {hits
+            ? `${hits.length} result${hits.length === 1 ? "" : "s"} for \u201c${query.trim()}\u201d`
+            : `${name} ${chapter}`}
           {chapterQ.isFetching && !hits && <Spinner />}
         </div>
         {hits && !hits.length ? (
@@ -403,12 +405,23 @@ export function BiblePanel({
                       <span className="mt-0.5 shrink-0 text-right text-[12px] font-semibold text-[var(--v-accent)]">
                         {hits ? `${s.caption}` : i + 1}
                       </span>
-                      <FormattableText
-                        text={s.sourceLines[0] ?? ""}
-                        formats={formatsFor(s.slideId ?? "")}
-                        onFormatsChange={(f) => setFormatsFor(s.slideId ?? "", f)}
-                        className="font-lyric text-sm leading-snug text-[var(--v-text)]"
-                      />
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <FormattableText
+                          text={s.sourceLines[0] ?? ""}
+                          formats={formatsFor(s.slideId ?? "")}
+                          onFormatsChange={(f) => setFormatsFor(s.slideId ?? "", f)}
+                          emphasis={hits?.[i]?.spans}
+                          className="font-lyric text-sm leading-snug text-[var(--v-text)]"
+                        />
+                        {hits?.[i]?.kind && hits[i]!.kind !== "phrase" && (
+                          <span className="text-[11px] text-[var(--v-text-faint)]">
+                            {hits[i]!.kind === "similar" ? "Close wording" : "Has all these words"}
+                          </span>
+                        )}
+                        {hits?.[i]?.continues && (
+                          <span className="text-[11px] text-[var(--v-text-faint)]">Carries on into the next verse</span>
+                        )}
+                      </span>
                     </div>
                     {/* These are the primary actions on this screen, and they
                         were 22x22 - under the 24px minimum target size, and
