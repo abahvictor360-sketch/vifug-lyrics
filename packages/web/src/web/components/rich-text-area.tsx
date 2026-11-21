@@ -7,6 +7,9 @@ import {
   type MarkPatch, type TextAlign, type TextFormat, type TextRun,
 } from "../lib/rich-text";
 import { SizeButtons } from "./size-buttons";
+import { HighlightButton } from "./highlight-button";
+import { useToolbarFit } from "../hooks/use-toolbar-fit";
+import { copyRich, insertRich, readRich, richPayload } from "../lib/rich-clipboard";
 
 /**
  * A text box whose words can be coloured and emphasised.
@@ -107,6 +110,8 @@ export function RichTextArea({
   const [sel, setSel] = useState({ start: 0, end: 0 });
   const [toolbar, setToolbar] = useState<{ top: number; left: number } | null>(null);
   const [palette, setPalette] = useState(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const toolbarShift = useToolbarFit(toolbarRef, !!toolbar, toolbar);
 
   const readSelection = useCallback(() => {
     const ta = taRef.current;
@@ -162,6 +167,41 @@ export function RichTextArea({
   const setMarks = (marks: MarkPatch) => {
     onFormatsChange(applyMarks(formats, sel.start, sel.end, marks));
     taRef.current?.focus();
+  };
+
+  /*
+   * Copy and cut carry the style with the words, so pasting them into another
+   * text box in Vifug brings the bold, underline and highlight along. Cut then
+   * removes the selection the way typing over it would (execCommand keeps the
+   * browser's own undo working).
+   */
+  const copyStyled = (e: React.ClipboardEvent<HTMLTextAreaElement>, cut: boolean) => {
+    const ta = e.currentTarget;
+    if (ta.selectionStart === ta.selectionEnd) return;
+    const done = copyRich(e, richPayload(value, formats, ta.selectionStart, ta.selectionEnd));
+    if (done && cut && !document.execCommand("delete")) {
+      const s = ta.selectionStart;
+      const next = value.slice(0, s) + value.slice(ta.selectionEnd);
+      onFormatsChange(reanchor(formats, value, next));
+      onChange(next);
+    }
+  };
+
+  // The host gets first refusal (the slide editor turns a multi-paragraph paste
+  // into several slides); if it leaves the paste alone and what is arriving is
+  // styled text from Vifug, it goes in with its style.
+  const pasteStyled = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    onPaste?.(e);
+    if (e.defaultPrevented) return;
+    const rich = readRich(e);
+    if (!rich) return;
+    e.preventDefault();
+    const ta = e.currentTarget;
+    const merged = insertRich(value, formats, ta.selectionStart, ta.selectionEnd, rich);
+    // execCommand keeps native undo; its input event runs onChange, which
+    // re-anchors the old ranges, so the merged ranges are set after it.
+    if (!document.execCommand("insertText", false, rich.text)) onChange(merged.value);
+    onFormatsChange(merged.formats);
   };
 
   const segments = segmentLines(value, formats, sel.start, sel.end);
@@ -235,7 +275,9 @@ export function RichTextArea({
           onFormatsChange(reanchor(formats, value, e.target.value));
           onChange(e.target.value);
         }}
-        onPaste={onPaste}
+        onCopy={(e) => copyStyled(e, false)}
+        onCut={(e) => copyStyled(e, true)}
+        onPaste={pasteStyled}
         onScroll={syncScroll}
         onSelect={readSelection}
         onKeyUp={readSelection}
@@ -246,10 +288,11 @@ export function RichTextArea({
 
       {toolbar && hasSelection && (
         <div
+          ref={toolbarRef}
           // Keeping focus in the textarea is what preserves the selection; a
           // toolbar button that stole it would clear the very range it acts on.
           onMouseDown={(e) => e.preventDefault()}
-          style={{ top: toolbar.top, left: toolbar.left }}
+          style={{ top: toolbar.top, left: toolbar.left, marginLeft: toolbarShift }}
           className="animate-fade-in absolute z-30 flex -translate-x-1/2 -translate-y-[calc(100%+6px)] items-center gap-0.5 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-3)] p-1 shadow-xl"
         >
           <ToolBtn label="Bold" active={!!active.bold} onClick={() => setMarks({ bold: !active.bold })}>
@@ -265,6 +308,8 @@ export function RichTextArea({
           >
             <Underline className="h-3.5 w-3.5" />
           </ToolBtn>
+
+          <HighlightButton active={active.highlight} onPick={(hex) => setMarks({ highlight: hex })} />
 
           <span className="mx-0.5 h-4 w-px bg-[var(--v-border)]" />
 

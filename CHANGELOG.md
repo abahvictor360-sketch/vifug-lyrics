@@ -7,6 +7,8 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
+- NEW: **highlight words, and copy and paste keeps the style.** Select words in a Bible verse or a slide and the toolbar now has a **Highlight** (marker pen) button beside Underline, Bold, Italic, size and colour. The highlight shows on Preview, Live, the stream and the phone remote, and is remembered per verse. Copying or cutting styled words and pasting them into another text box in Vifug now keeps their underline, highlight, bold, italic, colour and size (before, only the plain words came across); pasting several styled paragraphs into a presentation makes one slide per paragraph, each keeping its style. The style also goes to Word and Docs as HTML, and text copied from elsewhere still pastes as plain text.
+
 - NEW: **resize the panes on the operator screen.** Drag the dividers between the library, the slides and the live controls (in both the Vifug and the Broadcast layouts) to make any of them wider or narrower, and in Broadcast drag the line under Preview and Live to change how tall the screens are. Arrow keys work on a focused divider (16 px, Shift for 64), double-click resets one, and Settings, Layout has **Reset panel sizes**. Sizes are remembered per device and the slides pane never drops below about 320 px.
 - FIX: **the Controls dock in the Broadcast layout was cut off on small windows.** On a 1280 x 720 laptop GO LIVE, Prev, Next, Blank and Clear sat below the bottom edge of the third section. The screens along the top now leave the docks at least about 380 px, so all the controls show without scrolling, and the dock width is no longer fixed (it was 21 rem, or 24 rem on very wide screens).
 

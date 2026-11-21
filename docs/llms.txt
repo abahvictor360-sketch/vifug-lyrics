@@ -32,6 +32,7 @@ Allow: /
 #   slides and controls as docks below, the way a streaming desk is laid out.
 #   Chosen in Settings, applied instantly, remembered per device. Every divider can be dragged to resize the panes (library, slides, controls, and the height of the screens in Broadcast), with a Reset panel sizes button.
 # - Offline Bible: 31 English versions plus Yoruba, Hausa, Igbo, Twi and Swahili; add your own
+#   Underline, highlight, bold, italic, colour and resize words in a verse; styled copy and paste keeps the style inside the app
 # - Presentations: build slides in the app or import PowerPoint (.pptx) and PDF
 # - Theme designer: drag the text box, fonts (including your own font files), colours,
 #   motion, a bar behind the words, and picture, video and camera layers
