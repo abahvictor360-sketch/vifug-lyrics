@@ -11,6 +11,7 @@ import "./styles.css";
 import App from "./app.tsx";
 import { registerServiceWorker, watchInstallPrompt } from "./lib/pwa";
 import { hydrateSessionMedia } from "./lib/session-media";
+import { installNoMultiClickSelect } from "./lib/no-multiclick-select";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,8 @@ function useHashPath(): [string, (to: string, opts?: { replace?: boolean }) => v
 // desktop app, which ships its own assets and has no browser to install into.
 watchInstallPrompt();
 registerServiceWorker();
+// A double-click is an action in this app; it must not also highlight a word.
+installNoMultiClickSelect();
 // Files this browser was holding before the last reload. Fire-and-forget: the
 // app renders now and the media library fills in when the read lands.
 void hydrateSessionMedia();
