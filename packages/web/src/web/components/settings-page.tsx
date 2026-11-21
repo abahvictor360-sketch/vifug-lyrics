@@ -423,7 +423,7 @@ function LayoutSection() {
           mode="broadcast"
           current={layout}
           title="Broadcast"
-          blurb="Preview and live across the top at full size, the way a streaming desk is laid out. The list, the slides and the controls become docks below them."
+          blurb="Preview and live across the top at full size, the way a streaming desk is laid out. The list, the slides and the controls become docks below them, with the Lyrics, Bible, Presentations and Media tabs just above."
         />
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--v-border)] pt-3">
@@ -510,13 +510,17 @@ function LayoutChoice({
 function LayoutThumb({ mode }: { mode: LayoutMode }) {
   const screen = "rounded-[2px] bg-[var(--v-accent)]";
   const pane = "rounded-[2px] border border-[var(--v-border)] bg-[var(--v-surface-3)]";
+  // The thin bars are the menu: the whole thing along the top in the Vifug layout; in
+  // Broadcast, the account and settings bar on top and the content tabs above the docks.
+  const bar = "h-1.5 shrink-0 rounded-[2px] bg-[var(--v-text-faint)]/50";
   return (
     <div
       aria-hidden
-      className="flex aspect-video w-full gap-1 rounded-md border border-[var(--v-border)] bg-[var(--v-bg)] p-1.5"
+      className="flex aspect-video w-full flex-col gap-1 rounded-md border border-[var(--v-border)] bg-[var(--v-bg)] p-1.5"
     >
+      <div className={bar} />
       {mode === "vifug" ? (
-        <>
+        <div className="flex min-h-0 flex-1 gap-1">
           <div className={`w-[18%] ${pane}`} />
           <div className={`flex-1 ${pane}`} />
           <div className="flex w-[34%] flex-col gap-1">
@@ -526,14 +530,15 @@ function LayoutThumb({ mode }: { mode: LayoutMode }) {
             </div>
             <div className={`flex-1 ${pane}`} />
           </div>
-        </>
+        </div>
       ) : (
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-1">
           <div className="flex gap-1">
             <div className={`aspect-video flex-1 ${screen}`} />
             <div className={`aspect-video flex-1 ${screen}`} />
           </div>
-          <div className="flex flex-1 gap-1">
+          <div className={bar} />
+          <div className="flex min-h-0 flex-1 gap-1">
             <div className={`w-[18%] ${pane}`} />
             <div className={`flex-1 ${pane}`} />
             <div className={`w-[24%] ${pane}`} />
