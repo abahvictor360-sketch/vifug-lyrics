@@ -16,6 +16,12 @@ export type TextFormat = {
   end: number;
   /** Text colour as #rrggbb. Absent = inherit the slide's colour. */
   color?: string;
+  /**
+   * Highlighter-pen background behind the words, as #rrggbb. Painted as a
+   * background only - it adds no padding and changes no metrics, so the text
+   * wraps and auto-fits exactly as it would without it.
+   */
+  highlight?: string;
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
@@ -40,8 +46,10 @@ export type FormatMarks = Omit<TextFormat, "start" | "end">;
  * hence the explicit null rather than reusing Partial<FormatMarks>, whose
  * optional `color?: string` cannot express "remove it".
  */
-export type MarkPatch = Omit<Partial<FormatMarks>, "color" | "scale"> & {
+export type MarkPatch = Omit<Partial<FormatMarks>, "color" | "scale" | "highlight"> & {
   color?: string | null;
+  /** null removes the highlight. */
+  highlight?: string | null;
   /** null returns the text to the slide's own size. */
   scale?: number | null;
 };
@@ -83,7 +91,7 @@ export function serializeFormats(formats: TextFormat[]): string {
 
 /** Does this range actually carry anything worth storing? */
 function hasMarks(f: FormatMarks): boolean {
-  return Boolean(f.color || f.bold || f.italic || f.underline || (f.scale && f.scale !== 1));
+  return Boolean(f.color || f.highlight || f.bold || f.italic || f.underline || (f.scale && f.scale !== 1));
 }
 
 /**
@@ -109,6 +117,7 @@ export function normalize(formats: TextFormat[]): TextFormat[] {
 export function sameMarks(a: FormatMarks, b: FormatMarks): boolean {
   return (
     (a.color ?? null) === (b.color ?? null) &&
+    (a.highlight ?? null) === (b.highlight ?? null) &&
     Boolean(a.bold) === Boolean(b.bold) &&
     Boolean(a.italic) === Boolean(b.italic) &&
     Boolean(a.underline) === Boolean(b.underline) &&
@@ -128,7 +137,7 @@ function splitAt(formats: TextFormat[], start: number, end: number): TextFormat[
   const out: TextFormat[] = [];
   for (const f of formats) {
     const marks: FormatMarks = {
-      color: f.color, bold: f.bold, italic: f.italic, underline: f.underline, scale: f.scale,
+      color: f.color, highlight: f.highlight, bold: f.bold, italic: f.italic, underline: f.underline, scale: f.scale,
     };
     const edges = [f.start, ...[start, end].filter((p) => p > f.start && p < f.end), f.end];
     for (let i = 0; i < edges.length - 1; i++) {
@@ -180,6 +189,10 @@ export function applyMarks(
       if (marks.color) next.color = marks.color;
       else delete next.color;
     }
+    if ("highlight" in marks) {
+      if (marks.highlight) next.highlight = marks.highlight;
+      else delete next.highlight;
+    }
     if ("scale" in marks) {
       if (marks.scale && marks.scale !== 1) next.scale = marks.scale;
       else delete next.scale;
@@ -215,6 +228,8 @@ export function marksInRange(formats: TextFormat[], start: number, end: number):
   let bold = true, italic = true, underline = true;
   let color: string | undefined;
   let colorConsistent = true;
+  let highlight: string | undefined;
+  let highlightConsistent = true;
   let scale: number | undefined;
   let scaleConsistent = true;
 
@@ -225,9 +240,11 @@ export function marksInRange(formats: TextFormat[], start: number, end: number):
     if (!f?.underline) underline = false;
     if (i === start) {
       color = f?.color;
+      highlight = f?.highlight;
       scale = f?.scale;
     } else {
       if (f?.color !== color) colorConsistent = false;
+      if (f?.highlight !== highlight) highlightConsistent = false;
       if ((f?.scale ?? 1) !== (scale ?? 1)) scaleConsistent = false;
     }
   }
@@ -237,6 +254,7 @@ export function marksInRange(formats: TextFormat[], start: number, end: number):
     ...(italic ? { italic: true } : {}),
     ...(underline ? { underline: true } : {}),
     ...(colorConsistent && color ? { color } : {}),
+    ...(highlightConsistent && highlight ? { highlight } : {}),
     // An inconsistent selection reports 1, so A+ raises the whole thing to
     // one size rather than nudging each piece from wherever it happened to
     // be - the same reasoning as the bold button.
@@ -338,6 +356,7 @@ export function toRunLines(text: string, formats: TextFormat[]): TextRun[][] {
       runs.push({
         text: text.slice(s, e),
         ...(f.color ? { color: f.color } : {}),
+        ...(f.highlight ? { highlight: f.highlight } : {}),
         ...(f.bold ? { bold: true } : {}),
         ...(f.italic ? { italic: true } : {}),
         ...(f.underline ? { underline: true } : {}),
@@ -359,10 +378,34 @@ export function runsArePlain(lines: TextRun[][]): boolean {
   return lines.every((runs) => runs.every((r) => !hasMarks(r)));
 }
 
+/** Dark text on a light background, white on a dark one. */
+export function readableOn(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return "#ffffff";
+  const n = parseInt(m[1]!, 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  const luminance = 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  return luminance > 0.35 ? "#0b0e14" : "#ffffff";
+}
+
 /** CSS for a run. Shared by the editor overlay and the live output. */
 export function runStyle(run: FormatMarks): React.CSSProperties {
   return {
-    ...(run.color ? { color: run.color } : {}),
+    ...(run.color
+      ? { color: run.color }
+      : // A highlight is a coloured block behind the words; the slide's own text
+        // colour (usually white) would disappear on a light one, so unless the
+        // operator chose a text colour the words take whichever of dark and white
+        // reads on the highlight.
+        run.highlight
+        ? { color: readableOn(run.highlight) }
+        : {}),
+    ...(run.highlight
+      ? { backgroundColor: run.highlight, boxDecorationBreak: "clone" as const, WebkitBoxDecorationBreak: "clone" as const }
+      : {}),
     ...(run.bold ? { fontWeight: 800 } : {}),
     ...(run.italic ? { fontStyle: "italic" } : {}),
     ...(run.underline ? { textDecoration: "underline" } : {}),

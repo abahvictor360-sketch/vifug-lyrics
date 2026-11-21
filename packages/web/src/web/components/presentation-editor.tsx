@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { X, Plus, Trash2, ChevronUp, ChevronDown, ImageIcon, Film, Sparkles } from "lucide-react";
 import { VButton } from "./bits";
 import { splitParagraphs } from "../lib/paste-split";
+import { insertRich, readRich, splitRichParagraphs } from "../lib/rich-clipboard";
 import { RichTextArea } from "./rich-text-area";
 import { parseFormats, serializeFormats, type TextAlign } from "../lib/rich-text";
 import { MediaPicker } from "./media-picker";
@@ -140,20 +141,36 @@ export function PresentationEditor({
     const paragraphs = splitParagraphs(text);
     if (paragraphs.length < 2) return; // single paragraph - let the browser paste it
 
+    // Styled text copied from another slide or a verse: each new slide keeps the
+    // style of its own paragraph. The one the cursor is in is built from the
+    // first paragraph's style placed at the cursor.
+    const rich = readRich(e);
+    const richParts = rich ? splitRichParagraphs(rich) : null;
+    const styled = richParts && richParts.length === paragraphs.length ? richParts : null;
+
     e.preventDefault();
     const el = e.currentTarget;
     const before = el.value.slice(0, el.selectionStart);
     const after = el.value.slice(el.selectionEnd);
+    const selectedLength = el.selectionEnd - el.selectionStart;
     const [first, ...rest] = paragraphs;
 
     setSlides((prev) => {
       const idx = prev.findIndex((s) => s.key === key);
       const target = prev[idx];
       if (idx === -1 || !target) return prev;
-      const head: EditSlide = { ...target, body: `${before}${first ?? ""}${after}` };
-      const made: EditSlide[] = rest.map((body) => ({
+      let headFormat = target.format;
+      if (styled) {
+        const merged = insertRich(target.body ?? "", parseFormats(target.format), before.length, before.length + selectedLength, styled[0]!);
+        // Only the first paragraph goes into this slide; the text that followed
+        // the cursor stays where it was after it.
+        headFormat = serializeFormats(merged.formats);
+      }
+      const head: EditSlide = { ...target, body: `${before}${first ?? ""}${after}`, format: headFormat };
+      const made: EditSlide[] = rest.map((body, i) => ({
         ...blankSlide(),
         body,
+        format: styled ? serializeFormats(styled[i + 1]!.formats) : null,
         backgroundId: target.backgroundId,
         bgColor: target.bgColor,
         textColor: target.textColor,

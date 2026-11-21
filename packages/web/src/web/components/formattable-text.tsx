@@ -5,6 +5,9 @@ import {
   type MarkPatch, type TextFormat,
 } from "../lib/rich-text";
 import { SizeButtons } from "./size-buttons";
+import { HighlightButton } from "./highlight-button";
+import { useToolbarFit } from "../hooks/use-toolbar-fit";
+import { copyRich, richPayload } from "../lib/rich-clipboard";
 
 /**
  * Read-only text that can still be coloured and emphasised.
@@ -45,6 +48,8 @@ export function FormattableText({
   const [sel, setSel] = useState<{ start: number; end: number } | null>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [palette, setPalette] = useState(false);
+  const toolbarRef = useRef<HTMLSpanElement>(null);
+  const toolbarShift = useToolbarFit(toolbarRef, !!(sel && pos), pos);
 
   const readSelection = useCallback(() => {
     const host = hostRef.current;
@@ -97,8 +102,24 @@ export function FormattableText({
     onFormatsChange(applyMarks(formats, sel.start, sel.end, marks));
   };
 
+  // Copying part of a styled verse keeps its style for pasting into another
+  // text box in Vifug. A selection with no style falls through to the
+  // browser's ordinary copy.
+  const onCopy = (e: React.ClipboardEvent<HTMLSpanElement>) => {
+    const host = hostRef.current;
+    const selection = window.getSelection();
+    if (!host || !selection || selection.isCollapsed || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!host.contains(range.commonAncestorContainer)) return;
+    const pre = range.cloneRange();
+    pre.selectNodeContents(host);
+    pre.setEnd(range.startContainer, range.startOffset);
+    const start = pre.toString().length;
+    copyRich(e, richPayload(text, formats, start, start + range.toString().length));
+  };
+
   return (
-    <span ref={hostRef} className={`relative ${className}`}>
+    <span ref={hostRef} onCopy={onCopy} className={`relative ${className}`}>
       {runLines.map((runs, li) => (
         <span key={li}>
           {li > 0 && "\n"}
@@ -112,6 +133,7 @@ export function FormattableText({
 
       {sel && pos && (
         <span
+          ref={toolbarRef}
           contentEditable={false}
           // preventDefault keeps the selection alive through the press;
           // stopPropagation keeps a click on a toolbar button from also
@@ -119,7 +141,7 @@ export function FormattableText({
           onMouseDown={(e) => e.preventDefault()}
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={(e) => e.stopPropagation()}
-          style={{ top: pos.top, left: pos.left }}
+          style={{ top: pos.top, left: pos.left, marginLeft: toolbarShift }}
           className="animate-fade-in absolute z-30 flex -translate-x-1/2 -translate-y-[calc(100%+6px)] items-center gap-0.5 rounded-lg border border-[var(--v-border)] bg-[var(--v-surface-3)] p-1 shadow-xl"
         >
           <Btn label="Bold" active={!!active.bold} onClick={() => setMarks({ bold: !active.bold })}>
@@ -135,6 +157,8 @@ export function FormattableText({
           >
             <Underline className="h-3.5 w-3.5" />
           </Btn>
+
+          <HighlightButton active={active.highlight} onPick={(hex) => setMarks({ highlight: hex })} />
 
           <span className="mx-0.5 h-4 w-px bg-[var(--v-border)]" />
 
