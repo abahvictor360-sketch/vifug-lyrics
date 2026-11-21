@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [Unreleased]
+## [1.38.0] — 2026-11-21
 
 - NEW: **search the Bible for a sentence.** Type a line you remember ("for God so loved the world", "the Lord is my shepherd") in the Bible tab's search box and the verses that contain it are listed with their references and the matching words marked. Capitals and punctuation no longer matter, results appear while you are still typing the last word, and a line that runs over a verse break lists both verses. Exact wording comes first, then close wording (a paraphrase), then verses with all the words in any order; before, only an exact match of the raw text was found, and only the first 60 in book order. The same search is used when adding Scripture to a service plan.
 - CHANGE: **in the Broadcast layout the Lyrics, Bible, Presentations and Media tabs sit directly above the three docks.** The logo, Plans, History, status and the Help, Library and Settings buttons stay at the top. The Vifug layout is unchanged. The Settings, Layout card shows the menu in its diagram, and the screens' default height leaves room for the extra bar so the Controls are not cut off on 720 and 768 pixel windows.
