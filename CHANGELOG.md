@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [Unreleased]
+## [1.37.0] — 2026-11-21
 
 - NEW: **highlight words, and copy and paste keeps the style.** Select words in a Bible verse or a slide and the toolbar now has a **Highlight** (marker pen) button beside Underline, Bold, Italic, size and colour. The highlight shows on Preview, Live, the stream and the phone remote, and is remembered per verse. Copying or cutting styled words and pasting them into another text box in Vifug now keeps their underline, highlight, bold, italic, colour and size (before, only the plain words came across); pasting several styled paragraphs into a presentation makes one slide per paragraph, each keeping its style. The style also goes to Word and Docs as HTML, and text copied from elsewhere still pastes as plain text.
 
