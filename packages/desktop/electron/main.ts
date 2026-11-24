@@ -13,6 +13,7 @@ import fsSync from "node:fs";
 import { startEmbeddedServer } from "./server";
 import { lanAddresses, lanAddressDetails, firewallState, allowThroughFirewall } from "./network";
 import { ndiStatus, ndiStart, ndiStop, ndiRebind } from "./ndi";
+import { vcamStatus, vcamStart, vcamStop, vcamRebind } from "./virtual-camera";
 import { streamStart, streamChunk, streamStop, streamStatus, onStreamState, type StreamStartOptions } from "./stream";
 import { beginStartupLog, logStartup, logStartupError, startupLogPath } from "./startup-log";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -422,6 +423,7 @@ ipcMain.handle(
       if (wantFullscreen) existing.setFullScreen(true);
       existing.focus();
       if (screenId === MAIN_SCREEN) ndiRebind(existing);
+      if (screenId === MAIN_SCREEN) vcamRebind(existing);
       win?.webContents.send("projector:state", { open: true, displayId: target.id, screenId });
       return { ok: true, displayId: target.id, screenId };
     }
@@ -486,6 +488,7 @@ ipcMain.handle(
     projectorWin.on("closed", () => {
       if (projectors.get(screenId) === projectorWin) projectors.delete(screenId);
       if (screenId === MAIN_SCREEN) ndiRebind(null);
+  if (screenId === MAIN_SCREEN) vcamRebind(null);
       win?.webContents.send("projector:state", {
         open: false,
         screenId,
@@ -494,7 +497,10 @@ ipcMain.handle(
     });
     // Once the projector is up, point any running NDI sender at it.
     if (screenId === MAIN_SCREEN) {
-      projectorWin.webContents.on("did-finish-load", () => ndiRebind(mainProjector()));
+      projectorWin.webContents.on("did-finish-load", () => {
+        ndiRebind(mainProjector());
+        vcamRebind(mainProjector());
+      });
     }
     win?.webContents.send("projector:state", { open: true, displayId: target.id, screenId });
     return { ok: true, displayId: target.id, screenId };
@@ -511,6 +517,7 @@ ipcMain.handle("projector:close", (_e, opts?: { dismissed?: boolean; screenId?: 
   projectorFor(screenId)?.close();
   projectors.delete(screenId);
   if (screenId === MAIN_SCREEN) ndiRebind(null);
+  if (screenId === MAIN_SCREEN) vcamRebind(null);
   return { ok: true };
 });
 
@@ -560,6 +567,34 @@ function ndiSourceWindow(): BrowserWindow {
   return w;
 }
 ipcMain.handle("ndi:stop", () => ndiStop());
+
+/* --- Windows virtual camera ---
+   The same picture as NDI, offered to the operating system as a camera so OBS,
+   vMix and ProPresenter can pick "Vifug" out of their ordinary capture-device
+   list with nothing installed on their side. The driver negotiates the size,
+   so the offscreen source window is built to order rather than fixed at
+   1080p the way NDI's is. */
+ipcMain.handle("vcam:status", () => vcamStatus());
+ipcMain.handle("vcam:start", () => vcamStart(mainProjector(), vcamSourceWindow));
+ipcMain.handle("vcam:stop", () => vcamStop());
+
+function vcamSourceWindow(width: number, height: number): BrowserWindow {
+  const w = new BrowserWindow({
+    show: false,
+    width,
+    height,
+    backgroundColor: "#000000",
+    webPreferences: {
+      offscreen: true,
+      preload: path.join(__dirname, "preload.mjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false,
+    },
+  });
+  loadRoute(w, "/projector");
+  return w;
+}
 
 // --- Screen / window capture ---
 // Only enumerates sources and hands back their ids; the actual stream is

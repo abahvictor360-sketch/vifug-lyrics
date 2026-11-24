@@ -135,6 +135,14 @@ export type AppSettings = {
    * native NDI runtime + grandiose addon; falls back gracefully if absent).
    */
   ndi?: { enabled: boolean; sourceName: string; frameRate: number } | null;
+  /**
+   * Windows virtual camera (desktop only). Publishes the live screen as a
+   * system camera device, so OBS, vMix and ProPresenter can pick "Vifug" out
+   * of their ordinary Video Capture Device list with nothing installed at
+   * their end. Separate from `ndi` because a church with neither a switcher
+   * nor the NDI plugin is exactly who this is for.
+   */
+  virtualCamera?: { enabled: boolean } | null;
   /** Next/Prev (arrows, buttons, remote) sends the slide live immediately. */
   advanceGoesLive?: boolean;
   activeBackgroundId?: string | null;

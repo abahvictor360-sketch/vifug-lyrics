@@ -13,10 +13,26 @@
 ; from Settings, with a proper elevation prompt. Failing here must never block
 ; the install, so nothing is checked and nothing is reported.
 
+; The virtual camera driver.
+;
+; A DirectShow filter has to be registered with the system before anything can
+; enumerate it, which is the one part of "Vifug appears in OBS" that cannot be
+; done from inside the app: it writes under HKCR and needs the elevation the
+; installer already has.
+;
+; Best effort, like the firewall rule above. A per-user install is not
+; elevated and this will fail; the app notices (Settings reports the driver as
+; not registered) and the camera is simply unavailable rather than broken. An
+; install that cannot register a camera must never fail outright over it.
+!macro vifugRegisterCamera
+  nsExec::Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\resources\camera\vifug-camera.dll"'
+!macroend
+
 !macro customInstall
   nsExec::Exec 'netsh advfirewall firewall delete rule name="Vifug companion screens"'
   nsExec::Exec 'netsh advfirewall firewall add rule name="Vifug companion screens" dir=in action=allow program="$INSTDIR\Vifug.exe" enable=yes profile=any remoteip=localsubnet'
   !insertmacro vifugEnsureVcRuntime
+  !insertmacro vifugRegisterCamera
 !macroend
 
 ; Microsoft Visual C++ runtime.
@@ -76,4 +92,7 @@
 ; to anyone auditing their firewall later.
 !macro customUnInstall
   nsExec::Exec 'netsh advfirewall firewall delete rule name="Vifug companion screens"'
+  ; Unregister before the file goes, or the CLSID is left pointing at nothing
+  ; and every host that enumerates cameras pays for a failed load for ever.
+  nsExec::Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\resources\camera\vifug-camera.dll"'
 !macroend

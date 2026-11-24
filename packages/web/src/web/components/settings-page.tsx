@@ -11,6 +11,7 @@ import {
   Settings2,
   Image as ImageIcon,
   Film,
+  Video,
   Palette,
   Upload,
   Link2,
@@ -88,7 +89,7 @@ import type { useDesktop } from "../hooks/use-desktop";
 import { useCreateTheme, useUpdateTheme, useDeleteTheme, useThemes, themeSuits, type ThemeDraft, type Theme as ThemeRow } from "../hooks/use-songs";
 import { DOWNLOAD_PAGE } from "../hooks/use-update-check";
 import { useNetworkOrigin } from "../hooks/use-network-origin";
-import type { DisplayInfo, FirewallState } from "../lib/desktop";
+import type { DisplayInfo, FirewallState, VirtualCameraStatus } from "../lib/desktop";
 import { teleportToObs } from "../lib/obs";
 import { sendToVmix } from "../lib/vmix";
 import { useDialog } from "../hooks/use-dialog";
@@ -3357,6 +3358,10 @@ function StreamingSection({
         <NdiPanel settings={settings} patchSettings={patchSettings} desktop={desktop} origin={origin} />
       </Group>
 
+      <Group title="Virtual camera" icon={Video}>
+        <VirtualCameraPanel settings={settings} patchSettings={patchSettings} desktop={desktop} />
+      </Group>
+
       <Group title="Teleport to OBS / vMix" icon={Rocket}>
         <TeleportPanel settings={settings} patchSettings={patchSettings} origin={origin} />
       </Group>
@@ -4285,6 +4290,117 @@ type NdiRuntimeStatus = {
   lastFrameAgoMs?: number | null;
   ownWindow?: boolean;  // picture comes from our own window, not a projector
 };
+
+/**
+ * The Windows virtual camera.
+ *
+ * The point of it is the thing a volunteer can do unaided: open OBS, add a
+ * Video Capture Device, and find "Vifug" in the list beside the webcam. NDI
+ * and the browser source both reach the same three programs and both ask
+ * somebody to install a plugin or paste a URL first.
+ *
+ * No size or frame-rate controls here on purpose: the host picks those when
+ * it adds the device, and Vifug renders to whatever it asks for.
+ */
+function VirtualCameraPanel({
+  settings,
+  patchSettings,
+  desktop,
+}: {
+  settings: AppSettings | undefined;
+  patchSettings: (p: Partial<AppSettings>) => void;
+  desktop: ReturnType<typeof useDesktop>;
+}) {
+  const enabled = settings?.virtualCamera?.enabled ?? false;
+  const [status, setStatus] = useState<VirtualCameraStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Polled rather than pushed: the interesting number is how many hosts are
+  // reading, and that changes when somebody adds a source in OBS - an event
+  // this side never hears about.
+  useEffect(() => {
+    if (!desktop?.vcamStatus) return;
+    let alive = true;
+    const read = () => {
+      desktop.vcamStatus?.()
+        .then((s) => alive && setStatus(s))
+        .catch(() => alive && setStatus(null));
+    };
+    read();
+    const timer = setInterval(read, 2000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [desktop]);
+
+  const toggle = async (on: boolean) => {
+    patchSettings({ virtualCamera: { enabled: on } });
+    if (!desktop?.vcamStart || !desktop?.vcamStop) return;
+    setBusy(true);
+    try {
+      setStatus(on ? await desktop.vcamStart() : await desktop.vcamStop());
+    } catch {
+      setStatus(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!desktop) {
+    return (
+      <p className="text-[12px] text-[var(--v-text-faint)]">
+        The virtual camera needs the desktop app - a browser cannot add a camera to your system. In
+        a browser, use the OBS overlay above instead.
+      </p>
+    );
+  }
+
+  const windowsOnly = status?.reason === "windows_only";
+  const notRegistered = status?.reason === "driver_not_registered";
+
+  return (
+    <div className="space-y-4">
+      <label className="flex items-center justify-between">
+        <span className="min-w-0">
+          <span className="block text-sm">Appear as a camera called “Vifug”</span>
+          <span className="block text-[12px] text-[var(--v-text-faint)]">
+            In OBS, vMix or ProPresenter, add a Video Capture Device and pick Vifug. No plugin, no
+            URL.
+          </span>
+        </span>
+        <Toggle checked={enabled} onChange={toggle} />
+      </label>
+
+      <div className="flex items-center gap-2 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-[12px]">
+        <span
+          className={`h-2 w-2 shrink-0 rounded-full ${
+            status?.running && (status.consumers ?? 0) > 0
+              ? "bg-[var(--v-ok)]"
+              : status?.running
+                ? "bg-amber-400"
+                : "bg-[var(--v-text-faint)]"
+          }`}
+        />
+        <span className="min-w-0 flex-1 text-[var(--v-text-dim)]">
+          {busy
+            ? "Working…"
+            : windowsOnly
+              ? "The virtual camera is Windows only for now."
+              : notRegistered
+                ? "The camera driver is not registered on this machine - reinstall Vifug, or run the installer's repair."
+                : status?.running
+                  ? (status.consumers ?? 0) > 0
+                    ? `Being read by ${status.consumers} ${status.consumers === 1 ? "program" : "programs"} at ${status.width}×${status.height}${status.ownWindow ? ", from its own window" : ""}.`
+                    : "Waiting for a program to add it. Nothing is being sent until one does."
+                  : status?.available
+                    ? "Ready - turn it on, then add it in OBS."
+                    : "Checking…"}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function NdiPanel({
   settings,

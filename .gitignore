@@ -79,3 +79,7 @@ web-dist
 
 # uploaded media, written at runtime
 packages/web/media
+
+# Virtual camera driver build output
+packages/virtual-camera/windows/build/
+packages/desktop/build/camera/

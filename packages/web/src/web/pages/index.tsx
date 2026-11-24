@@ -1006,6 +1006,20 @@ export default function OperatorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFollowOn, stage.status, micMuted, recogniserKey]);
 
+  /*
+   * The virtual camera follows its setting, including across a restart.
+   *
+   * It is a system-wide device rather than something inside this window: an
+   * operator who switched it on and set OBS up around it should find it there
+   * the next morning, not discover the source is black because nobody went
+   * back into Settings to switch it on again.
+   */
+  const virtualCameraOn = settings?.virtualCamera?.enabled ?? false;
+  useEffect(() => {
+    if (!desktop?.vcamStart || !desktop?.vcamStop) return;
+    void (virtualCameraOn ? desktop.vcamStart() : desktop.vcamStop()).catch(() => {});
+  }, [desktop, virtualCameraOn]);
+
   // Recording the live output. Read through a ref in the key handler so the
   // shortcut always calls the current toggle without re-registering the
   // listener every tick of the elapsed-time counter.
