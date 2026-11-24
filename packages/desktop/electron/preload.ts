@@ -77,6 +77,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("ndi:start", opts),
   ndiStop: () => ipcRenderer.invoke("ndi:stop"),
 
+  // Windows virtual camera: the live screen offered to the OS as a camera, so
+  // OBS / vMix / ProPresenter can pick "Vifug" from their capture-device list.
+  vcamStatus: () => ipcRenderer.invoke("vcam:status"),
+  vcamStart: () => ipcRenderer.invoke("vcam:start"),
+  vcamStop: () => ipcRenderer.invoke("vcam:stop"),
+
   // LAN address(es) so companion screens (Stage/Remote/Stream) can be opened
   // from another device on the same network, not just this machine, plus the
   // firewall check that explains it when they cannot.

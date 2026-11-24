@@ -57,6 +57,11 @@ export interface ElectronAPI {
   ndiStart?: (opts: { sourceName: string; frameRate: number }) => Promise<NdiStatus>;
   ndiStop?: () => Promise<NdiStatus>;
 
+  // Windows virtual camera (desktop + Windows only; absent everywhere else).
+  vcamStatus?: () => Promise<VirtualCameraStatus>;
+  vcamStart?: () => Promise<VirtualCameraStatus>;
+  vcamStop?: () => Promise<VirtualCameraStatus>;
+
   /** Routable IPv4 addresses of this machine, best first, for companion links. */
   getLanIps?: () => Promise<string[]>;
   /** The same addresses with their adapter names, for the Settings picker. */
@@ -149,6 +154,30 @@ export interface NdiStatus {
   available: boolean;
   running: boolean;
   sourceName?: string;
+  reason?: string;
+}
+
+/**
+ * The Windows virtual camera, as the operator panel needs to describe it.
+ *
+ * `available` is the driver being registered, not merely being on Windows:
+ * the commonest failure is the app publishing perfectly to a pipe no camera
+ * is reading, because the installer's registration step was undone. And
+ * `consumers` is the one number that answers "is OBS actually getting this?"
+ */
+export interface VirtualCameraStatus {
+  available: boolean;
+  running: boolean;
+  /** Hosts reading right now - OBS, vMix, ProPresenter. */
+  consumers: number;
+  width?: number;
+  height?: number;
+  fps?: number;
+  framesSent?: number;
+  lastFrameAgoMs?: number | null;
+  /** The picture comes from an offscreen window, not a projector. */
+  ownWindow?: boolean;
+  /** "windows_only", "driver_not_registered", or a listen failure. */
   reason?: string;
 }
 
