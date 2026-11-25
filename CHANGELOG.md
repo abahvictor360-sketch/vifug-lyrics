@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [Unreleased]
+## [1.39.0] — 2026-11-25
 
 - NEW: **Vifug Receiver**, a small separate app (`receiver/`) for a second computer. It lists the Vifugs on the network, shows the chosen one's live screen full screen with sound (optionally transparent), and on Windows and Linux presents it as a camera for OBS, vMix, Zoom and similar. The desktop app now announces itself on the local network (a small UDP broadcast with the computer's name and port) so the Receiver can find it. Not yet released; see receiver/README.md for what has and has not been tested.
 - CHANGED: **the timer's settings have their own tab.** Settings now has a Timer tab with the screens it shows on, count down / up, the label, size and background. The Timer panel on the main screen keeps only the clock, Start / Pause / Reset, how long, and where it goes (a corner or the centre), with a link to the rest.
