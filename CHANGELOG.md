@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- NEW: **Vifug Receiver**, a small separate app (`receiver/`) for a second computer. It lists the Vifugs on the network, shows the chosen one's live screen full screen with sound (optionally transparent), and on Windows and Linux presents it as a camera for OBS, vMix, Zoom and similar. The desktop app now announces itself on the local network (a small UDP broadcast with the computer's name and port) so the Receiver can find it. See receiver/README.md.
+
 ## [1.38.1] — 2026-11-21
 
 - FIX: **double-clicking no longer highlights text.** A double-click is an action here (it sends a slide, a verse or a song live), but the browser also took it as "select this word", so every double-click left highlighted text behind, and on a Bible verse it raised the formatting toolbar too. Double and triple clicks on anything that is not a text field no longer select text. Dragging across words to select them (how a phrase in a verse is marked up) is unchanged, and double-clicking a word in a text box still selects it.
