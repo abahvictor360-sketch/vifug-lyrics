@@ -62,9 +62,8 @@ import {
 } from "../hooks/use-playlists";
 import { useBibleManifest, parseReference, searchVersion, versionAbbr, type SearchHit } from "../hooks/use-bible";
 import { useServerNow } from "../hooks/use-server-clock";
-import { MediaPicker } from "../components/media-picker";
 import {
-  DEFAULT_TIMER, DEFAULT_TIMER_BG, formatTimer, timerMs, timerPhase,
+  DEFAULT_TIMER, formatTimer, timerMs, timerPhase,
   startedTimer, resumedTimer, pausedTimer, resetTimer,
   type ServiceTimer,
 } from "../lib/timer";
@@ -1872,7 +1871,7 @@ export default function OperatorPage() {
     />
 
     {/* Stream / OBS browser source */}
-    <TimerPanel settings={settings} patchSettings={patchSettings} />
+    <TimerPanel settings={settings} patchSettings={patchSettings} onOpenSettings={() => { setSettingsSection("timer"); setSettingsOpen(true); }} />
     <StreamPanel settings={settings} patchSettings={patchSettings} />
     </>
   );
@@ -3350,14 +3349,14 @@ function AutoFollowPanel({
 function TimerPanel({
   settings,
   patchSettings,
+  onOpenSettings,
 }: {
   settings: AppSettings | undefined;
   patchSettings: (p: Partial<AppSettings>) => void;
+  onOpenSettings: () => void;
 }) {
   const t: ServiceTimer = { ...DEFAULT_TIMER, ...(settings?.timer ?? {}) };
   const set = (patch: Partial<ServiceTimer>) => patchSettings({ timer: { ...t, ...patch } });
-  const bg = t.bg ?? DEFAULT_TIMER_BG;
-  const setBg = (patch: Partial<NonNullable<ServiceTimer["bg"]>>) => set({ bg: { ...bg, ...patch } });
 
   // The panel is the one surface that needs a live reading while paused too,
   // so it ticks whenever the timer is on rather than only while running.
@@ -3365,7 +3364,6 @@ function TimerPanel({
   const ms = timerMs(t, now);
   const phase = timerPhase(t, ms);
 
-  const [open, setOpen] = useState(false);
   const mins = Math.floor(t.durationSec / 60);
   const secs = t.durationSec % 60;
 
@@ -3456,169 +3454,29 @@ function TimerPanel({
             </div>
           )}
 
-          {/* Which screens see it - the point of the feature, so it is named
-              rather than hinted at. "Screen" meant the main output and read as
-              "the screen you are looking at". */}
-          <div className="mb-2">
-            <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">
-              Show it on
-            </span>
-            <div className="flex gap-1.5">
-              {([
-                { k: "live" as const, l: "Main screen", hint: "The projector and any extra screens - what the congregation sees" },
-                { k: "stage" as const, l: "Stage", hint: "The stage display at /#/stage - the platform's own monitor" },
-                { k: "stream" as const, l: "Stream", hint: "The OBS / vMix browser source at /#/stream" },
-              ]).map((o) => (
-                <button
-                  key={o.k}
-                  title={o.hint}
-                  aria-pressed={t.screens[o.k]}
-                  onClick={() => set({ screens: { ...t.screens, [o.k]: !t.screens[o.k] } })}
-                  className={`flex-1 rounded-md border px-1 py-1.5 text-[12px] leading-tight transition-colors ${
-                    t.screens[o.k]
-                      ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                      : "border-[var(--v-border)] bg-[var(--v-surface-3)] text-[var(--v-text-dim)] hover:text-[var(--v-text)]"
-                  }`}
-                >
-                  {o.l}
-                </button>
-              ))}
-            </div>
-            {/* Ticking every one of these off is a timer running where nobody
-                can see it, which looks exactly like a broken timer. */}
-            {!t.screens.live && !t.screens.stage && !t.screens.stream && (
-              <p className="mt-1 text-[11px] text-amber-500">
-                Not showing anywhere - pick a screen above.
-              </p>
-            )}
+          <div className="mb-2 flex items-center gap-1.5">
+            <span className="text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">Where</span>
+            <select
+              aria-label="Timer position"
+              value={t.position}
+              onChange={(e) => set({ position: e.target.value as ServiceTimer["position"] })}
+              className="min-w-0 flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-[12px] outline-none focus:border-[var(--v-accent)]"
+            >
+              <option value="top-left">Top left</option>
+              <option value="top-right">Top right</option>
+              <option value="bottom-left">Bottom left</option>
+              <option value="bottom-right">Bottom right</option>
+              <option value="center">Centre (fills the screen)</option>
+            </select>
           </div>
-
+          {/* Everything else about the timer lives in Settings > Timer, so this
+              panel stays the few controls used mid-service. */}
           <button
-            onClick={() => setOpen((v) => !v)}
+            onClick={onOpenSettings}
             className="w-full text-left text-[12px] text-[var(--v-text-faint)] hover:text-[var(--v-text-dim)]"
           >
-            {open ? "▾" : "▸"} Set up
+            More timer settings: screens, size, background...
           </button>
-
-          {open ? (
-            <div className="mt-2 space-y-2">
-              <div className="flex gap-1.5">
-                {(["countdown", "countup"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => set({ mode: m, running: false, frozenMs: null, anchor: null })}
-                    className={`flex-1 rounded-md border py-1.5 text-[12px] transition-colors ${
-                      t.mode === m
-                        ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                        : "border-[var(--v-border)] bg-[var(--v-surface-3)] text-[var(--v-text-dim)]"
-                    }`}
-                  >
-                    {m === "countdown" ? "Count down" : "Count up"}
-                  </button>
-                ))}
-              </div>
-
-              <input
-                placeholder="Label (optional) - e.g. Service starts in"
-                value={t.label}
-                onChange={(e) => set({ label: e.target.value })}
-                className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-sm outline-none focus:border-[var(--v-accent)]"
-              />
-
-              <div className="flex gap-1.5">
-                <select
-                  value={t.position}
-                  onChange={(e) => set({ position: e.target.value as ServiceTimer["position"] })}
-                  className="flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-[12px] outline-none focus:border-[var(--v-accent)]"
-                >
-                  <option value="top-left">Top left</option>
-                  <option value="top-right">Top right</option>
-                  <option value="bottom-left">Bottom left</option>
-                  <option value="bottom-right">Bottom right</option>
-                  <option value="center">Centre</option>
-                </select>
-                {t.position !== "center" && <select
-                  value={t.size}
-                  onChange={(e) => set({ size: e.target.value as ServiceTimer["size"] })}
-                  className="flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-[12px] outline-none focus:border-[var(--v-accent)]"
-                >
-                  <option value="small">Small</option>
-                  <option value="medium">Medium</option>
-                  <option value="large">Large</option>
-                </select>}
-              </div>
-
-              {t.position === "center" && (
-                <label className="block text-[12px] text-[var(--v-text-dim)]">
-                  Size: {t.fillPct ?? 90}% of the screen width
-                  <input
-                    type="range" min={20} max={100} step={5}
-                    aria-label="Timer size"
-                    value={t.fillPct ?? 90}
-                    onChange={(e) => set({ fillPct: Number(e.target.value) })}
-                    className="w-full accent-[var(--v-accent)]"
-                  />
-                </label>
-              )}
-
-              <div>
-                <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">
-                  Background
-                </span>
-                <div className="flex gap-1.5">
-                  {([
-                    { k: "none" as const, l: "None" },
-                    { k: "color" as const, l: "Colour" },
-                    { k: "media" as const, l: "Picture / video" },
-                  ]).map((o) => (
-                    <button
-                      key={o.k}
-                      aria-pressed={bg.kind === o.k}
-                      onClick={() => setBg({ kind: o.k })}
-                      className={`flex-1 rounded-md border py-1.5 text-[12px] transition-colors ${
-                        bg.kind === o.k
-                          ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
-                          : "border-[var(--v-border)] bg-[var(--v-surface-3)] text-[var(--v-text-dim)]"
-                      }`}
-                    >
-                      {o.l}
-                    </button>
-                  ))}
-                </div>
-                {bg.kind === "color" && (
-                  <input
-                    type="color"
-                    aria-label="Timer background colour"
-                    value={bg.color}
-                    onChange={(e) => setBg({ color: e.target.value })}
-                    className="mt-1.5 h-8 w-full cursor-pointer rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)]"
-                  />
-                )}
-                {bg.kind === "media" && (
-                  <div className="mt-1.5">
-                    <MediaPicker activeId={bg.mediaId} onSelect={(id) => setBg({ mediaId: id })} defaultMuted />
-                  </div>
-                )}
-                <p className="mt-1 text-[11px] leading-snug text-[var(--v-text-faint)]">
-                  {t.position === "center"
-                    ? "In the centre the background fills the whole screen; use the size slider to make the digits bigger or smaller."
-                    : "In a corner the background is a panel just behind the digits."}
-                </p>
-              </div>
-
-              {t.mode === "countdown" ? (
-                <label className="flex items-center justify-between text-[12px] text-[var(--v-text-dim)]">
-                  Keep counting past zero
-                  <input
-                    type="checkbox"
-                    checked={t.overrun}
-                    onChange={(e) => set({ overrun: e.target.checked })}
-                    className="accent-[var(--v-accent)]"
-                  />
-                </label>
-              ) : null}
-            </div>
-          ) : null}
         </>
       ) : (
         <p className="text-[12px] text-[var(--v-text-faint)]">

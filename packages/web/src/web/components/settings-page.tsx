@@ -21,6 +21,7 @@ import {
   LayoutList,
   Languages,
   Info,
+  Timer,
   Mail,
   Heart,
   Megaphone,
@@ -57,6 +58,7 @@ import { OUTPUT_CANVASES, DEFAULT_OUTPUT_CANVAS } from "../lib/output-canvas";
 import { VButton } from "./bits";
 import { FontPicker } from "./font-picker";
 import { SlideRender } from "./slide-render";
+import { TimerSettings } from "./timer-settings";
 import { hexToRgba } from "./announcement-ticker";
 import { MediaPicker } from "./media-picker";
 import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-media";
@@ -116,7 +118,7 @@ export type ProjectorApi = {
 };
 
 export type SectionId =
-  | "lyrics" | "designer" | "bible" | "presentations" | "streaming" | "ai" | "shortcuts" | "layout" | "general" | "about";
+  | "lyrics" | "designer" | "bible" | "presentations" | "streaming" | "timer" | "ai" | "shortcuts" | "layout" | "general" | "about";
 
 /**
  * Streaming, AI and Shortcuts used to live inside General, which had grown
@@ -129,6 +131,7 @@ const SECTIONS: { id: SectionId; label: string; icon: typeof Music4; hint: strin
   { id: "bible", label: "Bible", icon: BookOpen, hint: "Versions & scripture look" },
   { id: "presentations", label: "Presentations", icon: MonitorPlay, hint: "Slide look & media defaults" },
   { id: "streaming", label: "Streaming & output", icon: Radio, hint: "NDI, OBS & screens" },
+  { id: "timer", label: "Timer", icon: Timer, hint: "Screens, size & background" },
   { id: "ai", label: "AI auto-follow", icon: Ear, hint: "Mic & speech engine" },
   { id: "shortcuts", label: "Shortcuts", icon: Keyboard, hint: "Keys for the live controls" },
   { id: "layout", label: "Layout", icon: Columns3, hint: "How the operator screen is arranged" },
@@ -143,6 +146,7 @@ const SECTION_TITLES: Record<SectionId, string> = {
   bible: "Bible",
   presentations: "Presentations",
   streaming: "Streaming & output",
+  timer: "Timer",
   ai: "AI auto-follow",
   shortcuts: "Shortcuts",
   layout: "Layout",
@@ -347,6 +351,7 @@ export function SettingsPage({
                 onStageNotes={onStageNotes}
               />
             )}
+            {section === "timer" && <TimerSettings settings={settings} patchSettings={patchSettings} />}
             {section === "ai" && (
               <AiSection
                 settings={settings}

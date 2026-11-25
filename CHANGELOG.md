@@ -7,8 +7,9 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
-- NEW: **the timer can have a background.** In the Timer panel's *Set up*, choose None, a solid colour, or a picture or video from the media library. In a corner it is a small panel behind the digits; in the centre it fills the whole screen.
-- IMPROVED: **a centred timer is big, and you set how big.** It used to be a few percent of the screen's height whatever the position, so in the middle it looked small. Centred, the digits now take 90% of the screen's width by default, and a Size slider (20-100%) in Set up makes them bigger or smaller. Corner sizes are unchanged.
+- CHANGED: **the timer's settings have their own tab.** Settings now has a Timer tab with the screens it shows on, count down / up, the label, size and background. The Timer panel on the main screen keeps only the clock, Start / Pause / Reset, how long, and where it goes (a corner or the centre), with a link to the rest.
+- NEW: **the timer can have a background.** In Settings > Timer, choose None, a solid colour, or a picture or video from the media library. In a corner it is a small panel behind the digits; in the centre it fills the whole screen.
+- IMPROVED: **a centred timer is big, and you set how big.** It used to be a few percent of the screen's height whatever the position, so in the middle it looked small. Centred, the digits now take 90% of the screen's width by default, and a Size slider (20-100%) in Settings > Timer makes them bigger or smaller. Corner sizes are unchanged.
 - NEW: **lyrics and Bible verses now fade onto the live screen.** The words' entrance was only ever applied to a few of the choices in the menu: the default ("fade") and the Settings choices "fade" and "slide" did nothing, so slides cut in. The default now fades in, Settings offers the same list as the theme designer, and three transitions are added: Wipe from the left, Wipe down, and Rise and focus. "None" still cuts.
 
 ## [1.38.1] — 2026-11-21
