@@ -134,6 +134,34 @@ export function TimerSettings({
       </section>
 
       <section className={card}>
+        <span className={label}>Digit colour</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            aria-label="Timer digit colour"
+            value={/^#[0-9a-f]{6}$/i.test(t.color) ? t.color : "#ffffff"}
+            onChange={(e) => set({ color: e.target.value })}
+            className="h-10 w-16 shrink-0 cursor-pointer rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)]"
+          />
+          {/* Quick picks for the usual pairings with a dark, light or coloured backdrop. */}
+          {["#FFFFFF", "#000000", "#FFD54A", "#7DD3FC", "#86EFAC", "#FCA5A5"].map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={`Digit colour ${c}`}
+              onClick={() => set({ color: c })}
+              style={{ background: c }}
+              className={`h-8 w-8 shrink-0 rounded-full border-2 ${t.color.toLowerCase() === c.toLowerCase() ? "border-[var(--v-accent)]" : "border-[var(--v-border)]"}`}
+            />
+          ))}
+        </div>
+        <p className="mt-2 text-[12px] text-[var(--v-text-faint)]">
+          Pick whatever suits the background. The digits still turn amber for the last seconds of a
+          countdown and red once it runs over, so that warning is not lost.
+        </p>
+      </section>
+
+      <section className={card}>
         <span className={label}>Background</span>
         <div className="flex gap-2">
           {([
