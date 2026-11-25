@@ -62,8 +62,9 @@ import {
 } from "../hooks/use-playlists";
 import { useBibleManifest, parseReference, searchVersion, versionAbbr, type SearchHit } from "../hooks/use-bible";
 import { useServerNow } from "../hooks/use-server-clock";
+import { MediaPicker } from "../components/media-picker";
 import {
-  DEFAULT_TIMER, formatTimer, timerMs, timerPhase,
+  DEFAULT_TIMER, DEFAULT_TIMER_BG, formatTimer, timerMs, timerPhase,
   startedTimer, resumedTimer, pausedTimer, resetTimer,
   type ServiceTimer,
 } from "../lib/timer";
@@ -3355,6 +3356,8 @@ function TimerPanel({
 }) {
   const t: ServiceTimer = { ...DEFAULT_TIMER, ...(settings?.timer ?? {}) };
   const set = (patch: Partial<ServiceTimer>) => patchSettings({ timer: { ...t, ...patch } });
+  const bg = t.bg ?? DEFAULT_TIMER_BG;
+  const setBg = (patch: Partial<NonNullable<ServiceTimer["bg"]>>) => set({ bg: { ...bg, ...patch } });
 
   // The panel is the one surface that needs a live reading while paused too,
   // so it ticks whenever the timer is on rather than only while running.
@@ -3543,6 +3546,51 @@ function TimerPanel({
                   <option value="medium">Medium</option>
                   <option value="large">Large</option>
                 </select>
+              </div>
+
+              <div>
+                <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">
+                  Background
+                </span>
+                <div className="flex gap-1.5">
+                  {([
+                    { k: "none" as const, l: "None" },
+                    { k: "color" as const, l: "Colour" },
+                    { k: "media" as const, l: "Picture / video" },
+                  ]).map((o) => (
+                    <button
+                      key={o.k}
+                      aria-pressed={bg.kind === o.k}
+                      onClick={() => setBg({ kind: o.k })}
+                      className={`flex-1 rounded-md border py-1.5 text-[12px] transition-colors ${
+                        bg.kind === o.k
+                          ? "border-[var(--v-accent)] bg-[var(--v-accent-soft)] text-[var(--v-accent)]"
+                          : "border-[var(--v-border)] bg-[var(--v-surface-3)] text-[var(--v-text-dim)]"
+                      }`}
+                    >
+                      {o.l}
+                    </button>
+                  ))}
+                </div>
+                {bg.kind === "color" && (
+                  <input
+                    type="color"
+                    aria-label="Timer background colour"
+                    value={bg.color}
+                    onChange={(e) => setBg({ color: e.target.value })}
+                    className="mt-1.5 h-8 w-full cursor-pointer rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)]"
+                  />
+                )}
+                {bg.kind === "media" && (
+                  <div className="mt-1.5">
+                    <MediaPicker activeId={bg.mediaId} onSelect={(id) => setBg({ mediaId: id })} defaultMuted />
+                  </div>
+                )}
+                <p className="mt-1 text-[11px] leading-snug text-[var(--v-text-faint)]">
+                  {t.position === "center"
+                    ? "In the centre the background fills the whole screen and the digits are drawn as large as will fit."
+                    : "In a corner the background is a panel just behind the digits."}
+                </p>
               </div>
 
               {t.mode === "countdown" ? (

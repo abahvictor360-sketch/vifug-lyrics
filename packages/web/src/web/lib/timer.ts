@@ -32,6 +32,18 @@ export type TimerScreens = {
 
 export type TimerPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
 
+/**
+ * What sits behind the digits. "media" points at an item in the media library
+ * (a solid colour, a picture or a video), the same ones the slides use.
+ */
+export type TimerBackground = {
+  kind: "none" | "color" | "media";
+  color: string;
+  mediaId: string | null;
+};
+
+export const DEFAULT_TIMER_BG: TimerBackground = { kind: "none", color: "#101018", mediaId: null };
+
 export type ServiceTimer = {
   enabled: boolean;
   /** Shown above the digits. Empty hides the line entirely. */
@@ -57,6 +69,11 @@ export type ServiceTimer = {
   /** Roughly 4/7/11% of the screen's smaller edge. */
   size: "small" | "medium" | "large";
   color: string;
+  /**
+   * Behind the digits. In a corner it is a panel the size of the timer; at the
+   * centre it fills the whole screen. Absent on timers saved before it existed.
+   */
+  bg?: TimerBackground;
   /** Turn amber with this many seconds left. 0 disables the warning. */
   warnAtSec: number;
 };
@@ -74,6 +91,7 @@ export const DEFAULT_TIMER: ServiceTimer = {
   position: "top-right",
   size: "medium",
   color: "#FFFFFF",
+  bg: DEFAULT_TIMER_BG,
   warnAtSec: 30,
 };
 

@@ -53,9 +53,12 @@ export type LayerMotion = "fade" | "slide-left" | "slide-right" | "slide-up" | "
 
 /** How the words arrive when the slide changes. "fade" is the long-standing default. */
 export const TEXT_MOTIONS: { id: string; label: string }[] = [
-  { id: "fade", label: "Standard" },
+  { id: "fade", label: "Fade in (default)" },
   { id: "none", label: "None (cut)" },
-  { id: "fade-in", label: "Fade in" },
+  { id: "fade-in", label: "Soft fade in" },
+  { id: "wipe", label: "Wipe from the left" },
+  { id: "wipe-down", label: "Wipe down" },
+  { id: "rise-blur", label: "Rise and focus" },
   { id: "slide-up", label: "Rise from below" },
   { id: "slide-down", label: "Drop from above" },
   { id: "slide-left", label: "Slide in from the right" },
@@ -79,7 +82,16 @@ export const LAYER_MOTIONS: { id: LayerMotion | ""; label: string }[] = [
 /** Keyframes for the words' entrance, for the Web Animations API. */
 export function textMotionKeyframes(id: string): Keyframe[] | null {
   switch (id) {
+    // "fade" is the stored default of every theme, so it has to be a visible
+    // transition: it used to be listed but animated nothing, which meant a
+    // verse or a lyric simply cut onto the screen.
+    case "fade": return [{ opacity: 0 }, { opacity: 1 }];
     case "fade-in": return [{ opacity: 0 }, { opacity: 1 }];
+    case "wipe": return [{ clipPath: "inset(0 100% 0 0)", opacity: 0.4 }, { clipPath: "inset(0 0 0 0)", opacity: 1 }];
+    case "wipe-down": return [{ clipPath: "inset(0 0 100% 0)", opacity: 0.4 }, { clipPath: "inset(0 0 0 0)", opacity: 1 }];
+    case "rise-blur": return [{ opacity: 0, transform: "translateY(10%)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }];
+    // Older themes stored plain "slide" from a menu that never animated it.
+    case "slide":
     case "slide-up": return [{ opacity: 0, transform: "translateY(18%)" }, { opacity: 1, transform: "none" }];
     case "slide-down": return [{ opacity: 0, transform: "translateY(-18%)" }, { opacity: 1, transform: "none" }];
     case "slide-left": return [{ opacity: 0, transform: "translateX(10%)" }, { opacity: 1, transform: "none" }];

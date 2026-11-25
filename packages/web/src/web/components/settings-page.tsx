@@ -84,7 +84,7 @@ import { LogoOverlay, DEFAULT_LOGO, type LogoSettings, type LogoPosition } from 
 import type { AppSettings, ThemeOverride } from "../hooks/use-settings";
 import { LANGS } from "../hooks/use-translations";
 import type { LiveState, LiveTheme } from "../lib/live-bus";
-import { themeToLive } from "../lib/live-bus";
+import { themeToLive, TEXT_MOTIONS } from "../lib/live-bus";
 import { MAIN_SCREEN, screenIdFrom, screenUrl } from "../lib/screens";
 import type { useDesktop } from "../hooks/use-desktop";
 import { useCreateTheme, useUpdateTheme, useDeleteTheme, useThemes, themeSuits, type ThemeDraft, type Theme as ThemeRow } from "../hooks/use-songs";
@@ -1108,8 +1108,8 @@ function ThemeFields({ theme, patch }: { theme: ThemeRow; patch: (p: ThemeDraft)
             onChange={(e) => patch({ transition: e.target.value })}
             className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
           >
-            {["none", "fade", "slide", "zoom"].map((t) => (
-              <option key={t} value={t}>{t}</option>
+            {TEXT_MOTIONS.map((m) => (
+              <option key={m.id} value={m.id}>{m.label}</option>
             ))}
           </select>
         </label>

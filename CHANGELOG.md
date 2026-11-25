@@ -5,6 +5,12 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- NEW: **the timer can have a background.** In the Timer panel's *Set up*, choose None, a solid colour, or a picture or video from the media library. In a corner it is a small panel behind the digits; in the centre it fills the whole screen.
+- IMPROVED: **a centred timer is big.** It used to be a few percent of the screen's height whatever the position, so in the middle it looked small. Centred, the digits now take 50%, 70% or 90% of the screen's width (small, medium, large) and shrink only if the screen is too short. Corner sizes are unchanged.
+- NEW: **lyrics and Bible verses now fade onto the live screen.** The words' entrance was only ever applied to a few of the choices in the menu: the default ("fade") and the Settings choices "fade" and "slide" did nothing, so slides cut in. The default now fades in, Settings offers the same list as the theme designer, and three transitions are added: Wipe from the left, Wipe down, and Rise and focus. "None" still cuts.
+
 ## [1.38.1] — 2026-11-21
 
 - FIX: **double-clicking no longer highlights text.** A double-click is an action here (it sends a slide, a verse or a song live), but the browser also took it as "select this word", so every double-click left highlighted text behind, and on a Bible verse it raised the formatting toolbar too. Double and triple clicks on anything that is not a text field no longer select text. Dragging across words to select them (how a phrase in a verse is marked up) is unchanged, and double-clicking a word in a text box still selects it.
