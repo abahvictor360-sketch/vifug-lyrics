@@ -7,6 +7,7 @@ GitHub Release with Windows, macOS and Linux artifacts.
 
 ## [Unreleased]
 
+- NEW: **Vifug Receiver**, a small separate app (`receiver/`) for a second computer. It lists the Vifugs on the network, shows the chosen one's live screen full screen with sound (optionally transparent), and on Windows and Linux presents it as a camera for OBS, vMix, Zoom and similar. The desktop app now announces itself on the local network (a small UDP broadcast with the computer's name and port) so the Receiver can find it. Not yet released; see receiver/README.md for what has and has not been tested.
 - CHANGED: **the timer's settings have their own tab.** Settings now has a Timer tab with the screens it shows on, count down / up, the label, size and background. The Timer panel on the main screen keeps only the clock, Start / Pause / Reset, how long, and where it goes (a corner or the centre), with a link to the rest.
 - NEW: **the timer's digits can be any colour.** Settings > Timer has a colour picker and quick swatches, so the digits can match or contrast with the background (yellow on blue, say). The amber last-seconds warning and the red overrun colour still take over so they are not lost.
 - NEW: **the timer can have a background.** In Settings > Timer, choose None, a solid colour, or a picture or video from the media library. In a corner it is a small panel behind the digits; in the centre it fills the whole screen.

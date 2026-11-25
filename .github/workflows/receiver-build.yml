@@ -1,0 +1,44 @@
+name: Build Vifug Receiver
+
+# Builds the Vifug Receiver (receiver/) for Windows, macOS and Linux and uploads
+# the installers as artifacts. It does not publish a release.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win nsis
+          - os: macos-latest
+            target: --mac dmg
+          - os: ubuntu-latest
+            target: --linux AppImage
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: receiver
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm test
+      - name: Build the Windows camera helper
+        if: runner.os == 'Windows'
+        run: |
+          pip install pyvirtualcam numpy pyinstaller
+          pyinstaller --onefile --name vcam-bridge --distpath helper/dist helper/vcam_bridge.py
+      - run: npx electron-builder ${{ matrix.target }} --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vifug-receiver-${{ matrix.os }}
+          path: |
+            receiver/dist/*.exe
+            receiver/dist/*.dmg
+            receiver/dist/*.AppImage

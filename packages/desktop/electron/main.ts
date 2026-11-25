@@ -12,6 +12,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import { startEmbeddedServer } from "./server";
 import { lanAddresses, lanAddressDetails, firewallState, allowThroughFirewall } from "./network";
+import { startBeacon, stopBeacon } from "./beacon";
 import { ndiStatus, ndiStart, ndiStop, ndiRebind } from "./ndi";
 import { streamStart, streamChunk, streamStop, streamStatus, onStreamState, type StreamStartOptions } from "./stream";
 import { beginStartupLog, logStartup, logStartupError, startupLogPath } from "./startup-log";
@@ -190,6 +191,8 @@ async function ensureProductionServer() {
       logStartupError(`binding ${a.hostname}:${a.port || "auto"}`, err),
   });
   baseUrl = `http://127.0.0.1:${port}`;
+  // Lets the Vifug Receiver on another computer find this one.
+  startBeacon(port, app.getVersion());
 }
 
 function createWindow() {
@@ -740,7 +743,7 @@ ipcMain.handle("stream:start", (_e, opts: StreamStartOptions) => streamStart(opt
 ipcMain.handle("stream:stop", () => streamStop());
 // send, not invoke: several chunks a second, and nothing to answer.
 ipcMain.on("stream:chunk", (_e, data: ArrayBuffer) => streamChunk(data));
-app.on("before-quit", () => { streamStop(); });
+app.on("before-quit", () => { streamStop(); stopBeacon(); });
 
 /**
  * Backup and restore.
