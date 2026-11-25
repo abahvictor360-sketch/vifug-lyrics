@@ -28,9 +28,9 @@ const SIZES: Record<ServiceTimer["size"], [string, string]> = {
 /**
  * In the middle the timer is the thing on the screen, not a badge over it, so
  * it is sized to the screen's width instead of a few percent of its height.
- * Small / medium / large are the share of the width the digits may take.
+ * The operator sets the share of the width the digits may take (fillPct).
  */
-const FILL_WIDTH: Record<ServiceTimer["size"], number> = { small: 0.5, medium: 0.7, large: 0.9 };
+export const DEFAULT_FILL_PCT = 90;
 
 const CORNERS: Record<Exclude<ServiceTimer["position"], "center">, React.CSSProperties> = {
   "top-left": { top: "4%", left: "4%" },
@@ -97,8 +97,8 @@ export function TimerOverlay({
     // by the height so a short, wide screen does not overflow.
     const w = scale ? "cqw" : "vw";
     const h = scale ? "cqh" : "vh";
-    const share = FILL_WIDTH[timer.size] * 100;
-    size = `min(calc(${share}${w} / ${(text.length * 0.6).toFixed(2)}), ${timer.label ? 55 : 70}${h})`;
+    const share = Math.min(100, Math.max(20, timer.fillPct ?? DEFAULT_FILL_PCT));
+    size = `min(calc(${share}${w} / ${(text.length * 0.625).toFixed(2)}), ${timer.label ? 70 : 90}${h})`;
   }
 
   const digits = (

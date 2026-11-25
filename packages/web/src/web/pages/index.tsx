@@ -3537,7 +3537,7 @@ function TimerPanel({
                   <option value="bottom-right">Bottom right</option>
                   <option value="center">Centre</option>
                 </select>
-                <select
+                {t.position !== "center" && <select
                   value={t.size}
                   onChange={(e) => set({ size: e.target.value as ServiceTimer["size"] })}
                   className="flex-1 rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-2 py-1.5 text-[12px] outline-none focus:border-[var(--v-accent)]"
@@ -3545,8 +3545,21 @@ function TimerPanel({
                   <option value="small">Small</option>
                   <option value="medium">Medium</option>
                   <option value="large">Large</option>
-                </select>
+                </select>}
               </div>
+
+              {t.position === "center" && (
+                <label className="block text-[12px] text-[var(--v-text-dim)]">
+                  Size: {t.fillPct ?? 90}% of the screen width
+                  <input
+                    type="range" min={20} max={100} step={5}
+                    aria-label="Timer size"
+                    value={t.fillPct ?? 90}
+                    onChange={(e) => set({ fillPct: Number(e.target.value) })}
+                    className="w-full accent-[var(--v-accent)]"
+                  />
+                </label>
+              )}
 
               <div>
                 <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--v-text-faint)]">
@@ -3588,7 +3601,7 @@ function TimerPanel({
                 )}
                 <p className="mt-1 text-[11px] leading-snug text-[var(--v-text-faint)]">
                   {t.position === "center"
-                    ? "In the centre the background fills the whole screen and the digits are drawn as large as will fit."
+                    ? "In the centre the background fills the whole screen; use the size slider to make the digits bigger or smaller."
                     : "In a corner the background is a panel just behind the digits."}
                 </p>
               </div>

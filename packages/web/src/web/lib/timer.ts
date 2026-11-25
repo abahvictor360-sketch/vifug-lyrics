@@ -70,6 +70,11 @@ export type ServiceTimer = {
   size: "small" | "medium" | "large";
   color: string;
   /**
+   * Centre position only: how much of the screen's width the digits may take,
+   * 20-100. Absent on older timers, which get the default (90).
+   */
+  fillPct?: number;
+  /**
    * Behind the digits. In a corner it is a panel the size of the timer; at the
    * centre it fills the whole screen. Absent on timers saved before it existed.
    */
@@ -92,6 +97,7 @@ export const DEFAULT_TIMER: ServiceTimer = {
   size: "medium",
   color: "#FFFFFF",
   bg: DEFAULT_TIMER_BG,
+  fillPct: 90,
   warnAtSec: 30,
 };
 
