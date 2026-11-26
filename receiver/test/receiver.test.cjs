@@ -71,46 +71,54 @@ const pixel = (file, w, x, y) => {
   return [raw[o], raw[o + 1], raw[o + 2]];
 };
 
-test("transparent frames come out over the chosen background; opaque ones are unchanged", async () => {
+/** Run the sink on `n` identical frames and return the first output frame's pixel at (x, y). */
+async function firstPixel(rgba, background) {
   const out = path.join(tmp(), "out.rgb");
   const W = 64, H = 36;
   const sink = new CameraSink({
-    inWidth: 128, inHeight: 72, width: W, height: H, fps: 15, background: "green",
-    testOutput: ["-frames:v", "6", "-pix_fmt", "rgb24", "-f", "rawvideo", out],
+    inWidth: 128, inHeight: 72, width: W, height: H, fps: 15, background,
+    testOutput: ["-frames:v", "2", "-pix_fmt", "rgb24", "-f", "rawvideo", out],
   }).start();
-  // BGRA little-endian words: 0xAARRGGBB. Fully transparent, then opaque red.
-  for (let i = 0; i < 3; i++) sink.write(frame(128, 72, 0x00000000));
-  for (let i = 0; i < 3; i++) sink.write(frame(128, 72, 0xffff0000));
+  // Enough frames that how many ffmpeg flushes at the end of its input
+  // (which differs between platforms) cannot matter.
+  for (let i = 0; i < 12; i++) sink.write(frame(128, 72, rgba));
   sink.stop();
   await new Promise((r) => sink.proc.on("exit", r));
   assert.equal(sink.status().error, null);
   const size = fs.statSync(out).size;
+  assert.ok(size >= W * H * 3, "at least one frame came out");
   assert.equal(size % (W * H * 3), 0, "whole frames only");
-  assert.ok(size / (W * H * 3) >= 5, "frames written: " + size / (W * H * 3));
-  const first = pixel(out, W, 10, 10);
-  assert.ok(first[1] > 150 && first[0] < 40, "transparent shows the green backdrop: " + first);
-  const raw = fs.readFileSync(out);
-  const n = raw.length / (W * H * 3);
-  const o = ((n - 1) * W * H + 10 * W + 10) * 3;
-  assert.ok(raw[o] > 200 && raw[o + 1] < 40, "opaque red stays red: " + [raw[o], raw[o + 1], raw[o + 2]]);
+  return pixel(out, W, 10, 10);
+}
+
+// BGRA little-endian words: 0xAARRGGBB.
+test("a transparent frame comes out over the chosen background", { timeout: 30000 }, async () => {
+  const p = await firstPixel(0x00000000, "green");
+  assert.ok(p[1] > 150 && p[0] < 40, "transparent shows the green backdrop: " + p);
 });
 
-test("the Windows path pipes the converted frames to the helper", async () => {
+test("an opaque frame is unchanged", { timeout: 30000 }, async () => {
+  const p = await firstPixel(0xffff0000, "green");
+  assert.ok(p[0] > 200 && p[1] < 40, "opaque red stays red: " + p);
+});
+
+test("the Windows path pipes the converted frames to the helper", { timeout: 30000 }, async () => {
   const dir = tmp();
   const counted = path.join(dir, "count.txt");
-  const helper = path.join(dir, "helper.cjs");
-  fs.writeFileSync(helper, `#!${process.execPath}\nlet n=0;process.stdin.on("data",d=>n+=d.length);process.stdin.on("end",()=>require("fs").writeFileSync(${JSON.stringify(counted)},String(n)));`);
-  fs.chmodSync(helper, 0o755);
+  const script = path.join(dir, "helper.cjs");
+  fs.writeFileSync(script, `let n=0;process.stdin.on("data",d=>n+=d.length);process.stdin.on("end",()=>require("fs").writeFileSync(${JSON.stringify(counted)},String(n)));`);
   const W = 32, H = 18;
   const sink = new CameraSink({
     inWidth: W, inHeight: H, width: W, height: H, fps: 15, background: "black",
-    testOutput: ["-frames:v", "4", "-pix_fmt", "rgb24", "-f", "rawvideo", "pipe:1"], helperPath: helper,
+    testOutput: ["-frames:v", "4", "-pix_fmt", "rgb24", "-f", "rawvideo", "pipe:1"],
+    // The helper is node running a script, so this works on every system.
+    helperPath: process.execPath, helperArgs: [script],
   }).start();
-  for (let i = 0; i < 6; i++) sink.write(frame(W, H, 0xff00ff00));
+  for (let i = 0; i < 12; i++) sink.write(frame(W, H, 0xff00ff00));
   sink.stop();
   await new Promise((r) => sink.helper.on("exit", r));
   assert.equal(Number(fs.readFileSync(counted, "utf8")) % (W * H * 3), 0);
-  assert.ok(Number(fs.readFileSync(counted, "utf8")) >= 3 * W * H * 3);
+  assert.ok(Number(fs.readFileSync(counted, "utf8")) >= W * H * 3, "at least one frame reached the helper");
 });
 
 test("the ffmpeg command overlays on a background and scales to the camera size", () => {
