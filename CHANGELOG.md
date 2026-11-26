@@ -5,6 +5,10 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
+## [Unreleased]
+
+- IMPROVED: **more ways to type a Bible reference.** Standard abbreviations that are not the start of the book's name now work: `1kgs 3 9`, `2kgs`, `1sam`, `1chr`, `1thess`, `2tim`, `1pt`, `1jn`, `jn`, `mk`, `lk`, `mt`, `rv`, `sos`, `dt`, `jdg`, `jl`, `phlm` and others. A Roman or spelled-out number in front of the book works too: `II Kings 2 11`, `iii john 1 4`, `1st john 3 16`, `first john 1 9`, `Second Peter 3 9`. Ambiguous short forms such as `jo` are still left alone rather than guessed. Applies to the Bible tab, service plans and the phone remote, which share one lookup.
+
 ## [1.39.0] — 2026-11-25
 
 - NEW: **Vifug Receiver**, a small separate app (`receiver/`) for a second computer. It lists the Vifugs on the network, shows the chosen one's live screen full screen with sound (optionally transparent), and on Windows and Linux presents it as a camera for OBS, vMix, Zoom and similar. The desktop app now announces itself on the local network (a small UDP broadcast with the computer's name and port) so the Receiver can find it. Not yet released; see receiver/README.md for what has and has not been tested.

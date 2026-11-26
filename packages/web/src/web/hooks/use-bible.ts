@@ -1,3 +1,4 @@
+import { normaliseBookText, bookNameForAlias } from "../lib/book-names";
 import { useQuery } from "@tanstack/react-query";
 import { getUserBook, isUserVersion, listUserVersions } from "../lib/user-bibles";
 import { buildCorpus, type VerseCorpus } from "../lib/quoted-verse";
@@ -125,15 +126,19 @@ export function parseReference(input: string, manifest: BibleManifest): ParsedRe
   const q = input.trim();
   const m = q.match(/^(\d?\s*[A-Za-z. ]+?)\s*(\d+)(?:\s*(?:[:.]|vs?\.?|\s)\s*(\d+)(?:\s*[-–]\s*(\d+))?)?\s*$/i);
   if (!m) return null;
-  const rawBook = m[1].replace(/\.$/, "").trim().toLowerCase().replace(/\s+/g, " ");
+  // "II Kings" and "first john" become "2 kings" and "1 john" before matching.
+  const rawBook = normaliseBookText(m[1].replace(/\.$/, ""));
   const chapter = parseInt(m[2], 10);
   const verse = m[3] ? parseInt(m[3], 10) : 1;
   const endVerse = m[4] ? parseInt(m[4], 10) : null;
 
   const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ");
   // exact, then startsWith, then loose contains (min 3 chars)
+  // A standard abbreviation that is not the start of the name ("1kgs", "jn").
+  const aliased = bookNameForAlias(rawBook);
   let hit =
     manifest.canon.find((b) => norm(b.name) === rawBook) ||
+    (aliased ? manifest.canon.find((b) => norm(b.name) === aliased.toLowerCase()) : undefined) ||
     manifest.canon.find((b) => norm(b.name).startsWith(rawBook)) ||
     manifest.canon.find((b) => norm(b.name).replace(/\s+/g, "").startsWith(rawBook.replace(/\s+/g, ""))) ||
     (rawBook.length >= 3 ? manifest.canon.find((b) => norm(b.name).includes(rawBook)) : undefined) ||
