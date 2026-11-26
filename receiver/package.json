@@ -1,0 +1,34 @@
+{
+  "name": "vifug-receiver",
+  "version": "0.1.0",
+  "description": "Receive a Vifug live screen from another computer: full screen, with sound and optional transparency, or as a camera for OBS, Zoom and vMix.",
+  "author": "Victor Abah",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/receiver.test.cjs",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.vifug.receiver",
+    "productName": "Vifug Receiver",
+    "directories": { "output": "dist" },
+    "files": ["main.cjs", "preload.cjs", "lib/**", "ui/**", "package.json"],
+    "asarUnpack": ["node_modules/ffmpeg-static/**"],
+    "win": {
+      "target": "nsis",
+      "extraResources": [{ "from": "helper/dist/vcam-bridge.exe", "to": "vcam-bridge.exe" }]
+    },
+    "linux": { "target": "AppImage", "category": "AudioVideo" },
+    "mac": { "target": "dmg", "category": "public.app-category.video" }
+  }
+}

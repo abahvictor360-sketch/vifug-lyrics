@@ -21,6 +21,7 @@ import {
   LayoutList,
   Languages,
   Info,
+  Timer,
   Mail,
   Heart,
   Megaphone,
@@ -57,6 +58,7 @@ import { OUTPUT_CANVASES, DEFAULT_OUTPUT_CANVAS } from "../lib/output-canvas";
 import { VButton } from "./bits";
 import { FontPicker } from "./font-picker";
 import { SlideRender } from "./slide-render";
+import { TimerSettings } from "./timer-settings";
 import { hexToRgba } from "./announcement-ticker";
 import { MediaPicker } from "./media-picker";
 import { useSetAllVideoSound, useMedia, useUploadMedia } from "../hooks/use-media";
@@ -84,7 +86,7 @@ import { LogoOverlay, DEFAULT_LOGO, type LogoSettings, type LogoPosition } from 
 import type { AppSettings, ThemeOverride } from "../hooks/use-settings";
 import { LANGS } from "../hooks/use-translations";
 import type { LiveState, LiveTheme } from "../lib/live-bus";
-import { themeToLive } from "../lib/live-bus";
+import { themeToLive, TEXT_MOTIONS } from "../lib/live-bus";
 import { MAIN_SCREEN, screenIdFrom, screenUrl } from "../lib/screens";
 import type { useDesktop } from "../hooks/use-desktop";
 import { useCreateTheme, useUpdateTheme, useDeleteTheme, useThemes, themeSuits, type ThemeDraft, type Theme as ThemeRow } from "../hooks/use-songs";
@@ -116,7 +118,7 @@ export type ProjectorApi = {
 };
 
 export type SectionId =
-  | "lyrics" | "designer" | "bible" | "presentations" | "streaming" | "ai" | "shortcuts" | "layout" | "general" | "about";
+  | "lyrics" | "designer" | "bible" | "presentations" | "streaming" | "timer" | "ai" | "shortcuts" | "layout" | "general" | "about";
 
 /**
  * Streaming, AI and Shortcuts used to live inside General, which had grown
@@ -129,6 +131,7 @@ const SECTIONS: { id: SectionId; label: string; icon: typeof Music4; hint: strin
   { id: "bible", label: "Bible", icon: BookOpen, hint: "Versions & scripture look" },
   { id: "presentations", label: "Presentations", icon: MonitorPlay, hint: "Slide look & media defaults" },
   { id: "streaming", label: "Streaming & output", icon: Radio, hint: "NDI, OBS & screens" },
+  { id: "timer", label: "Timer", icon: Timer, hint: "Screens, size & background" },
   { id: "ai", label: "AI auto-follow", icon: Ear, hint: "Mic & speech engine" },
   { id: "shortcuts", label: "Shortcuts", icon: Keyboard, hint: "Keys for the live controls" },
   { id: "layout", label: "Layout", icon: Columns3, hint: "How the operator screen is arranged" },
@@ -143,6 +146,7 @@ const SECTION_TITLES: Record<SectionId, string> = {
   bible: "Bible",
   presentations: "Presentations",
   streaming: "Streaming & output",
+  timer: "Timer",
   ai: "AI auto-follow",
   shortcuts: "Shortcuts",
   layout: "Layout",
@@ -347,6 +351,7 @@ export function SettingsPage({
                 onStageNotes={onStageNotes}
               />
             )}
+            {section === "timer" && <TimerSettings settings={settings} patchSettings={patchSettings} />}
             {section === "ai" && (
               <AiSection
                 settings={settings}
@@ -1108,8 +1113,8 @@ function ThemeFields({ theme, patch }: { theme: ThemeRow; patch: (p: ThemeDraft)
             onChange={(e) => patch({ transition: e.target.value })}
             className="w-full rounded-md border border-[var(--v-border)] bg-[var(--v-surface-3)] px-3 py-2 text-sm outline-none focus:border-[var(--v-accent)]"
           >
-            {["none", "fade", "slide", "zoom"].map((t) => (
-              <option key={t} value={t}>{t}</option>
+            {TEXT_MOTIONS.map((m) => (
+              <option key={m.id} value={m.id}>{m.label}</option>
             ))}
           </select>
         </label>
