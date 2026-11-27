@@ -944,9 +944,23 @@ export default function OperatorPage() {
    * panel, because that string is already the authority on it everywhere
    * else in this file - the live history reads it the same way.
    */
+  /*
+   * The version the Bible panel opens on when nobody has chosen one: the first
+   * English version, or the first enabled one - the same pick the panel makes.
+   * Without it the quotation index below was only ever built after the Bible
+   * tab had been opened once, because the panel was the only thing that knew
+   * a version. An operator who starts on Lyrics, with a song up, never opened
+   * it, so a quoted or paraphrased verse was never recognised from any other
+   * tab. A reference read out still worked, which hid the problem.
+   */
+  const defaultBibleVersionId = useMemo(() => {
+    const langs = (settings?.bibleLangs ?? {}) as Record<string, boolean>;
+    const v = (bibleManifest.data?.versions ?? []).find((x) => x.lang === "en" || langs[x.id] !== false);
+    return v?.id ?? null;
+  }, [settings?.bibleLangs, bibleManifest.data]);
   const bibleVersionId = useMemo(
-    () => bibleSlides[0]?.slideId?.split("-")[0] ?? null,
-    [bibleSlides],
+    () => bibleSlides[0]?.slideId?.split("-")[0] ?? defaultBibleVersionId,
+    [bibleSlides, defaultBibleVersionId],
   );
 
   /** Versions installed AND switched on, so naming a disabled one does nothing. */
