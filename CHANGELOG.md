@@ -5,8 +5,9 @@ Versioning follows [Semantic Versioning](https://semver.org). Releases are cut b
 pushing a `v*` tag, which triggers the desktop installer build and publishes a
 GitHub Release with Windows, macOS and Linux artifacts.
 
-## [Unreleased]
+## [1.40.0] — 2026-11-27
 
+- NEW: **use a phone as the microphone for AI auto-follow.** In Settings > AI auto-follow, under Microphone, turn on *Use my phone as the microphone*: a QR code and link appear, the phone opens it and presses *Send my microphone*, and auto-follow listens through the phone instead of the computer's microphone. The phone remote has a new *Mic* tab (behind the PIN) that opens the same page. It reuses the phone-camera pairing, so the sound goes directly from the phone to the computer and only the pairing uses app.vifug.com, because a phone only allows its microphone on a secure page. While the phone has not connected, listening waits and says so instead of falling back to the computer's microphone; if the phone drops and returns, listening restarts. *New link* invalidates the old one. The meter in the Audio Mixer shows the phone's level.
 - FIX: **auto-follow recognised a quoted or paraphrased verse only after the Bible tab had been opened once.** The index of the Bible that those two kinds of match search was built for whichever version the Bible panel was showing, and the panel was the only thing that knew a version, so on any other tab (Lyrics with a song up, Presentations, Media, Plans, History) nothing was ever built and a verse said without being cited, or in the preacher's own words, was never found. A reference read out ("John three sixteen") worked everywhere, which hid it. The index is now built from your first enabled Bible version from the start, and from whichever version the Bible panel is showing once you choose another.
 
 ## [1.39.1] — 2026-11-26

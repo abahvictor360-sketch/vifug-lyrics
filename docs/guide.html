@@ -2418,6 +2418,28 @@
         <span class="inline-code">docs/SELF_HOST_WHISPER.md</span>.
       </p>
 
+      <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:26px 0 10px">Use a phone as the microphone</h3>
+      <p>
+        The microphone does not have to be one plugged into the computer. A phone near the speaker, or in the
+        congregation, can be the room microphone instead.
+      </p>
+      <ol>
+        <li>In <b>Settings, then AI auto-follow</b>, under Microphone, turn on <b>Use my phone as the microphone</b>. A QR code and a link appear.</li>
+        <li>On the phone, scan the code or open the link, and press <b>Send my microphone</b>. Allow the microphone when the phone asks. Keep that page open with the screen on - the page asks the phone not to sleep.</li>
+        <li>Settings says <b>Phone connected</b>, and auto-follow listens through the phone instead of the microphone chosen above. If the phone drops out and comes back, listening restarts by itself.</li>
+      </ol>
+      <p>
+        On the phone remote there is also a <b>Mic</b> tab, behind the same PIN as the rest of the remote, with a button
+        that opens the same page, so the phone that is already your remote can be the microphone too.
+      </p>
+      <p>
+        Two things to know. A phone only lets a page use its microphone over a secure (https) address, so the pairing goes
+        through <span class="inline-code">app.vifug.com</span> and the phone needs the internet to pair; the sound itself travels
+        straight from the phone to the computer. And <b>New link</b> in Settings makes the old link stop working, which is the
+        thing to press if the code was ever shared by mistake. While the phone has not connected, the AI Auto-Follow panel
+        says <b>Waiting for the phone's microphone</b> rather than quietly using the computer's microphone.
+      </p>
+
       <h3 style="font-family:var(--font-display);font-size:16.5px;font-weight:600;margin:26px 0 10px">Following the songs</h3>
       <p>Turn on <b>Advance slides automatically by listening to the room</b> and Vifug matches what it hears against the next few slides, jumping to the furthest confident match. Two dials sit underneath: how many words of a slide must be heard before it moves, and how far ahead it looks.</p>
 
