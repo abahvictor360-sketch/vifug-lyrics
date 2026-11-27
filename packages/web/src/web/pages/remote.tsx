@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronLeft, ChevronRight, Square, Ban, SendHorizontal, Wifi, WifiOff,
-  Music, BookOpen, MonitorPlay, Camera, SlidersHorizontal, Loader2, Film, Check, Upload,
+  Music, BookOpen, MonitorPlay, Camera, SlidersHorizontal, Loader2, Film, Check, Upload, Mic,
 } from "lucide-react";
 import type { LiveState } from "../lib/live-bus";
 import { IDLE_STATE, DEFAULT_THEME } from "../lib/live-bus";
 import { subscribeSnapshot } from "../lib/realtime";
 import { uploadMediaFile } from "../hooks/use-media";
+import { phoneMicUrl } from "../lib/phone-mic";
 
 /**
  * Phone / tablet remote.
@@ -190,6 +191,73 @@ function BibleTab({ onSelect }: { onSelect: (ref: string) => void }) {
         Select passage
       </button>
       <p className="text-center text-xs text-white/50">Cues it into the operator's Bible preview - same as typing it in the app.</p>
+    </div>
+  );
+}
+
+/**
+ * Use this phone as the microphone for AI auto-follow.
+ *
+ * Opens the secure page that sends the phone's microphone, because a phone
+ * only allows a page to use its microphone over https and this remote page,
+ * on the local network, is not. The link only exists once the operator has
+ * switched the feature on in Settings.
+ */
+function MicTab({ pin }: { pin: string | null }) {
+  const [state, setState] = useState<"loading" | "off" | "ready" | "error">("loading");
+  const [url, setUrl] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/remote/phone-mic", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin }),
+        });
+        const data = (await res.json()) as { ok?: boolean; room?: string | null };
+        if (cancelled) return;
+        if (!data.ok) setState("error");
+        else if (!data.room) setState("off");
+        else {
+          setUrl(phoneMicUrl(data.room));
+          setState("ready");
+        }
+      } catch {
+        if (!cancelled) setState("error");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pin]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold">Use this phone as the microphone</h2>
+      {state === "loading" && <p className="text-sm text-white/55">Checking...</p>}
+      {state === "error" && <p className="text-sm text-red-400">Couldn't reach the app. Check the PIN and the connection.</p>}
+      {state === "off" && (
+        <p className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/70">
+          It is switched off. On the computer running Vifug, open Settings, then AI auto-follow, and turn on <b>Use my phone as the microphone</b>.
+        </p>
+      )}
+      {state === "ready" && (
+        <>
+          <a
+            href={url}
+            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-700 py-4 text-lg font-semibold"
+          >
+            <Mic className="h-5 w-5" /> Open the microphone page
+          </a>
+          <p className="text-sm text-white/60">
+            Press <b>Send my microphone</b> there and keep that page open with the screen on. Put the phone near the speaker.
+            AI auto-follow will listen through it.
+          </p>
+          <p className="text-xs text-white/40">This opens a secure page on app.vifug.com, so the phone needs the internet to pair.</p>
+        </>
+      )}
     </div>
   );
 }
@@ -406,7 +474,7 @@ function PhotoTab({ onUploaded }: { onUploaded: (mediaId: string) => void }) {
   );
 }
 
-type PickerTab = "control" | "songs" | "bible" | "decks" | "photo";
+type PickerTab = "control" | "songs" | "bible" | "decks" | "photo" | "mic";
 
 export default function RemotePage() {
   const [state, setState] = useState<LiveState>(IDLE_STATE);
@@ -521,6 +589,7 @@ export default function RemotePage() {
     { id: "bible", label: "Bible", icon: BookOpen },
     { id: "decks", label: "Decks", icon: MonitorPlay },
     { id: "photo", label: "Media", icon: Camera },
+    { id: "mic", label: "Mic", icon: Mic },
   ];
 
   return (
@@ -630,6 +699,8 @@ export default function RemotePage() {
               flashSent("Presentation");
             }}
           />
+        ) : tab === "mic" ? (
+          <MicTab pin={pin} />
         ) : (
           <PhotoTab
             onUploaded={(mediaId) => {
@@ -641,7 +712,7 @@ export default function RemotePage() {
       </div>
 
       {/* Tab bar */}
-      <div className="mt-3 grid grid-cols-5 gap-1.5">
+      <div className="mt-3 grid grid-cols-6 gap-1.5">
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;

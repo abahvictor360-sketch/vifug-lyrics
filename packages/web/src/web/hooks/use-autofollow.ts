@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { peakLevel, publishMicLevel } from "../lib/audio-taps";
 import { parseSpokenReference, spokenRefToQuery } from "../lib/spoken-ref";
+import { PHONE_MIC_WAITING, liveAudioTrack } from "../lib/phone-mic";
 import { LocalRecogniser, effectiveModel, pcmFromStream } from "../lib/local-stt";
 import { parseSpokenVersion } from "../lib/spoken-version";
 import { ParaphraseTracker } from "../lib/follow-detect";
@@ -144,6 +145,14 @@ export function useAutoFollow(opts: {
   accentedEnglish?: boolean;
   /** Spoken language code, or "multi". Used by the local engine. */
   language?: string | null;
+  /**
+   * Listen to a phone's microphone (sent over the phone pairing) instead of one
+   * on this computer. `phoneStream` is the stream that fills when it connects.
+   * While the phone has not connected, listening waits rather than quietly
+   * falling back to the laptop's microphone, which is not the one in the room.
+   */
+  usePhoneMic?: boolean;
+  phoneStream?: MediaStream | null;
 }) {
   const {
     slides, currentIndex, onAdvanceTo, threshold = 0.34, lookahead = 3,
@@ -152,6 +161,8 @@ export function useAutoFollow(opts: {
     onVersion, versionIds, matchQuote, localModelHost, accentedEnglish = false,
     scriptureLive,
     rankVerses,
+    usePhoneMic = false,
+    phoneStream = null,
   } = opts;
   const [status, setStatus] = useState<AutoFollowStatus>("off");
   const [heard, setHeard] = useState("");
@@ -317,6 +328,11 @@ export function useAutoFollow(opts: {
     stopMeter();
     mediaRef.current?.getTracks().forEach((t) => t.stop());
     mediaRef.current = null;
+    if (phoneElRef.current) {
+      phoneElRef.current.pause();
+      phoneElRef.current.srcObject = null;
+      phoneElRef.current = null;
+    }
     transcriptRef.current = [];
     trackerRef.current.reset();
     setEvents([]);
@@ -499,7 +515,28 @@ export function useAutoFollow(opts: {
   );
 
   /** The one place the room mic is opened, whichever engine is listening. */
+  const phoneRef = useRef({ on: usePhoneMic, stream: phoneStream });
+  phoneRef.current = { on: usePhoneMic, stream: phoneStream };
+  const phoneElRef = useRef<HTMLAudioElement | null>(null);
+
   const openMic = useCallback(async () => {
+    if (phoneRef.current.on) {
+      const track = liveAudioTrack(phoneRef.current.stream);
+      if (!track) throw new Error(PHONE_MIC_WAITING);
+      // A copy, so stopping a session never ends the phone's own track.
+      const stream = new MediaStream([track.clone()]);
+      // Chromium only feeds a received audio stream into Web Audio (the meter
+      // and the on-device engine) once an element is playing it. Muted, so
+      // the room is not played back into the room.
+      const el = new Audio();
+      el.muted = true;
+      el.srcObject = stream;
+      void el.play().catch(() => {});
+      phoneElRef.current = el;
+      mediaRef.current = stream;
+      startMeter(stream);
+      return stream;
+    }
     // Use the microphone chosen in Settings → AI. Without this the browser
     // picks the system default, which on Windows is often a webcam mic
     // pointed away from the room - Auto-Follow then "works" but hears
@@ -519,6 +556,18 @@ export function useAutoFollow(opts: {
     startMeter(stream);
     return stream;
   }, [startMeter]);
+
+  /**
+   * The phone microphone has not connected yet. Not an error: the page that
+   * owns this hook restarts listening when the phone's audio arrives, so all
+   * this does is say what it is waiting for.
+   */
+  const waitForPhone = useCallback((e: unknown) => {
+    if (!(e instanceof Error) || e.message !== PHONE_MIC_WAITING) return false;
+    setErrorText("Waiting for your phone. Open the link on the phone and press Send my microphone.");
+    setStatus("connecting");
+    return true;
+  }, []);
 
   /**
    * Whisper on this machine - no key, no account, no uplink.
@@ -572,11 +621,12 @@ export function useAutoFollow(opts: {
       // Audio starts flowing straight away: the worker buffers it while the
       // model downloads, so the first thing said is not lost to the wait.
       pcmStopRef.current = pcmFromStream(stream, (pcm) => rec.push(pcm));
-    } catch {
+    } catch (e) {
+      if (waitForPhone(e)) return;
       setStatus("error");
       mediaRef.current?.getTracks().forEach((t) => t.stop());
     }
-  }, [openMic, evaluate, listenForScripture, listenForParaphrase]);
+  }, [openMic, evaluate, listenForScripture, listenForParaphrase, waitForPhone]);
 
   const start = useCallback(async () => {
     if (engineRef.current === "local") return startLocal();
@@ -647,11 +697,12 @@ export function useAutoFollow(opts: {
         recorderRef.current?.stop();
         recorderRef.current = null;
       };
-    } catch {
+    } catch (e) {
+      if (waitForPhone(e)) return;
       setStatus("error");
       mediaRef.current?.getTracks().forEach((t) => t.stop());
     }
-  }, [evaluate, openMic, startLocal, listenForScripture, listenForScriptureInterim, listenForParaphrase]);
+  }, [evaluate, openMic, startLocal, listenForScripture, listenForScriptureInterim, listenForParaphrase, waitForPhone]);
 
   useEffect(() => stop, [stop]);
 

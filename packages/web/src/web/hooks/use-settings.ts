@@ -122,6 +122,10 @@ export type AppSettings = {
    * speech rather than on a form of words.
    */
   autoFollowQuotes?: boolean;
+  /** Listen to a phone's microphone (paired from the phone) instead of one on this computer. */
+  autoFollowPhoneMic?: boolean;
+  /** The private room code that phone pairs with. Kept so the phone remote can offer the link too. */
+  autoFollowPhoneMicRoom?: string | null;
   /**
    * Switch translation when the preacher names one out loud - "John three
    * sixteen in the Message".

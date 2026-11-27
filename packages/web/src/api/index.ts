@@ -1454,6 +1454,23 @@ const app = new Hono()
     if (!cfg.requirePin) return c.json({ ok: true }, 200);
     return c.json({ ok: !!cfg.pin && pin === cfg.pin }, 200);
   })
+  // The pairing code for "use my phone as the microphone", for a phone that has
+  // the PIN. Behind the PIN like every other thing the remote can do, because
+  // whoever holds the code can speak into the auto-follow microphone.
+  .post("/remote/phone-mic", async (c) => {
+    const { pin } = await c.req.json<{ pin?: string }>().catch(() => ({ pin: undefined }));
+    const auth = await remoteAuthConfig();
+    if (auth.requirePin && (!auth.pin || pin !== auth.pin)) return c.json({ ok: false, room: null }, 401);
+    const [row] = await db.select().from(schema.settings).where(eq(schema.settings.id, "app"));
+    let cfg: { autoFollowPhoneMic?: boolean; autoFollowPhoneMicRoom?: string | null } = {};
+    try {
+      cfg = row ? JSON.parse(row.config) : {};
+    } catch {
+      /* unreadable settings: nothing is on offer */
+    }
+    const room = cfg.autoFollowPhoneMic && typeof cfg.autoFollowPhoneMicRoom === "string" ? cfg.autoFollowPhoneMicRoom : null;
+    return c.json({ ok: true, room }, 200);
+  })
   .post("/remote/command", async (c) => {
     const cmd = await c.req.json<{
       action: string;
